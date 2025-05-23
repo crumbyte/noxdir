@@ -32,6 +32,7 @@ type DirModel struct {
 	columns       []Column
 	dirsTable     *table.Model
 	topFilesTable *table.Model
+	topDirsTable  *table.Model
 	nav           *Navigation
 	filters       filter.FiltersList
 	mode          Mode
@@ -39,6 +40,7 @@ type DirModel struct {
 	width         int
 	height        int
 	showTopFiles  bool
+	showTopDirs   bool
 }
 
 func NewDirModel(nav *Navigation) *DirModel {
@@ -61,6 +63,7 @@ func NewDirModel(nav *Navigation) *DirModel {
 		),
 		dirsTable:     buildTable(),
 		topFilesTable: buildTable(),
+		topDirsTable:  buildTable(),
 		mode:          PENDING,
 		nav:           nav,
 	}
@@ -72,6 +75,9 @@ func NewDirModel(nav *Navigation) *DirModel {
 
 	dm.topFilesTable.SetStyles(style)
 	dm.topFilesTable.SetHeight(topFilesTableHeight)
+
+	dm.topDirsTable.SetStyles(style)
+	dm.topDirsTable.SetHeight(topFilesTableHeight)
 
 	return dm
 }
@@ -85,6 +91,7 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case updateDirState:
+		dm.mode = PENDING
 		runtime.GC()
 		dm.nav.Entry().CalculateSize()
 
@@ -97,7 +104,12 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		dm.updateTableData()
 
 		dm.topFilesTable.SetRows(nil)
-		dm.fillTopFiles()
+		dm.fillTopEntries(&structure.TopFilesInstance, dm.topFilesTable)
+
+		dm.topDirsTable.SetRows(nil)
+		structure.TopDirsInstance.Scan(dm.nav.Entry())
+		dm.fillTopEntries(&structure.TopDirsInstance, dm.topDirsTable)
+
 	case tea.WindowSizeMsg:
 		dm.updateSize(msg.Width, msg.Height)
 	case tea.KeyMsg:
@@ -130,8 +142,13 @@ func (dm *DirModel) View() string {
 
 	rows := []string{summary}
 
-	if dm.showTopFiles {
-		tft := dm.topFilesTable.View()
+	if dm.showTopDirs || dm.showTopFiles {
+		topTable := dm.topFilesTable
+		if dm.showTopDirs {
+			topTable = dm.topDirsTable
+		}
+
+		tft := topTable.View()
 
 		dm.dirsTable.SetHeight(dirsTableHeight - h(tft))
 		rows = append(rows, dm.dirsTable.View(), tft)
@@ -188,7 +205,10 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 			return true
 		}
 	case toggleTopFiles:
-		dm.showTopFiles = !dm.showTopFiles
+		dm.showTopFiles = !dm.showTopFiles && !dm.showTopDirs
+		dm.updateSize(dm.width, dm.height)
+	case toggleTopDirs:
+		dm.showTopDirs = !dm.showTopDirs && !dm.showTopFiles
 		dm.updateSize(dm.width, dm.height)
 	case toggleDirsFilter:
 		dm.filters.ToggleFilter(filter.DirsOnlyFilterID)
@@ -292,7 +312,7 @@ func (dm *DirModel) dirsSummary() string {
 		Render(NewStatusBar(items, dm.width))
 }
 
-func (dm *DirModel) fillTopFiles() {
+func (dm *DirModel) fillTopEntries(entries heap.Interface, tm *table.Model) {
 	iconWidth := 5
 	colSize := int(float64(dm.width-iconWidth) * colWidthRatio)
 	nameWidth := dm.width - (colSize * 2) - iconWidth
@@ -305,18 +325,18 @@ func (dm *DirModel) fillTopFiles() {
 		{Title: "Last Change", Width: colSize},
 	}
 
-	dm.topFilesTable.SetColumns(columns)
-	dm.topFilesTable.SetCursor(0)
+	tm.SetColumns(columns)
+	tm.SetCursor(0)
 
-	if structure.TopFilesInstance.Len() == 0 || dm.topFilesTable.Rows() != nil {
+	if entries.Len() == 0 || tm.Rows() != nil {
 		return
 	}
 
 	rows := make([]table.Row, 15)
-	heap.Pop(&structure.TopFilesInstance)
+	heap.Pop(entries)
 
 	for i := len(rows) - 1; i >= 0; i-- {
-		file, ok := heap.Pop(&structure.TopFilesInstance).(*structure.Entry)
+		file, ok := heap.Pop(entries).(*structure.Entry)
 		if !ok {
 			continue
 		}
@@ -335,8 +355,8 @@ func (dm *DirModel) fillTopFiles() {
 		}
 	}
 
-	dm.topFilesTable.SetRows(rows)
-	dm.topFilesTable.SetCursor(0)
+	tm.SetRows(rows)
+	tm.SetCursor(0)
 }
 
 func (dm *DirModel) updateSize(width, height int) {
@@ -344,7 +364,9 @@ func (dm *DirModel) updateSize(width, height int) {
 
 	dm.dirsTable.SetWidth(width)
 	dm.topFilesTable.SetWidth(width)
+	dm.topDirsTable.SetWidth(width)
 
 	dm.updateTableData()
-	dm.fillTopFiles()
+	dm.fillTopEntries(&structure.TopFilesInstance, dm.topFilesTable)
+	dm.fillTopEntries(&structure.TopDirsInstance, dm.topDirsTable)
 }

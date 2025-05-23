@@ -23,6 +23,7 @@ const (
 	sortTotalFree     bindingKey = "alt+f"
 	sortTotalUsedP    bindingKey = "alt+g"
 	toggleTopFiles    bindingKey = "ctrl+q"
+	toggleTopDirs     bindingKey = "ctrl+e"
 	toggleDirsFilter  bindingKey = "."
 	toggleFilesFilter bindingKey = ","
 	toggleNameFilter  bindingKey = "ctrl+f"
@@ -156,6 +157,15 @@ var dirsKeyMap = [][]key.Binding{
 			key.WithHelp(
 				bindKeyStyle.Render(toggleNameFilter.String()),
 				helpDescStyle.Render(" - \uEA6D toggle name filter"),
+			),
+		),
+	},
+	{
+		key.NewBinding(
+			key.WithKeys(toggleTopDirs.String()),
+			key.WithHelp(
+				bindKeyStyle.Render(toggleTopDirs.String()),
+				helpDescStyle.Render(" - toggle top dirs"),
 			),
 		),
 	},

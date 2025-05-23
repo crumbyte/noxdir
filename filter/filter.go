@@ -57,6 +57,13 @@ func (df *FilesFilter) Filter(e *structure.Entry) bool {
 	return !df.enabled || !e.IsDir
 }
 
+// NameFilter filters a single instance of the *structure.Entry by its path value.
+// If the entry's path value does not contain the user's input, it will not be
+// filtered/discarded.
+//
+// The user's input is handled by the textinput.Model instance, therefore the
+// filter must update internal state by providing the corresponding Updater
+// implementation.
 type NameFilter struct {
 	input   textinput.Model
 	enabled bool
@@ -78,6 +85,8 @@ func (nf *NameFilter) Toggle() {
 	nf.enabled = !nf.enabled
 }
 
+// Filter filters an instance of *structure.Entry by checking if its path value
+// contains the current filter input.
 func (nf *NameFilter) Filter(e *structure.Entry) bool {
 	return strings.Contains(
 		strings.ToLower(e.Name()),

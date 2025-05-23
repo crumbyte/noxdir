@@ -25,7 +25,10 @@ const (
 	bfsQueueSize     = 64
 )
 
-var TopFilesInstance = TopFiles{size: maxTopFiles}
+var (
+	TopFilesInstance = TopFiles{size: maxTopFiles}
+	TopDirsInstance  = TopDirs{size: maxTopFiles}
+)
 
 // Entry contains the information about a single directory or a file instance
 // within the file system. If the entry represents a directory instance, it has

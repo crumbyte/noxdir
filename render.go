@@ -31,7 +31,6 @@ type ViewModel struct {
 	dirModel   *DirModel
 	nav        *Navigation
 	lastErr    []error
-	width      int
 }
 
 func NewViewModel(n *Navigation) *ViewModel {
@@ -51,8 +50,6 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		vm.width = msg.Width
 	case tea.KeyMsg:
 		bk := bindingKey(strings.ToLower(msg.String()))
 
