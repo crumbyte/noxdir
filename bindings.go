@@ -16,7 +16,6 @@ const (
 	quit              bindingKey = "q"
 	cancel            bindingKey = "ctrl+c"
 	enter             bindingKey = "enter"
-	sort              bindingKey = "s"
 	explore           bindingKey = "e"
 	sortTotalCap      bindingKey = "alt+t"
 	sortTotalUsed     bindingKey = "alt+u"
@@ -35,28 +34,28 @@ var navigateKeyMap = [][]key.Binding{
 			key.WithKeys("up", "k"),
 			key.WithHelp(
 				bindKeyStyle.Render("↑/k"),
-				helpDescStyle.Render(" - \uF062 up"),
+				helpDescStyle.Render(" - up"),
 			),
 		),
 		key.NewBinding(
 			key.WithKeys("down", "j"),
 			key.WithHelp(
 				bindKeyStyle.Render("↓/j"),
-				helpDescStyle.Render(" - \uF063 down"),
+				helpDescStyle.Render(" - down"),
 			),
 		),
 		key.NewBinding(
 			key.WithKeys("home", "g"),
 			key.WithHelp(
 				bindKeyStyle.Render("g/home"),
-				helpDescStyle.Render(" - \uF149 go to start"),
+				helpDescStyle.Render(" - go to start"),
 			),
 		),
 		key.NewBinding(
 			key.WithKeys("end", "G"),
 			key.WithHelp(
 				bindKeyStyle.Render("G/end"),
-				helpDescStyle.Render(" - \uF149 go to end"),
+				helpDescStyle.Render(" - go to end"),
 			),
 		),
 	},
@@ -72,28 +71,28 @@ var drivesKeyMap = [][]key.Binding{
 			),
 			key.WithHelp(
 				bindKeyStyle.Render("alt+(t/f/u/g)"),
-				helpDescStyle.Render(" - \U000F04BA sort total/free/used/usage"),
+				helpDescStyle.Render(" - sort total/free/used/usage"),
 			),
 		),
 		key.NewBinding(
 			key.WithKeys(enter.String()),
 			key.WithHelp(
 				bindKeyStyle.Render(enter.String()),
-				helpDescStyle.Render(" - \U000F17A3 open drive"),
+				helpDescStyle.Render(" - open drive"),
 			),
 		),
 		key.NewBinding(
 			key.WithKeys(explore.String()),
 			key.WithHelp(
 				bindKeyStyle.Render(explore.String()),
-				helpDescStyle.Render(" - \uF115 explore drive"),
+				helpDescStyle.Render(" - explore drive"),
 			),
 		),
 		key.NewBinding(
 			key.WithKeys(quit.String(), cancel.String()),
 			key.WithHelp(
 				bindKeyStyle.Render(quit.String()+"/"+cancel.String()),
-				helpDescStyle.Render(" - \U000F0206 quit"),
+				helpDescStyle.Render(" - quit"),
 			),
 		),
 	},
@@ -105,28 +104,28 @@ var dirsKeyMap = [][]key.Binding{
 			key.WithKeys(enter.String()),
 			key.WithHelp(
 				bindKeyStyle.Render(enter.String()),
-				helpDescStyle.Render(" - \U000F17A3 open dir"),
+				helpDescStyle.Render(" - open dir"),
 			),
 		),
 		key.NewBinding(
 			key.WithKeys(backspace.String()),
 			key.WithHelp(
 				bindKeyStyle.Render(backspace.String()),
-				helpDescStyle.Render(" - \U000F17A7 back"),
+				helpDescStyle.Render(" - back"),
 			),
 		),
 		key.NewBinding(
 			key.WithKeys(explore.String()),
 			key.WithHelp(
 				bindKeyStyle.Render(explore.String()),
-				helpDescStyle.Render(" - \uF115 explore dir/file"),
+				helpDescStyle.Render(" - explore dir/file"),
 			),
 		),
 		key.NewBinding(
 			key.WithKeys(quit.String(), cancel.String()),
 			key.WithHelp(
 				bindKeyStyle.Render(quit.String()+"/"+cancel.String()),
-				helpDescStyle.Render(" - \U000F0206 quit"),
+				helpDescStyle.Render(" - quit"),
 			),
 		),
 	},
@@ -135,37 +134,37 @@ var dirsKeyMap = [][]key.Binding{
 			key.WithKeys(toggleTopFiles.String()),
 			key.WithHelp(
 				bindKeyStyle.Render(toggleTopFiles.String()),
-				helpDescStyle.Render(" - \U000F028B toggle top files"),
+				helpDescStyle.Render(" - toggle top files"),
 			),
 		),
 		key.NewBinding(
-			key.WithKeys(toggleDirsFilter.String()),
+			key.WithKeys(toggleTopDirs.String()),
 			key.WithHelp(
-				bindKeyStyle.Render(toggleDirsFilter.String()),
-				helpDescStyle.Render(" - \uF4D3 toggle dirs only"),
-			),
-		),
-		key.NewBinding(
-			key.WithKeys(toggleFilesFilter.String()),
-			key.WithHelp(
-				bindKeyStyle.Render(toggleFilesFilter.String()),
-				helpDescStyle.Render(" - \uF15B toggle files only"),
+				bindKeyStyle.Render(toggleTopDirs.String()),
+				helpDescStyle.Render(" - toggle top dirs"),
 			),
 		),
 		key.NewBinding(
 			key.WithKeys(toggleNameFilter.String()),
 			key.WithHelp(
 				bindKeyStyle.Render(toggleNameFilter.String()),
-				helpDescStyle.Render(" - \uEA6D toggle name filter"),
+				helpDescStyle.Render(" - toggle name filter"),
 			),
 		),
 	},
 	{
 		key.NewBinding(
-			key.WithKeys(toggleTopDirs.String()),
+			key.WithKeys(toggleDirsFilter.String()),
 			key.WithHelp(
-				bindKeyStyle.Render(toggleTopDirs.String()),
-				helpDescStyle.Render(" - toggle top dirs"),
+				bindKeyStyle.Render(toggleDirsFilter.String()),
+				helpDescStyle.Render(" - toggle dirs only"),
+			),
+		),
+		key.NewBinding(
+			key.WithKeys(toggleFilesFilter.String()),
+			key.WithHelp(
+				bindKeyStyle.Render(toggleFilesFilter.String()),
+				helpDescStyle.Render(" - toggle files only"),
 			),
 		),
 	},
