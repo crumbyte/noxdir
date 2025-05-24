@@ -1,4 +1,6 @@
 # 🧹 NoxDir
+[![Build](https://github.com/crumbyte/noxdir/actions/workflows/build.yml/badge.svg)](https://github.com/crumbyte/noxdir/actions/workflows/build.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/crumbyte/noxdir)](https://goreportcard.com/report/github.com/crumbyte/noxdir)
 
 **NoxDir** is a high-performance, cross-platform command-line tool for
 visualizing and exploring your file system usage. It detects mounted drives or
