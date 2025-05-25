@@ -129,7 +129,7 @@ func (t *Tree) Traverse() error {
 
 	for len(queue) > 0 {
 		currentNode, queue = queue[0], queue[1:]
-▄
+
 		t.handleEntry(
 			currentNode,
 			func(newDir *Entry) { queue = append(queue, newDir) },
