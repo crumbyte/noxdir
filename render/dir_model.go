@@ -1,4 +1,4 @@
-package main
+package render
 
 import (
 	"container/heap"
@@ -93,14 +93,14 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case updateDirState:
 		dm.mode = PENDING
 		runtime.GC()
-		dm.nav.Entry().CalculateSize()
+		dm.nav.tree.CalculateSize()
 
 		dm.updateTableData()
 	case scanFinished:
 		dm.mode = READY
 
 		runtime.GC()
-		dm.nav.Entry().CalculateSize()
+		dm.nav.tree.CalculateSize()
 		dm.updateTableData()
 
 		dm.topFilesTable.SetRows(nil)

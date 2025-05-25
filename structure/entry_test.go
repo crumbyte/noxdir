@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -72,9 +73,10 @@ func TestEntry_Traverse(t *testing.T) {
 	entryRoot := initTmpEntry(t, &testEntryInstance, root)
 
 	e := structure.NewDirEntry(entryRoot, 0)
+	tree := structure.NewTree(e)
 
-	require.NoError(t, e.Traverse())
-	e.CalculateSize()
+	require.NoError(t, tree.Traverse())
+	tree.CalculateSize()
 
 	require.Equal(t, uint64(4), e.LocalDirs)
 	require.Equal(t, uint64(3), e.LocalFiles)
@@ -87,6 +89,60 @@ func TestEntry_Traverse(t *testing.T) {
 	require.NoError(t, os.RemoveAll(entryRoot))
 }
 
+func TestEntry_TraverseExclude(t *testing.T) {
+	root, err := filepath.Abs(".")
+	require.NoError(t, err)
+
+	entryRoot := initTmpEntry(t, &testEntryInstance, root)
+
+	tableData := []struct {
+		exclude          []string
+		expectedDirsCnt  uint64
+		expectedFilesCnt uint64
+	}{
+		{
+			exclude:          []string{"noxdir_root_test_entry"},
+			expectedDirsCnt:  0,
+			expectedFilesCnt: 0,
+		},
+		{
+			exclude:          []string{"level_1_1"},
+			expectedDirsCnt:  9,
+			expectedFilesCnt: 19,
+		},
+		{
+			exclude:          []string{"level_2"},
+			expectedDirsCnt:  7,
+			expectedFilesCnt: 11,
+		},
+		{
+			exclude:          []string{"level_3", "level_1_4"},
+			expectedDirsCnt:  9,
+			expectedFilesCnt: 15,
+		},
+	}
+
+	for _, data := range tableData {
+		t.Run(
+			"exclude: "+strings.Join(data.exclude, ","),
+			func(t *testing.T) {
+				e := structure.NewDirEntry(entryRoot, 0)
+				tree := structure.NewTree(
+					e, structure.WithExclude(data.exclude),
+				)
+
+				require.NoError(t, tree.Traverse())
+				tree.CalculateSize()
+
+				require.Equal(t, data.expectedDirsCnt, e.TotalDirs)
+				require.Equal(t, data.expectedFilesCnt, e.TotalFiles)
+			},
+		)
+	}
+
+	require.NoError(t, os.RemoveAll(entryRoot))
+}
+
 func TestEntry_TraverseAsync(t *testing.T) {
 	root, err := filepath.Abs(".")
 	require.NoError(t, err)
@@ -94,8 +150,9 @@ func TestEntry_TraverseAsync(t *testing.T) {
 	entryRoot := initTmpEntry(t, &testEntryInstance, root)
 
 	e := structure.NewDirEntry(entryRoot, 0)
+	tree := structure.NewTree(e)
 
-	done, errCh := e.TraverseAsync()
+	done, errCh := tree.TraverseAsync()
 
 	select {
 	case err = <-errCh:
@@ -106,7 +163,7 @@ func TestEntry_TraverseAsync(t *testing.T) {
 		break
 	}
 
-	e.CalculateSize()
+	tree.CalculateSize()
 
 	require.Equal(t, uint64(4), e.LocalDirs)
 	require.Equal(t, uint64(3), e.LocalFiles)

@@ -33,10 +33,18 @@ func (esh *EntrySizeHeap) Reset() {
 }
 
 func (esh *EntrySizeHeap) Less(i, j int) bool {
+	if len(esh.files) == 0 {
+		return false
+	}
+
 	return esh.files[i].Size < esh.files[j].Size
 }
 
 func (esh *EntrySizeHeap) Swap(i, j int) {
+	if len(esh.files) == 0 {
+		return
+	}
+
 	esh.files[i], esh.files[j] = esh.files[j], esh.files[i]
 }
 
@@ -45,6 +53,10 @@ func (esh *EntrySizeHeap) Len() int {
 }
 
 func (esh *EntrySizeHeap) Pop() (v any) {
+	if len(esh.files) == 0 {
+		return
+	}
+
 	v, esh.files = esh.files[esh.Len()-1], esh.files[:esh.Len()-1]
 
 	return

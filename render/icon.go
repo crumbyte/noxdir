@@ -1,4 +1,4 @@
-package main
+package render
 
 import "github.com/crumbyte/noxdir/structure"
 

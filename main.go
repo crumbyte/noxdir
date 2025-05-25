@@ -1,14 +1,9 @@
 package main
 
 import (
-	"log/slog"
+	"github.com/crumbyte/noxdir/cmd"
 )
 
 func main() {
-	logger := slog.Default()
-
-	if err := Render(); err != nil {
-		// TODO: display error properly formatted
-		logger.Error(err.Error())
-	}
+	cmd.Execute()
 }

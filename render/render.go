@@ -1,7 +1,6 @@
-package main
+package render
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -169,21 +168,8 @@ func NewProgressBar(width int, full, empty rune) progress.Model {
 	)
 }
 
-func Render() error {
-	drivesList, err := drive.NewList()
-	if err != nil {
-		return fmt.Errorf("drive.NewList: %w", err)
-	}
-
-	teaProg = tea.NewProgram(
-		NewViewModel(NewNavigation(drivesList)), tea.WithAltScreen(),
-	)
-
-	if _, err = teaProg.Run(); err != nil {
-		return fmt.Errorf("tea.Run: %w", err)
-	}
-
-	return nil
+func SetTeaProgram(tp *tea.Program) {
+	teaProg = tp
 }
 
 func buildTable() *table.Model {

@@ -10,8 +10,7 @@ cleanup workflow.
 
 ## 🚀 Features
 
-- ✅ Cross-platform drive and mount point detection (**Windows**, **macOS**, *
-  *Linux**)
+- ✅ Cross-platform drive and mount point detection (**Windows**, **macOS**, **Linux**)
 - 📊 Real-time disk usage insights: used, free, total capacity, and utilization
   percentage
 - 🖥️ Interactive and intuitive terminal interface with keyboard navigation

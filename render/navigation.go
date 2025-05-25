@@ -1,4 +1,4 @@
-package main
+package render
 
 import (
 	"sync/atomic"
@@ -23,6 +23,7 @@ type stackItem struct {
 }
 
 type Navigation struct {
+	tree         *structure.Tree
 	entry        *structure.Entry
 	drives       *drive.List
 	currentDrive *drive.Info
@@ -32,8 +33,9 @@ type Navigation struct {
 	locked       atomic.Bool
 }
 
-func NewNavigation(l *drive.List) *Navigation {
+func NewNavigation(l *drive.List, t *structure.Tree) *Navigation {
 	return &Navigation{
+		tree:   t,
 		state:  Drives,
 		drives: l,
 	}
@@ -103,8 +105,9 @@ func (n *Navigation) LevelDown(path string, cursor int, clh ChangeLevelHandler) 
 
 		n.entry = structure.NewDirEntry(path, 0)
 		n.currentDrive = n.drives.DriveInfo(path)
+		n.tree.SetRoot(n.entry)
 
-		return n.entry.TraverseAsync()
+		return n.tree.TraverseAsync()
 	}
 
 	defer func() {

@@ -1,4 +1,4 @@
-package main
+package render
 
 import (
 	"github.com/charmbracelet/bubbles/key"
