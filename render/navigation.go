@@ -124,8 +124,7 @@ func (n *Navigation) LevelDown(path string, cursor int, clh ChangeLevelHandler) 
 		&stackItem{entry: n.entry, cursor: cursor},
 	)
 
-	n.entry = entry
-	n.cursor = 0
+	n.entry, n.cursor = entry, 0
 
 	return nil, nil
 }

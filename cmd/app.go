@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
-	"log/slog"
 	"os"
+	"runtime/debug"
 
 	"github.com/crumbyte/noxdir/drive"
 	"github.com/crumbyte/noxdir/render"
@@ -48,16 +49,25 @@ Example: --exclude="node_modules,Steam\appcache"
 }
 
 func Execute() {
-	logger := slog.Default()
-
 	if err := appCmd.Execute(); err != nil {
-		// TODO: display error properly formatted
-		logger.Error(err.Error())
+		printError(err, debug.Stack())
+
 		os.Exit(1)
 	}
 }
 
 func runApp(_ *cobra.Command, _ []string) error {
+	defer func() {
+		if r := recover(); r != nil {
+			err, ok := r.(error)
+			if !ok {
+				err = errors.New("unknown error")
+			}
+
+			printError(err, debug.Stack())
+		}
+	}()
+
 	drivesList, err := drive.NewList()
 	if err != nil {
 		return fmt.Errorf("drive.NewList: %w", err)
@@ -77,13 +87,23 @@ func runApp(_ *cobra.Command, _ []string) error {
 			),
 		),
 		tea.WithAltScreen(),
+		tea.WithoutCatchPanics(),
 	)
 
 	render.SetTeaProgram(teaProg)
 
 	if _, err = teaProg.Run(); err != nil {
-		return fmt.Errorf("tea.Run: %w", err)
+		return err
 	}
 
 	return nil
+}
+
+func printError(err error, stackTrace []byte) {
+	report := render.ReportError(err, stackTrace)
+
+	_, err = os.Stdout.WriteString(report)
+	if err != nil {
+		return
+	}
 }

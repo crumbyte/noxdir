@@ -66,7 +66,7 @@ var testEntryInstance = testEntry{
 	},
 }
 
-func TestEntry_Traverse(t *testing.T) {
+func TestTree_Traverse(t *testing.T) {
 	root, err := filepath.Abs(".")
 	require.NoError(t, err)
 
@@ -89,7 +89,7 @@ func TestEntry_Traverse(t *testing.T) {
 	require.NoError(t, os.RemoveAll(entryRoot))
 }
 
-func TestEntry_TraverseExclude(t *testing.T) {
+func TestTree_TraverseExclude(t *testing.T) {
 	root, err := filepath.Abs(".")
 	require.NoError(t, err)
 
@@ -143,7 +143,7 @@ func TestEntry_TraverseExclude(t *testing.T) {
 	require.NoError(t, os.RemoveAll(entryRoot))
 }
 
-func TestEntry_TraverseAsync(t *testing.T) {
+func TestTree_TraverseAsync(t *testing.T) {
 	root, err := filepath.Abs(".")
 	require.NoError(t, err)
 
