@@ -2,6 +2,7 @@ package render
 
 import (
 	"container/heap"
+	"os"
 	"runtime"
 	"strconv"
 	"strings"
@@ -90,13 +91,13 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
-	case updateDirState:
+	case UpdateDirState:
 		dm.mode = PENDING
 		runtime.GC()
 		dm.nav.tree.CalculateSize()
 
 		dm.updateTableData()
-	case scanFinished:
+	case ScanFinished:
 		dm.mode = READY
 
 		runtime.GC()
@@ -113,12 +114,12 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		dm.updateSize(msg.Width, msg.Height)
 	case tea.KeyMsg:
-		if dm.nav.State() == Drives || dm.handleKeyBindings(msg) {
+		if dm.nav.OnDrives() || dm.handleKeyBindings(msg) {
 			return dm, nil
 		}
 	}
 
-	if dm.nav.State() == Drives {
+	if dm.nav.OnDrives() {
 		return dm, nil
 	}
 
@@ -222,7 +223,7 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 }
 
 func (dm *DirModel) updateTableData() {
-	if dm.nav.State() == Drives || dm.nav.Entry() == nil || !dm.nav.Entry().IsDir {
+	if dm.nav.OnDrives() || dm.nav.Entry() == nil || !dm.nav.Entry().IsDir {
 		return
 	}
 
@@ -341,8 +342,14 @@ func (dm *DirModel) fillTopEntries(entries heap.Interface, tm *table.Model) {
 			continue
 		}
 
+		rootPath := dm.nav.Entry().Path + string(os.PathSeparator)
+
+		if dm.nav.currentDrive != nil {
+			rootPath = dm.nav.currentDrive.Path
+		}
+
 		path := strings.TrimSuffix(
-			strings.TrimPrefix(file.Path, dm.nav.currentDrive.Path),
+			strings.TrimPrefix(file.Path, rootPath),
 			file.Name(),
 		)
 

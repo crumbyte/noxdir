@@ -77,7 +77,7 @@ func (dm *DriveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	if dm.nav.State() == Dirs {
+	if !dm.nav.OnDrives() {
 		return dm, nil
 	}
 
@@ -171,7 +171,7 @@ func (dm *DriveModel) drivesSummary() string {
 }
 
 func (dm *DriveModel) sortDrives(sortKey drive.SortKey) {
-	if dm.nav.State() != Drives {
+	if !dm.nav.OnDrives() {
 		return
 	}
 

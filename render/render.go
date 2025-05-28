@@ -19,8 +19,8 @@ import (
 const updateTickerInterval = time.Millisecond * 500
 
 type (
-	updateDirState struct{}
-	scanFinished   struct{}
+	UpdateDirState struct{}
+	ScanFinished   struct{}
 )
 
 var teaProg *tea.Program
@@ -73,7 +73,7 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (vm *ViewModel) View() string {
-	if vm.nav.State() == Drives {
+	if vm.nav.OnDrives() {
 		return vm.driveModel.View()
 	}
 
@@ -81,18 +81,14 @@ func (vm *ViewModel) View() string {
 }
 
 func (vm *ViewModel) levelDown() {
-	if !vm.nav.Lock() {
-		return
-	}
-
 	sr := vm.dirModel.dirsTable.SelectedRow()
 	cursor := vm.dirModel.dirsTable.Cursor()
 
-	if vm.nav.State() == Drives {
+	if vm.nav.OnDrives() {
 		sr = vm.driveModel.drivesTable.SelectedRow()
 	}
 
-	done, errChan := vm.nav.LevelDown(
+	done, errChan := vm.nav.Down(
 		sr[1],
 		cursor,
 		func(_ *structure.Entry, _ State) {
@@ -102,8 +98,6 @@ func (vm *ViewModel) levelDown() {
 	)
 
 	if done == nil {
-		vm.nav.Unlock()
-
 		return
 	}
 
@@ -113,10 +107,9 @@ func (vm *ViewModel) levelDown() {
 		ticker := time.NewTicker(updateTickerInterval)
 		defer func() {
 			ticker.Stop()
-			vm.nav.Unlock()
 		}()
 
-		teaProg.Send(updateDirState{})
+		teaProg.Send(UpdateDirState{})
 
 		for {
 			select {
@@ -125,9 +118,9 @@ func (vm *ViewModel) levelDown() {
 					vm.lastErr = append(vm.lastErr, err)
 				}
 			case <-ticker.C:
-				teaProg.Send(updateDirState{})
+				teaProg.Send(UpdateDirState{})
 			case <-done:
-				teaProg.Send(scanFinished{})
+				teaProg.Send(ScanFinished{})
 
 				return
 			}
@@ -136,13 +129,8 @@ func (vm *ViewModel) levelDown() {
 }
 
 func (vm *ViewModel) levelUp() {
-	if !vm.nav.Lock() {
-		return
-	}
-	defer vm.nav.Unlock()
-
-	vm.nav.LevelUp(func(_ *structure.Entry, _ State) {
-		if vm.nav.State() == Drives {
+	vm.nav.Up(func(_ *structure.Entry, _ State) {
+		if vm.nav.OnDrives() {
 			vm.driveModel.resetSort()
 			vm.driveModel.updateTableData(drive.TotalUsedP, true)
 

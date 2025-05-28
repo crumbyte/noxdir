@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"strings"
+	"time"
 
 	"github.com/crumbyte/noxdir/drive"
 	"github.com/crumbyte/noxdir/render"
@@ -16,6 +18,7 @@ import (
 
 var (
 	exclude []string
+	root    string
 
 	appCmd = &cobra.Command{
 		Use:   "noxdir",
@@ -46,6 +49,24 @@ scanning.
 
 Example: --exclude="node_modules,Steam\appcache"
 (first rule will exclude all existing "node_modules" directories)`)
+
+	appCmd.PersistentFlags().StringVarP(
+		&root,
+		"root",
+		"r",
+		"",
+		`Start from a predefined root directory. Instead of selecting the target
+drive and scanning all folders within, a root directory can be provided. 
+In this case, the scanning will be performed exclusively for the specified
+directory, drastically reducing the scanning time.
+
+Providing an invalid path results in a blank application output. In this 
+case, a "backspace" still can be used to return to the drives list. Also, all
+trailing slash characters will be removed from the provided path.
+
+Example: --root="C:\Program Files (x86)"
+`,
+	)
 }
 
 func Execute() {
@@ -68,24 +89,13 @@ func runApp(_ *cobra.Command, _ []string) error {
 		}
 	}()
 
-	drivesList, err := drive.NewList()
+	vm, err := initViewModel()
 	if err != nil {
-		return fmt.Errorf("drive.NewList: %w", err)
-	}
-
-	var opts []structure.TreeOpt
-
-	if len(exclude) > 0 {
-		opts = append(opts, structure.WithExclude(exclude))
+		return err
 	}
 
 	teaProg := tea.NewProgram(
-		render.NewViewModel(
-			render.NewNavigation(
-				drivesList,
-				structure.NewTree(nil, opts...),
-			),
-		),
+		vm,
 		tea.WithAltScreen(),
 		tea.WithoutCatchPanics(),
 	)
@@ -106,4 +116,48 @@ func printError(err error, stackTrace []byte) {
 	if err != nil {
 		return
 	}
+}
+
+func initViewModel() (*render.ViewModel, error) {
+	nav, err := resolveNavigation()
+	if err != nil {
+		return nil, err
+	}
+
+	vm := render.NewViewModel(nav)
+
+	if root != "" {
+		vm.Update(render.ScanFinished{})
+	}
+
+	return vm, nil
+}
+
+func resolveNavigation() (*render.Navigation, error) {
+	drivesList, err := drive.NewList()
+	if err != nil {
+		return nil, fmt.Errorf("drive.NewList: %w", err)
+	}
+
+	if root != "" {
+		root = strings.TrimSuffix(root, string(os.PathSeparator))
+
+		return render.NewRootNavigation(
+			drivesList,
+			structure.NewTree(
+				structure.NewDirEntry(root, time.Now().Unix()),
+			),
+		)
+	}
+
+	var opts []structure.TreeOpt
+
+	if len(exclude) > 0 {
+		opts = append(opts, structure.WithExclude(exclude))
+	}
+
+	return render.NewNavigation(
+		drivesList,
+		structure.NewTree(nil, opts...),
+	), nil
 }
