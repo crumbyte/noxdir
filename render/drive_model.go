@@ -156,6 +156,7 @@ func (dm *DriveModel) drivesSummary() string {
 	dl := dm.nav.DrivesList()
 
 	items := []*BarItem{
+		NewBarItem(Version, "#8338ec", 0),
 		NewBarItem("MODE", "#FF5F87", 0),
 		NewBarItem("Drives List", "", -1),
 		NewBarItem("CAPACITY", "#FF5F87", 0),

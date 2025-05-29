@@ -70,7 +70,7 @@ func NewDirModel(nav *Navigation) *DirModel {
 	}
 
 	style := table.DefaultStyles()
-	style.Header = TableHeaderStyle
+	style.Header = TopHeaderStyle
 	style.Cell = lipgloss.NewStyle()
 	style.Selected = lipgloss.NewStyle()
 
@@ -296,6 +296,7 @@ func (dm *DirModel) updateTableData() {
 
 func (dm *DirModel) dirsSummary() string {
 	items := []*BarItem{
+		NewBarItem(Version, "#8338ec", 0),
 		NewBarItem("PATH", "#FF5F87", 0),
 		NewBarItem(dm.nav.Entry().Path, "", -1),
 		NewBarItem(string(dm.mode), "#FF8531", 0),

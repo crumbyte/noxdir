@@ -9,6 +9,11 @@ var (
 				BorderForeground(lipgloss.Color("240")).
 				BorderBottom(true)
 
+	TopHeaderStyle = lipgloss.NewStyle().
+			Inherit(TableHeaderStyle).
+			BorderTop(true).
+			BorderStyle(lipgloss.NormalBorder())
+
 	SelectedRowStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#262626")).
 				Background(lipgloss.Color("#ebbd34")).
