@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"os"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -113,6 +114,7 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		dm.updateSize(msg.Width, msg.Height)
+		dm.filters.Update(msg)
 	case tea.KeyMsg:
 		if dm.nav.OnDrives() || dm.handleKeyBindings(msg) {
 			return dm, nil
@@ -132,30 +134,14 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (dm *DirModel) View() string {
 	h := lipgloss.Height
 
+	summary := dm.dirsSummary()
 	keyBindings := dm.dirsTable.Help.FullHelpView(
 		append(navigateKeyMap, dirsKeyMap...),
 	)
 
-	summary := dm.dirsSummary()
-
 	dirsTableHeight := dm.height - h(keyBindings) - (h(summary) * 2)
-	dm.dirsTable.SetHeight(dirsTableHeight)
 
-	rows := []string{summary}
-
-	if dm.showTopDirs || dm.showTopFiles {
-		topTable := dm.topFilesTable
-		if dm.showTopDirs {
-			topTable = dm.topDirsTable
-		}
-
-		tft := topTable.View()
-
-		dm.dirsTable.SetHeight(dirsTableHeight - h(tft))
-		rows = append(rows, dm.dirsTable.View(), tft)
-	} else {
-		rows = append(rows, dm.dirsTable.View())
-	}
+	rows := []string{keyBindings, summary}
 
 	for _, f := range dm.filters {
 		v, ok := f.(filter.Viewer)
@@ -166,16 +152,39 @@ func (dm *DirModel) View() string {
 		rendered := v.View()
 
 		if len(rendered) > 0 {
+			dirsTableHeight -= h(rendered)
+
 			rows = append(rows, rendered)
 		}
 	}
 
+	if dm.showTopDirs || dm.showTopFiles {
+		topTable := dm.topFilesTable
+		if dm.showTopDirs {
+			topTable = dm.topDirsTable
+		}
+
+		tft := topTable.View()
+
+		dirsTableHeight -= h(tft)
+		rows = append(rows, tft)
+	}
+
+	dm.dirsTable.SetHeight(dirsTableHeight)
+
+	rows = append(rows, dm.dirsTable.View(), summary)
+	slices.Reverse(rows)
+
 	return lipgloss.JoinVertical(
-		lipgloss.Top, append(rows, summary, keyBindings)...,
+		lipgloss.Top, rows...,
 	)
 }
 
 func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
+	if dm.mode != READY && dm.mode != INPUT {
+		return false
+	}
+
 	bk := bindingKey(strings.ToLower(msg.String()))
 
 	if bk == toggleNameFilter {

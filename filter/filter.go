@@ -6,6 +6,8 @@ import (
 	"github.com/crumbyte/noxdir/structure"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/lipgloss"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -70,9 +72,15 @@ type NameFilter struct {
 }
 
 func NewNameFilter(placeholder string) *NameFilter {
+	textStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#ebbd34"))
 	ti := textinput.New()
+
 	ti.Placeholder = placeholder
 	ti.Focus()
+	ti.Width = lipgloss.Width(placeholder)
+	ti.Prompt = string('\ue0b0') + "  "
+	ti.TextStyle = textStyle
+	ti.PromptStyle = textStyle
 
 	return &NameFilter{input: ti, enabled: false}
 }
@@ -95,6 +103,11 @@ func (nf *NameFilter) Filter(e *structure.Entry) bool {
 }
 
 func (nf *NameFilter) Update(msg tea.Msg) {
+	resizeMsg, ok := msg.(tea.WindowSizeMsg)
+	if ok {
+		nf.input.Width = resizeMsg.Width
+	}
+
 	if !nf.enabled {
 		return
 	}
