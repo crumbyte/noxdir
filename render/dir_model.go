@@ -39,10 +39,11 @@ type DirModel struct {
 	filters       filter.FiltersList
 	mode          Mode
 	lastErr       []error
-	width         int
 	height        int
+	width         int
 	showTopFiles  bool
 	showTopDirs   bool
+	fullHelp      bool
 }
 
 func NewDirModel(nav *Navigation) *DirModel {
@@ -59,7 +60,7 @@ func NewDirModel(nav *Navigation) *DirModel {
 			{Title: ""},
 		},
 		filters: filter.NewFiltersList(
-			filter.NewNameFilter("type..."),
+			filter.NewNameFilter("Filter..."),
 			&filter.DirsFilter{},
 			&filter.FilesFilter{},
 		),
@@ -135,9 +136,13 @@ func (dm *DirModel) View() string {
 	h := lipgloss.Height
 
 	summary := dm.dirsSummary()
-	keyBindings := dm.dirsTable.Help.FullHelpView(
-		append(navigateKeyMap, dirsKeyMap...),
-	)
+	keyBindings := dm.dirsTable.Help.ShortHelpView(shortHelp)
+
+	if dm.fullHelp {
+		keyBindings = dm.dirsTable.Help.FullHelpView(
+			append(navigateKeyMap, dirsKeyMap...),
+		)
+	}
 
 	dirsTableHeight := dm.height - h(keyBindings) - (h(summary) * 2)
 
@@ -186,7 +191,6 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 	}
 
 	bk := bindingKey(strings.ToLower(msg.String()))
-
 	if bk == toggleNameFilter {
 		if dm.mode == READY {
 			dm.mode = INPUT
@@ -205,13 +209,10 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 	}
 
 	switch bk {
+	case toggleHelp:
+		dm.fullHelp = !dm.fullHelp
 	case explore:
-		sr := dm.dirsTable.SelectedRow()
-		if len(sr) < 2 {
-			return true
-		}
-
-		if err := dm.nav.Explore(sr[1]); err != nil {
+		if dm.handleExploreKey() {
 			return true
 		}
 	case toggleTopFiles:
@@ -229,6 +230,15 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 	}
 
 	return false
+}
+
+func (dm *DirModel) handleExploreKey() bool {
+	sr := dm.dirsTable.SelectedRow()
+	if len(sr) < 2 {
+		return true
+	}
+
+	return dm.nav.Explore(sr[1]) != nil
 }
 
 func (dm *DirModel) updateTableData() {

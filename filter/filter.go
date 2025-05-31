@@ -78,9 +78,8 @@ func NewNameFilter(placeholder string) *NameFilter {
 	ti.Placeholder = placeholder
 	ti.Focus()
 	ti.Width = lipgloss.Width(placeholder)
-	ti.Prompt = string('\ue0b0') + "  "
-	ti.TextStyle = textStyle
-	ti.PromptStyle = textStyle
+	ti.Prompt = "\uE68F  "
+	ti.PromptStyle, ti.TextStyle = textStyle, textStyle
 
 	return &NameFilter{input: ti, enabled: false}
 }
@@ -125,5 +124,10 @@ func (nf *NameFilter) View() string {
 		return ""
 	}
 
-	return nf.input.View()
+	s := lipgloss.NewStyle().
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderTop(true)
+
+	return s.Render(nf.input.View())
 }

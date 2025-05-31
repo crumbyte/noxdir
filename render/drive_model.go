@@ -16,7 +16,9 @@ type DriveModel struct {
 	drivesTable  *table.Model
 	nav          *Navigation
 	sortState    SortState
+	height       int
 	width        int
+	fullHelp     bool
 }
 
 func NewDriveModel(n *Navigation) *DriveModel {
@@ -47,9 +49,9 @@ func (dm *DriveModel) Init() tea.Cmd {
 func (dm *DriveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		dm.width = msg.Width
+		dm.height, dm.width = msg.Height, msg.Width
 
-		dm.drivesTable.SetHeight(msg.Height - 10)
+		dm.drivesTable.SetHeight(msg.Height)
 		dm.drivesTable.SetWidth(msg.Width)
 
 		dm.updateTableData(dm.sortState.Key, dm.sortState.Desc)
@@ -59,6 +61,8 @@ func (dm *DriveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		bk := bindingKey(strings.ToLower(msg.String()))
 
 		switch bk {
+		case toggleHelp:
+			dm.fullHelp = !dm.fullHelp
 		case sortTotalCap, sortTotalUsed, sortTotalFree, sortTotalUsedP:
 			dm.sortDrives(
 				drive.SortKey(strings.TrimPrefix(msg.String(), "alt+")),
@@ -88,16 +92,24 @@ func (dm *DriveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (dm *DriveModel) View() string {
+	h := lipgloss.Height
 	summary := dm.drivesSummary()
+	keyBindings := dm.drivesTable.Help.ShortHelpView(shortHelp)
+
+	if dm.fullHelp {
+		keyBindings = dm.drivesTable.Help.FullHelpView(
+			append(navigateKeyMap, drivesKeyMap...),
+		)
+	}
+
+	dm.drivesTable.SetHeight(dm.height - h(keyBindings) - h(summary)*2)
 
 	return lipgloss.JoinVertical(
 		lipgloss.Top,
 		summary,
 		dm.drivesTable.View(),
 		summary,
-		dm.drivesTable.Help.FullHelpView(
-			append(navigateKeyMap, drivesKeyMap...),
-		),
+		keyBindings,
 	)
 }
 

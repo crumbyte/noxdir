@@ -26,6 +26,15 @@ const (
 	toggleDirsFilter  bindingKey = "."
 	toggleFilesFilter bindingKey = ","
 	toggleNameFilter  bindingKey = "ctrl+f"
+	toggleHelp        bindingKey = "?"
+)
+
+var toggleHelpBinding = key.NewBinding(
+	key.WithKeys(toggleHelp.String()),
+	key.WithHelp(
+		bindKeyStyle.Render(toggleHelp.String()),
+		helpDescStyle.Render(" - toggle full help"),
+	),
 )
 
 var navigateKeyMap = [][]key.Binding{
@@ -60,6 +69,8 @@ var navigateKeyMap = [][]key.Binding{
 		),
 	},
 }
+
+var shortHelp = append(navigateKeyMap[0], toggleHelpBinding)
 
 var drivesKeyMap = [][]key.Binding{
 	{
@@ -96,6 +107,7 @@ var drivesKeyMap = [][]key.Binding{
 			),
 		),
 	},
+	{toggleHelpBinding},
 }
 
 var dirsKeyMap = [][]key.Binding{
@@ -151,6 +163,7 @@ var dirsKeyMap = [][]key.Binding{
 				helpDescStyle.Render(" - toggle name filter"),
 			),
 		),
+		toggleHelpBinding,
 	},
 	{
 		key.NewBinding(
