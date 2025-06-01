@@ -17,8 +17,11 @@ import (
 )
 
 var (
-	exclude []string
-	root    string
+	ErrUnknown = errors.New("unknown error")
+
+	exclude   []string
+	root      string
+	sizeLimit string
 
 	appCmd = &cobra.Command{
 		Use:   "noxdir",
@@ -33,6 +36,7 @@ selected drive and presents the space consumption in a clear, user-friendly layo
 	}
 )
 
+// TODO: add flag for skipping empty folders
 func init() {
 	appCmd.PersistentFlags().StringSliceVarP(
 		&exclude,
@@ -61,17 +65,50 @@ In this case, the scanning will be performed exclusively for the specified
 directory, drastically reducing the scanning time.
 
 Providing an invalid path results in a blank application output. In this 
-case, a "backspace" still can be used to return to the drives list. Also, all
-trailing slash characters will be removed from the provided path.
+case, a "backspace" still can be used to return to the drives list.
+Also, all trailing slash characters will be removed from the provided
+path.
 
-Example: --root="C:\Program Files (x86)"
+Example: --root="C:\Program Files (x86)"`)
+
+	appCmd.PersistentFlags().StringVarP(
+		&sizeLimit,
+		"size-limit",
+		"l",
+		"",
+		`Define size limits/boundaries for files that should be shown in the
+scanner output. Files that do not fit in the provided limits will be
+skipped.
+
+The size limits can be defined using format "<size><unit>:<size><unit>
+where "unit" value can be: KB, MB, GB, TB, PB, and "size" is a positive 
+numeric value. For example: "1GB:5GB".
+
+Both values are optional. Therefore, it can also be an upper bound only
+or a lower bound only. These are the valid flag values: "1GB:", ":10GB"
+
+NOTE: providing this flag will lead to inaccurate sizes of the
+directories, since the calculation process will include only files
+that meet the boundaries. Also, this flag cannot be applied to the
+directories but only to files within.
+
+Example:
+	--size-limit="3GB:20GB"
+	--size-limit="3MB:"
+	--size-limit=":1TB"
 `,
 	)
 }
 
 func Execute() {
 	if err := appCmd.Execute(); err != nil {
-		printError(err, debug.Stack())
+		var cliErr *CLIError
+
+		if errors.As(err, &cliErr) {
+			printError(cliErr.Error())
+		} else {
+			printError(render.ReportError(err, debug.Stack()))
+		}
 
 		os.Exit(1)
 	}
@@ -82,10 +119,10 @@ func runApp(_ *cobra.Command, _ []string) error {
 		if r := recover(); r != nil {
 			err, ok := r.(error)
 			if !ok {
-				err = errors.New("unknown error")
+				err = ErrUnknown
 			}
 
-			printError(err, debug.Stack())
+			printError(render.ReportError(err, debug.Stack()))
 		}
 	}()
 
@@ -109,15 +146,6 @@ func runApp(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func printError(err error, stackTrace []byte) {
-	report := render.ReportError(err, stackTrace)
-
-	_, err = os.Stdout.WriteString(report)
-	if err != nil {
-		return
-	}
-}
-
 func initViewModel() (*render.ViewModel, error) {
 	nav, err := resolveNavigation()
 	if err != nil {
@@ -139,6 +167,28 @@ func resolveNavigation() (*render.Navigation, error) {
 		return nil, fmt.Errorf("drive.NewList: %w", err)
 	}
 
+	var opts []structure.TreeOpt
+
+	if len(exclude) > 0 {
+		opts = append(opts, structure.WithExclude(exclude))
+	}
+
+	sizeLimitFilter, err := parseSizeLimit()
+	if err != nil {
+		return nil, NewCLIError(
+			fmt.Errorf("invalid value for size-limit flag: %s", err.Error()),
+		)
+	}
+
+	if sizeLimitFilter != nil {
+		opts = append(
+			opts,
+			structure.WithFileInfoFilter(
+				[]drive.FileInfoFilter{sizeLimitFilter},
+			),
+		)
+	}
+
 	if root != "" {
 		root = strings.TrimSuffix(root, string(os.PathSeparator))
 
@@ -146,18 +196,19 @@ func resolveNavigation() (*render.Navigation, error) {
 			drivesList,
 			structure.NewTree(
 				structure.NewDirEntry(root, time.Now().Unix()),
+				opts...,
 			),
 		)
-	}
-
-	var opts []structure.TreeOpt
-
-	if len(exclude) > 0 {
-		opts = append(opts, structure.WithExclude(exclude))
 	}
 
 	return render.NewNavigation(
 		drivesList,
 		structure.NewTree(nil, opts...),
 	), nil
+}
+
+func printError(errMsg string) {
+	if _, err := os.Stdout.WriteString(errMsg + "\n"); err != nil {
+		return
+	}
 }

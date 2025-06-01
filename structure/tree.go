@@ -33,10 +33,23 @@ func WithExclude(exclude []string) TreeOpt {
 	}
 }
 
+// WithFileInfoFilter allows setting a list of filters for a drive.FileInfo
+// instances. The filters will be applied during the tree traversal and discard
+// nodes that do not meet the specific filter's specification.
+//
+// The Tree instance does not dictate the filter behavior; hence, the entire
+// filtration logic is defined within each drive.FileInfoFilter filter.
+func WithFileInfoFilter(fl []drive.FileInfoFilter) TreeOpt {
+	return func(t *Tree) {
+		t.fiFilters = fl
+	}
+}
+
 // Tree provides a set of method for building and traversing the *Entry tree.
 type Tree struct {
 	root             *Entry
 	exclude          []string
+	fiFilters        []drive.FileInfoFilter
 	calculateSizeSem uint32
 }
 
@@ -228,6 +241,10 @@ func (t *Tree) handleEntry(e *Entry, onNewDir func(*Entry), onErr func(error)) {
 	defer childPathBufPool.Put(nameBuf)
 
 	for _, child := range nodeEntries {
+		if !t.filterFileInfo(child) {
+			continue
+		}
+
 		*nameBuf = append(*nameBuf, e.Path...)
 
 		if e.Path[len(e.Path)-1] != filepath.Separator {
@@ -263,4 +280,14 @@ func (t *Tree) excludeEntry(e *Entry) bool {
 	}
 
 	return false
+}
+
+func (t *Tree) filterFileInfo(fi drive.FileInfo) bool {
+	for i := range t.fiFilters {
+		if !t.fiFilters[i](fi) {
+			return false
+		}
+	}
+
+	return true
 }

@@ -11,8 +11,7 @@ cleanup workflow.
 
 ## 🚀 Features
 
-- ✅ Cross-platform drive and mount point detection (**Windows**, **macOS**, *
-  *Linux**)
+- ✅ Cross-platform drive and mount point detection (**Windows**, **macOS**, **Linux**)
 - 📊 Real-time disk usage insights: used, free, total capacity, and utilization
   percentage
 - 🖥️ Interactive and intuitive terminal interface with keyboard navigation
@@ -77,27 +76,48 @@ Usage:
   noxdir [flags]
 
 Flags:
-  -x, --exclude strings   Exclude specific directories from scanning. Useful for directories
-                          with many subdirectories but minimal disk usage (e.g., node_modules).
+  -x, --exclude strings     Exclude specific directories from scanning. Useful for directories
+                            with many subdirectories but minimal disk usage (e.g., node_modules).
 
-                          NOTE: The check targets any string occurrence. The excluded directory
-                          name can be either an absolute path or only part of it. In the last case,
-                          all directories whose name contains that string will be excluded from
-                          scanning.
+                            NOTE: The check targets any string occurrence. The excluded directory
+                            name can be either an absolute path or only part of it. In the last case,
+                            all directories whose name contains that string will be excluded from
+                            scanning.
 
-                          Example: --exclude="node_modules,Steam\appcache"
-                          (first rule will exclude all existing "node_modules" directories)
-  -h, --help              help for noxdir
-  -r, --root string       Start from a predefined root directory. Instead of selecting the target
-                          drive and scanning all folders within, a root directory can be provided.
-                          In this case, the scanning will be performed exclusively for the specified
-                          directory, drastically reducing the scanning time.
+                            Example: --exclude="node_modules,Steam\appcache"
+                            (first rule will exclude all existing "node_modules" directories)
+  -h, --help                help for noxdir
+  -r, --root string         Start from a predefined root directory. Instead of selecting the target
+                            drive and scanning all folders within, a root directory can be provided.
+                            In this case, the scanning will be performed exclusively for the specified
+                            directory, drastically reducing the scanning time.
 
-                          Providing an invalid path results in a blank application output. In this
-                          case, a "backspace" still can be used to return to the drives list. Also, all
-                          trailing slash characters will be removed from the provided path.
+                            Providing an invalid path results in a blank application output. In this
+                            case, a "backspace" still can be used to return to the drives list.
+                            Also, all trailing slash characters will be removed from the provided
+                            path.
 
-                          Example: --root="C:\Program Files (x86)"
+                            Example: --root="C:\Program Files (x86)"
+  -l, --size-limit string   Define size limits/boundaries for files that should be shown in the
+                            scanner output. Files that do not fit in the provided limits will be
+                            skipped.
+
+                            The size limits can be defined using format "<size><unit>:<size><unit>
+                            where "unit" value can be: KB, MB, GB, TB, PB, and "size" is a positive
+                            numeric value. For example: "1GB:5GB".
+
+                            Both values are optional. Therefore, it can also be an upper bound only
+                            or a lower bound only. These are the valid flag values: "1GB:", ":10GB"
+
+                            NOTE: providing this flag will lead to inaccurate sizes of the
+                            directories, since the calculation process will include only files
+                            that meet the boundaries. Also, this flag cannot be applied to the
+                            directories but only to files within.
+
+                            Example:
+                                --size-limit="3GB:20GB"
+                                --size-limit="3MB:"
+                                --size-limit=":1TB"
 ```
 
 ## ⚠️ Known Issues
