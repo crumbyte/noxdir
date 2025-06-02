@@ -19,9 +19,10 @@ import (
 var (
 	ErrUnknown = errors.New("unknown error")
 
-	exclude   []string
-	root      string
-	sizeLimit string
+	exclude     []string
+	root        string
+	sizeLimit   string
+	noEmptyDirs bool
 
 	appCmd = &cobra.Command{
 		Use:   "noxdir",
@@ -96,6 +97,23 @@ Example:
 	--size-limit="3GB:20GB"
 	--size-limit="3MB:"
 	--size-limit=":1TB"
+`,
+	)
+
+	appCmd.PersistentFlags().BoolVarP(
+		&noEmptyDirs,
+		"no-empty-dirs",
+		"d",
+		false,
+		`Excludes all empty directories from the output. The directory is
+considered empty if it or its subdirectories do not contain any files.
+
+Even if the specific directory represents the entire tree structure of 
+subdirectories, without a single file, it will be completely skipped.
+
+Default value is "false".
+
+Example: --no-empty-dirs (provide a flag)
 `,
 	)
 }
