@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/crumbyte/noxdir/drive"
+	"github.com/crumbyte/noxdir/filter"
 	"github.com/crumbyte/noxdir/render"
 	"github.com/crumbyte/noxdir/structure"
 
@@ -170,7 +171,17 @@ func initViewModel() (*render.ViewModel, error) {
 		return nil, err
 	}
 
-	vm := render.NewViewModel(nav)
+	var dirModelFilters []filter.EntryFilter
+
+	if noEmptyDirs {
+		dirModelFilters = append(dirModelFilters, &filter.EmptyDirFilter{})
+	}
+
+	vm := render.NewViewModel(
+		nav,
+		render.NewDriveModel(nav),
+		render.NewDirModel(nav, dirModelFilters...),
+	)
 
 	if root != "" {
 		vm.Update(render.ScanFinished{})

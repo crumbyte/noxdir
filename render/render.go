@@ -34,12 +34,12 @@ type ViewModel struct {
 	lastErr    []error
 }
 
-func NewViewModel(n *Navigation) *ViewModel {
+func NewViewModel(n *Navigation, driveModel *DriveModel, dirMode *DirModel) *ViewModel {
 	return &ViewModel{
 		lastErr:    make([]error, 0),
 		nav:        n,
-		driveModel: NewDriveModel(n),
-		dirModel:   NewDirModel(n),
+		driveModel: driveModel,
+		dirModel:   dirMode,
 	}
 }
 

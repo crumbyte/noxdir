@@ -46,7 +46,16 @@ type DirModel struct {
 	fullHelp      bool
 }
 
-func NewDirModel(nav *Navigation) *DirModel {
+func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
+	defaultFilters := append(
+		[]filter.EntryFilter{
+			filter.NewNameFilter("Filter..."),
+			&filter.DirsFilter{},
+			&filter.FilesFilter{},
+		},
+		filters...,
+	)
+
 	dm := &DirModel{
 		columns: []Column{
 			{Title: ""},
@@ -59,11 +68,7 @@ func NewDirModel(nav *Navigation) *DirModel {
 			{Title: "Parent usage"},
 			{Title: ""},
 		},
-		filters: filter.NewFiltersList(
-			filter.NewNameFilter("Filter..."),
-			&filter.DirsFilter{},
-			&filter.FilesFilter{},
-		),
+		filters:       filter.NewFiltersList(defaultFilters...),
 		dirsTable:     buildTable(),
 		topFilesTable: buildTable(),
 		topDirsTable:  buildTable(),

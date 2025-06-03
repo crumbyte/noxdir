@@ -15,6 +15,7 @@ const (
 	DirsOnlyFilterID  ID = "DirsOnly"
 	FilesOnlyFilterID ID = "FilesOnly"
 	NameFilterID      ID = "NameFilter"
+	EmptyDirFilterID  ID = "EmptyDirFilter"
 )
 
 // DirsFilter filters *Entry by its type and allows directories only.
@@ -57,6 +58,26 @@ func (df *FilesFilter) Reset() {
 
 func (df *FilesFilter) Filter(e *structure.Entry) bool {
 	return !df.enabled || !e.IsDir
+}
+
+// EmptyDirFilter filters empty directories. It checks the total number of files,
+// including those in subdirectories, and discards it if it does not have any.
+//
+// The filter does not affect file *Entry instances.
+type EmptyDirFilter struct{}
+
+func (edf *EmptyDirFilter) ID() ID {
+	return EmptyDirFilterID
+}
+
+func (edf *EmptyDirFilter) Toggle() {}
+
+// Reset ...
+// TODO: interface segregation required
+func (edf *EmptyDirFilter) Reset() {}
+
+func (edf *EmptyDirFilter) Filter(e *structure.Entry) bool {
+	return !e.IsDir || e.TotalFiles > 0
 }
 
 // NameFilter filters a single instance of the *structure.Entry by its path value.
