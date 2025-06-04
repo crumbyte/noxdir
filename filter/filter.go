@@ -70,12 +70,6 @@ func (edf *EmptyDirFilter) ID() ID {
 	return EmptyDirFilterID
 }
 
-func (edf *EmptyDirFilter) Toggle() {}
-
-// Reset ...
-// TODO: interface segregation required
-func (edf *EmptyDirFilter) Reset() {}
-
 func (edf *EmptyDirFilter) Filter(e *structure.Entry) bool {
 	return !e.IsDir || e.TotalFiles > 0
 }

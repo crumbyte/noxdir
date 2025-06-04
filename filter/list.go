@@ -9,6 +9,16 @@ import (
 // ID defines a custom type for the filter identifier.
 type ID string
 
+// Reset resets the filter's state and disables it.
+type Reset interface {
+	Reset()
+}
+
+// Toggler enables or disables the filter.
+type Toggler interface {
+	Toggle()
+}
+
 // EntryFilter defines a contract for filtering a single *structure.Entry instance.
 type EntryFilter interface {
 	// ID returns a filter identifier allowing to uniquely identify the filter.
@@ -17,12 +27,6 @@ type EntryFilter interface {
 	// Filter contains the filtering logic and returns a bool value on whether
 	// the *Entry instance passed the filtration.
 	Filter(e *structure.Entry) bool
-
-	// Toggle enables or disables the filter.
-	Toggle()
-
-	// Reset resets the filter's state and disables it.
-	Reset()
 }
 
 // Updater defines an interface for filters that require their state to be updated
@@ -72,14 +76,18 @@ func (fl *FiltersList) ToggleFilter(id ID) {
 		return
 	}
 
-	(*fl)[id].Toggle()
+	if t, ok := (*fl)[id].(Toggler); ok {
+		t.Toggle()
+	}
 }
 
 // Reset traverses all filters in the list and calls EntryFilter.Reset method for
 // each of them.
 func (fl *FiltersList) Reset() {
 	for _, filter := range *fl {
-		filter.Reset()
+		if r, ok := filter.(Reset); ok {
+			r.Reset()
+		}
 	}
 }
 
