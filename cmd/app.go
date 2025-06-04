@@ -24,6 +24,7 @@ var (
 	root        string
 	sizeLimit   string
 	noEmptyDirs bool
+	noHidden    bool
 
 	appCmd = &cobra.Command{
 		Use:   "noxdir",
@@ -117,6 +118,20 @@ Default value is "false".
 Example: --no-empty-dirs (provide a flag)
 `,
 	)
+
+	appCmd.PersistentFlags().BoolVarP(
+		&noHidden,
+		"no-hidden",
+		"",
+		false,
+		`Excludes all hidden files and directories from the output. The entry is
+considered hidden if its name starts with a dot, e.g., ".git".
+
+Default value is "false".
+
+Example: --no-hidden (provide a flag)
+`,
+	)
 }
 
 func Execute() {
@@ -196,7 +211,10 @@ func resolveNavigation() (*render.Navigation, error) {
 		return nil, fmt.Errorf("drive.NewList: %w", err)
 	}
 
-	var opts []structure.TreeOpt
+	var (
+		opts []structure.TreeOpt
+		fif  []drive.FileInfoFilter
+	)
 
 	if len(exclude) > 0 {
 		opts = append(opts, structure.WithExclude(exclude))
@@ -210,13 +228,14 @@ func resolveNavigation() (*render.Navigation, error) {
 	}
 
 	if sizeLimitFilter != nil {
-		opts = append(
-			opts,
-			structure.WithFileInfoFilter(
-				[]drive.FileInfoFilter{sizeLimitFilter},
-			),
-		)
+		fif = append(fif, sizeLimitFilter)
 	}
+
+	if noHidden {
+		fif = append(fif, drive.HiddenFilter)
+	}
+
+	opts = append(opts, structure.WithFileInfoFilter(fif))
 
 	if root != "" {
 		root = strings.TrimSuffix(root, string(os.PathSeparator))

@@ -87,6 +87,23 @@ Flags:
                             Example: --exclude="node_modules,Steam\appcache"
                             (first rule will exclude all existing "node_modules" directories)
   -h, --help                help for noxdir
+  -d, --no-empty-dirs       Excludes all empty directories from the output. The directory is
+                            considered empty if it or its subdirectories do not contain any files.
+
+                            Even if the specific directory represents the entire tree structure of
+                            subdirectories, without a single file, it will be completely skipped.
+
+                            Default value is "false".
+
+                            Example: --no-empty-dirs (provide a flag)
+
+      --no-hidden           Excludes all hidden files and directories from the output. The entry is
+                            considered hidden if its name starts with a dot, e.g., ".git".
+
+                            Default value is "false".
+
+                            Example: --no-hidden (provide a flag)
+
   -r, --root string         Start from a predefined root directory. Instead of selecting the target
                             drive and scanning all folders within, a root directory can be provided.
                             In this case, the scanning will be performed exclusively for the specified

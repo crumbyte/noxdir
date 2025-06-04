@@ -41,7 +41,9 @@ func WithExclude(exclude []string) TreeOpt {
 // filtration logic is defined within each drive.FileInfoFilter filter.
 func WithFileInfoFilter(fl []drive.FileInfoFilter) TreeOpt {
 	return func(t *Tree) {
-		t.fiFilters = fl
+		if len(fl) != 0 {
+			t.fiFilters = fl
+		}
 	}
 }
 

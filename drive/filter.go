@@ -41,3 +41,9 @@ func (sf *SizeFilter) Filter(fi FileInfo) bool {
 
 	return fi.size >= sf.minLimit && fi.size <= sf.maxLimit
 }
+
+// HiddenFilter filters all hidden files and directories (with a dot prefix) and
+// returns a corresponding boolean value.
+func HiddenFilter(fi FileInfo) bool {
+	return len(fi.name) != 0 && fi.name[0] != '.'
+}
