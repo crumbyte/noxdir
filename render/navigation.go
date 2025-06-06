@@ -2,6 +2,8 @@ package render
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"sync/atomic"
 
 	"github.com/crumbyte/noxdir/drive"
@@ -31,6 +33,29 @@ type stackItem struct {
 	cursor int
 }
 
+// entryStack represents a stack of the visited entry. The last stack element
+// will always contain the previous entry.
+type entryStack []*stackItem
+
+func (e *entryStack) len() int {
+	return len(*e)
+}
+
+func (e *entryStack) push(si *stackItem) {
+	*e = append(*e, si)
+}
+
+func (e *entryStack) pop() *stackItem {
+	if len(*e) == 0 {
+		return nil
+	}
+
+	item := (*e)[len(*e)-1]
+	*e = (*e)[:len(*e)-1]
+
+	return item
+}
+
 // Navigation defines the behavior for traversing the file system tree structure
 // and handles the changes of state. It contains the current active drive/volume,
 // traversing history, and handles the race condition cases.
@@ -39,24 +64,28 @@ type Navigation struct {
 	entry        *structure.Entry
 	drives       *drive.List
 	currentDrive *drive.Info
-	entryStack   []*stackItem
+	entryStack   *entryStack
 	state        State
 	cursor       int
 	locked       atomic.Bool
 }
 
-func NewNavigation(l *drive.List, t *structure.Tree) *Navigation {
-	return &Navigation{
-		tree:   t,
-		state:  Drives,
-		drives: l,
+func NewNavigation(t *structure.Tree) *Navigation {
+	n := &Navigation{
+		tree:       t,
+		state:      Drives,
+		entryStack: &entryStack{},
 	}
+
+	n.RefreshDrives()
+
+	return n
 }
 
 // NewRootNavigation creates navigation for a predefined root directory entry.
 // It starts the blocking traversal immediately rather than in interactive mode.
 // Therefore, a root with a wide subdirectory structure might cause a delay.
-func NewRootNavigation(l *drive.List, t *structure.Tree) (*Navigation, error) {
+func NewRootNavigation(t *structure.Tree) (*Navigation, error) {
 	if t.Root() == nil {
 		return nil, errors.New("root is nil")
 	}
@@ -65,12 +94,12 @@ func NewRootNavigation(l *drive.List, t *structure.Tree) (*Navigation, error) {
 	<-done
 	t.CalculateSize()
 
-	return &Navigation{
-		drives: l,
-		tree:   t,
-		entry:  t.Root(),
-		state:  Dirs,
-	}, nil
+	n := NewNavigation(t)
+
+	n.state = Dirs
+	n.entry = t.Root()
+
+	return n, nil
 }
 
 // OnDrives checks whether the current navigation state is Drives or not.
@@ -114,7 +143,7 @@ func (n *Navigation) Up(ocl OnChangeLevel) {
 
 	defer n.unlock()
 
-	if len(n.entryStack) == 0 {
+	if n.entryStack.len() == 0 {
 		n.state, n.cursor = Drives, 0
 
 		return
@@ -124,10 +153,8 @@ func (n *Navigation) Up(ocl OnChangeLevel) {
 		ocl(n.entry, n.state)
 	}()
 
-	lastItem := n.entryStack[len(n.entryStack)-1]
-
+	lastItem := n.entryStack.pop()
 	n.entry, n.cursor = lastItem.entry, lastItem.cursor
-	n.entryStack = n.entryStack[:len(n.entryStack)-1]
 }
 
 // Down changes the current tree level down to the provided path. The path value
@@ -174,14 +201,76 @@ func (n *Navigation) Down(path string, cursor int, ocl OnChangeLevel) (chan stru
 		return nil, nil
 	}
 
-	n.entryStack = append(
-		n.entryStack,
-		&stackItem{entry: n.entry, cursor: cursor},
-	)
-
+	n.entryStack.push(&stackItem{entry: n.entry, cursor: cursor})
 	n.entry, n.cursor = entry, 0
 
 	return nil, nil
+}
+
+// RefreshDrives refreshes the list of the available drives and their memory
+// usage data.
+func (n *Navigation) RefreshDrives() {
+	dl, err := drive.NewList()
+	if err != nil {
+		panic(err)
+	}
+
+	n.drives = dl
+}
+
+// RefreshEntry refreshes the current *Entry root by scanning its structure and
+// updating the navigation state. The function will check the case when the
+// current root has been deleted and tries to fall back to the previous *Entry
+// in the stack. If all entries in the stack do not exist anymore, the navigation
+// will fall back to the drives list.
+//
+// The navigation will be locked until the scanning is complete and the "done"
+// channel is closed.
+func (n *Navigation) RefreshEntry() (chan struct{}, chan error, error) {
+	if n.OnDrives() || !n.lock() || n.entry == nil {
+		return nil, nil, nil
+	}
+
+	defer n.unlock()
+
+	for n.entryStack.len() > 0 || n.entry != nil {
+		_, err := os.Lstat(n.entry.Path)
+		if err == nil {
+			break
+		}
+
+		if errors.Is(err, os.ErrNotExist) {
+			lastItem := n.entryStack.pop()
+
+			if lastItem != nil {
+				n.entry, n.cursor = lastItem.entry, lastItem.cursor
+
+				continue
+			}
+
+			n.entry, n.cursor = nil, 0
+		}
+
+		return nil, nil, fmt.Errorf("lstat: %w", err)
+	}
+
+	if n.entry == nil {
+		n.state, n.cursor = Drives, 0
+
+		return nil, nil, nil
+	}
+
+	n.entry.Child = nil
+
+	t := structure.NewTree(n.entry)
+	doneChan, errChan := t.TraverseAsync()
+
+	go func() {
+		<-doneChan
+		n.unlock()
+	}()
+
+	return doneChan, errChan, nil
 }
 
 func (n *Navigation) Explore(path string) error {

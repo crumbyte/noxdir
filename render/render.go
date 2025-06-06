@@ -59,6 +59,8 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch bk {
+		case refresh:
+			vm.refresh()
 		case quit, cancel:
 			return vm, tea.Quit
 		case enter:
@@ -142,6 +144,48 @@ func (vm *ViewModel) levelUp() {
 		vm.dirModel.filters.Reset()
 		vm.dirModel.updateTableData()
 	})
+}
+
+func (vm *ViewModel) refresh() {
+	if vm.nav.OnDrives() {
+		vm.nav.RefreshDrives()
+		vm.driveModel.Update(nil)
+	}
+
+	done, errChan, err := vm.nav.RefreshEntry()
+	if err != nil {
+		panic(err)
+	}
+
+	if done == nil {
+		return
+	}
+
+	go func() {
+		vm.lastErr = []error{}
+
+		ticker := time.NewTicker(updateTickerInterval)
+		defer func() {
+			ticker.Stop()
+		}()
+
+		teaProg.Send(UpdateDirState{})
+
+		for {
+			select {
+			case err := <-errChan:
+				if err != nil {
+					vm.lastErr = append(vm.lastErr, err)
+				}
+			case <-ticker.C:
+				teaProg.Send(UpdateDirState{})
+			case <-done:
+				teaProg.Send(ScanFinished{})
+
+				return
+			}
+		}
+	}()
 }
 
 func NewProgressBar(width int, full, empty rune) progress.Model {

@@ -39,7 +39,6 @@ selected drive and presents the space consumption in a clear, user-friendly layo
 	}
 )
 
-// TODO: add flag for skipping empty folders
 func init() {
 	appCmd.PersistentFlags().StringSliceVarP(
 		&exclude,
@@ -206,11 +205,6 @@ func initViewModel() (*render.ViewModel, error) {
 }
 
 func resolveNavigation() (*render.Navigation, error) {
-	drivesList, err := drive.NewList()
-	if err != nil {
-		return nil, fmt.Errorf("drive.NewList: %w", err)
-	}
-
 	var (
 		opts []structure.TreeOpt
 		fif  []drive.FileInfoFilter
@@ -241,7 +235,6 @@ func resolveNavigation() (*render.Navigation, error) {
 		root = strings.TrimSuffix(root, string(os.PathSeparator))
 
 		return render.NewRootNavigation(
-			drivesList,
 			structure.NewTree(
 				structure.NewDirEntry(root, time.Now().Unix()),
 				opts...,
@@ -249,10 +242,7 @@ func resolveNavigation() (*render.Navigation, error) {
 		)
 	}
 
-	return render.NewNavigation(
-		drivesList,
-		structure.NewTree(nil, opts...),
-	), nil
+	return render.NewNavigation(structure.NewTree(nil, opts...)), nil
 }
 
 func printError(errMsg string) {

@@ -17,6 +17,7 @@ const (
 	cancel            bindingKey = "ctrl+c"
 	enter             bindingKey = "enter"
 	explore           bindingKey = "e"
+	refresh           bindingKey = "r"
 	sortTotalCap      bindingKey = "alt+t"
 	sortTotalUsed     bindingKey = "alt+u"
 	sortTotalFree     bindingKey = "alt+f"
@@ -107,7 +108,16 @@ var drivesKeyMap = [][]key.Binding{
 			),
 		),
 	},
-	{toggleHelpBinding},
+	{
+		toggleHelpBinding,
+		key.NewBinding(
+			key.WithKeys(refresh.String()),
+			key.WithHelp(
+				bindKeyStyle.Render(refresh.String()),
+				helpDescStyle.Render(" - refresh"),
+			),
+		),
+	},
 }
 
 var dirsKeyMap = [][]key.Binding{
@@ -178,6 +188,13 @@ var dirsKeyMap = [][]key.Binding{
 			key.WithHelp(
 				bindKeyStyle.Render(toggleFilesFilter.String()),
 				helpDescStyle.Render(" - toggle files only"),
+			),
+		),
+		key.NewBinding(
+			key.WithKeys(refresh.String()),
+			key.WithHelp(
+				bindKeyStyle.Render(refresh.String()),
+				helpDescStyle.Render(" - refresh"),
 			),
 		),
 	},
