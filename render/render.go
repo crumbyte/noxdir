@@ -173,7 +173,7 @@ func (vm *ViewModel) refresh() {
 
 		for {
 			select {
-			case err := <-errChan:
+			case err = <-errChan:
 				if err != nil {
 					vm.lastErr = append(vm.lastErr, err)
 				}
