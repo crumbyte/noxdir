@@ -13,6 +13,13 @@ import (
 	"github.com/crumbyte/noxdir/drive"
 )
 
+const (
+	workerTimeout    = time.Second * 2
+	workerReset      = time.Second
+	childPathBufSize = 512
+	bfsQueueSize     = 64
+)
+
 // TreeOpt defines a custom type for configuring a *Tree instance.
 type TreeOpt func(*Tree)
 

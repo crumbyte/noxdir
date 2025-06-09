@@ -9,16 +9,9 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"time"
 )
 
-const (
-	workerTimeout    = time.Second * 2
-	workerReset      = time.Second
-	maxTopFiles      = 16
-	childPathBufSize = 512
-	bfsQueueSize     = 64
-)
+const maxTopFiles = 16
 
 var (
 	TopFilesInstance = EntrySizeHeap{size: maxTopFiles}
