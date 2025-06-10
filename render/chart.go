@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	aspectFix = 2.4
+	chartLabelWidth = 50
+	aspectFix       = 2.4
 )
 
 var chartColors = []lipgloss.Color{
@@ -40,9 +41,9 @@ type RawChartSector struct {
 }
 
 type chartSector struct {
+	color      lipgloss.Color
 	label      string
 	size       int64
-	color      lipgloss.Color
 	usage      float64
 	startAngle float64
 	endAngle   float64
@@ -51,41 +52,12 @@ type chartSector struct {
 func chart(width, height, radius int, totalSize int64, rawSectors []RawChartSector) string {
 	sb := strings.Builder{}
 
-	sectors := make([]chartSector, 0, len(rawSectors))
-	others := chartSector{label: "Others"}
-
-	for _, s := range rawSectors {
-		if float64(s.Size)/float64(totalSize) < 0.04 {
-			others.size += s.Size
-
-			continue
-		}
-
-		sectors = append(sectors, chartSector{label: fmtName(s.Label, 50), size: s.Size})
-	}
-
-	if others.size > 0 {
-		sectors = append(sectors, others)
-	}
-
-	sort.Slice(sectors, func(i, j int) bool {
-		return sectors[i].size > sectors[j].size
-	})
-
-	start := 0.0
-	for i := range sectors {
-		sectors[i].color = chartColors[i]
-		sectors[i].usage = float64(sectors[i].size) / float64(totalSize)
-		sectors[i].startAngle = start
-		sectors[i].endAngle = start + sectors[i].usage*2*math.Pi
-
-		start = sectors[i].endAngle
-	}
+	sectors := prepareSectors(totalSize, rawSectors)
 
 	centerX, centerY := width/2/2, height/2
 
-	for y := 0; y < height; y++ {
-		for x := 0; x < width/2; x++ {
+	for y := range height {
+		for x := range width / 2 {
 			dx := float64(x - centerX)
 			dy := float64(y-centerY) * aspectFix
 
@@ -104,11 +76,15 @@ func chart(width, height, radius int, totalSize int64, rawSectors []RawChartSect
 
 			for _, s := range sectors {
 				if angle >= s.startAngle && angle < s.endAngle {
-					sb.WriteString(lipgloss.NewStyle().Foreground(s.color).Render("#"))
+					sb.WriteString(
+						lipgloss.NewStyle().Foreground(s.color).Render("#"),
+					)
+
 					break
 				}
 			}
 		}
+
 		sb.WriteByte('\n')
 	}
 
@@ -123,4 +99,47 @@ func chart(width, height, radius int, totalSize int64, rawSectors []RawChartSect
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Center, ch, lipgloss.JoinVertical(lipgloss.Left, legend...))
+}
+
+func prepareSectors(totalSize int64, rawSectors []RawChartSector) []chartSector {
+	sectors := make([]chartSector, 0, len(rawSectors))
+
+	others := chartSector{label: "Others"}
+
+	for _, s := range rawSectors {
+		if float64(s.Size)/float64(totalSize) < 0.04 {
+			others.size += s.Size
+
+			continue
+		}
+
+		sectors = append(
+			sectors,
+			chartSector{
+				label: fmtName(s.Label, chartLabelWidth),
+				size:  s.Size,
+			},
+		)
+	}
+
+	if others.size > 0 {
+		sectors = append(sectors, others)
+	}
+
+	sort.Slice(sectors, func(i, j int) bool {
+		return sectors[i].size > sectors[j].size
+	})
+
+	start := 0.0
+
+	for i := range sectors {
+		sectors[i].color = chartColors[i]
+		sectors[i].usage = float64(sectors[i].size) / float64(totalSize)
+		sectors[i].startAngle = start
+		sectors[i].endAngle = start + sectors[i].usage*2*math.Pi
+
+		start = sectors[i].endAngle
+	}
+
+	return sectors
 }

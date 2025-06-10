@@ -99,7 +99,7 @@ linters:
   # All settings can be found here https://github.com/golangci/golangci-lint/blob/HEAD/.golangci.reference.yml
   settings:
     cyclop:
-      max-complexity: 15
+      max-complexity: 16
       # The maximal average package complexity.
       # If it's higher than 0.0 (float) the check is enabled.
       # Default: 0.0

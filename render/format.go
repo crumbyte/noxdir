@@ -2,8 +2,9 @@ package render
 
 import (
 	"fmt"
-	"github.com/charmbracelet/lipgloss"
 	"strconv"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 type numeric interface {
