@@ -2,6 +2,7 @@ package render
 
 import (
 	"fmt"
+	"github.com/charmbracelet/lipgloss"
 	"strconv"
 )
 
@@ -31,4 +32,14 @@ func fmtSize[T numeric](bytesSize T, fmtWidth bool) string {
 
 func unitFmt(val uint64) string {
 	return strconv.FormatUint(val, 10)
+}
+
+func fmtName(name string, maxWidth int) string {
+	nameWrap := lipgloss.NewStyle().MaxWidth(maxWidth - 5).Render(name)
+
+	if lipgloss.Width(nameWrap) == maxWidth-5 {
+		nameWrap += "..."
+	}
+
+	return nameWrap
 }

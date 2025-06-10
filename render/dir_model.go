@@ -44,6 +44,7 @@ type DirModel struct {
 	showTopFiles  bool
 	showTopDirs   bool
 	fullHelp      bool
+	showCart      bool
 }
 
 func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
@@ -185,9 +186,13 @@ func (dm *DirModel) View() string {
 	rows = append(rows, dm.dirsTable.View(), summary)
 	slices.Reverse(rows)
 
-	return lipgloss.JoinVertical(
-		lipgloss.Top, rows...,
-	)
+	bg := lipgloss.JoinVertical(lipgloss.Top, rows...)
+
+	if dm.showCart {
+		return OverlayCenter(dm.width, dm.height, bg, dm.viewChart())
+	}
+
+	return bg
 }
 
 func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
@@ -214,6 +219,9 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 	}
 
 	switch bk {
+	case toggleChart:
+		dm.showCart = !dm.showCart
+		dm.updateTableData()
 	case toggleHelp:
 		dm.fullHelp = !dm.fullHelp
 	case explore:
@@ -235,6 +243,26 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 	}
 
 	return false
+}
+
+func (dm *DirModel) viewChart() string {
+	dialogBoxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#874BFD")).
+		Padding(1, 5)
+
+	chartSectors := make([]RawChartSector, 0, len(dm.nav.entry.Child))
+
+	for _, child := range dm.nav.entry.Child {
+		chartSectors = append(chartSectors, RawChartSector{
+			Label: child.Name(),
+			Size:  child.Size,
+		})
+	}
+
+	c := chart(dm.width/2, dm.height/2, 30, dm.nav.entry.Size, chartSectors)
+
+	return dialogBoxStyle.Render(lipgloss.JoinVertical(lipgloss.Center, c))
 }
 
 func (dm *DirModel) handleExploreKey() bool {
@@ -289,21 +317,14 @@ func (dm *DirModel) updateTableData() {
 		}
 
 		parentUsage := float64(child.Size) / float64(dm.nav.ParentSize())
-
 		pgBar := fillProgress.ViewAs(parentUsage)
-		name := child.Name()
-
-		fmtName := lipgloss.NewStyle().MaxWidth(nameWidth - 5).Render(name)
-		if lipgloss.Width(name) == nameWidth-5 {
-			fmtName += "..."
-		}
 
 		rows = append(
 			rows,
 			table.Row{
 				EntryIcon(child),
-				name,
-				fmtName,
+				child.Name(),
+				fmtName(child.Name(), nameWidth),
 				fmtSize(child.Size, true),
 				totalDirs,
 				totalFiles,

@@ -27,6 +27,7 @@ const (
 	toggleDirsFilter  bindingKey = "."
 	toggleFilesFilter bindingKey = ","
 	toggleNameFilter  bindingKey = "ctrl+f"
+	toggleChart       bindingKey = "ctrl+w"
 	toggleHelp        bindingKey = "?"
 )
 
@@ -195,6 +196,13 @@ var dirsKeyMap = [][]key.Binding{
 			key.WithHelp(
 				bindKeyStyle.Render(refresh.String()),
 				helpDescStyle.Render(" - refresh"),
+			),
+		),
+		key.NewBinding(
+			key.WithKeys(toggleChart.String()),
+			key.WithHelp(
+				bindKeyStyle.Render(toggleChart.String()),
+				helpDescStyle.Render(" - usage chart"),
 			),
 		),
 	},
