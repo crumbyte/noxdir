@@ -1,7 +1,6 @@
 package render
 
 import (
-	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -10,6 +9,7 @@ import (
 )
 
 const (
+	maxSectors      = 7
 	chartLabelWidth = 50
 	aspectFix       = 2.4
 )
@@ -20,19 +20,10 @@ var chartColors = []lipgloss.Color{
 	lipgloss.Color("#ff006e"),
 	lipgloss.Color("#8338ec"),
 	lipgloss.Color("#3a86ff"),
-	lipgloss.Color("#fcf6bd"),
-	lipgloss.Color("#d0f4de"),
-	lipgloss.Color("#a9def9"),
-	lipgloss.Color("#e4c1f9"),
-	lipgloss.Color("#ffbe0b"),
-	lipgloss.Color("#fb5607"),
-	lipgloss.Color("#ff006e"),
-	lipgloss.Color("#8338ec"),
-	lipgloss.Color("#3a86ff"),
-	lipgloss.Color("#fcf6bd"),
-	lipgloss.Color("#d0f4de"),
-	lipgloss.Color("#a9def9"),
-	lipgloss.Color("#e4c1f9"),
+	lipgloss.Color("#00f5d4"),
+	lipgloss.Color("#fef9ef"),
+	lipgloss.Color("#ff85a1"),
+	lipgloss.Color("#b5838d"),
 }
 
 type RawChartSector struct {
@@ -49,10 +40,10 @@ type chartSector struct {
 	endAngle   float64
 }
 
-func chart(width, height, radius int, totalSize int64, rawSectors []RawChartSector) string {
+func Chart(width, height, radius int, totalSize int64, raw []RawChartSector) string {
 	sb := strings.Builder{}
 
-	sectors := prepareSectors(totalSize, rawSectors)
+	sectors := prepareSectors(totalSize, raw)
 
 	centerX, centerY := width/2/2, height/2
 
@@ -77,7 +68,7 @@ func chart(width, height, radius int, totalSize int64, rawSectors []RawChartSect
 			for _, s := range sectors {
 				if angle >= s.startAngle && angle < s.endAngle {
 					sb.WriteString(
-						lipgloss.NewStyle().Foreground(s.color).Render("#"),
+						lipgloss.NewStyle().Foreground(s.color).Render("ø"),
 					)
 
 					break
@@ -88,17 +79,9 @@ func chart(width, height, radius int, totalSize int64, rawSectors []RawChartSect
 		sb.WriteByte('\n')
 	}
 
-	ch := sb.String()
-
-	legend := make([]string, 0, len(sectors))
-
-	for _, s := range sectors {
-		legend = append(legend, lipgloss.NewStyle().MaxWidth(width).Foreground(s.color).PaddingLeft(10).Render(
-			fmt.Sprintf("%s: %s \n", s.label, fmtSize(s.size, false)),
-		))
-	}
-
-	return lipgloss.JoinHorizontal(lipgloss.Center, ch, lipgloss.JoinVertical(lipgloss.Left, legend...))
+	return lipgloss.JoinHorizontal(
+		lipgloss.Center, sb.String(), legend(sectors, width/2),
+	)
 }
 
 func prepareSectors(totalSize int64, rawSectors []RawChartSector) []chartSector {
@@ -106,8 +89,10 @@ func prepareSectors(totalSize int64, rawSectors []RawChartSector) []chartSector 
 
 	others := chartSector{label: "Others"}
 
-	for _, s := range rawSectors {
-		if float64(s.Size)/float64(totalSize) < 0.04 {
+	for i, s := range rawSectors {
+		usage := float64(s.Size) / float64(totalSize)
+
+		if i > maxSectors {
 			others.size += s.Size
 
 			continue
@@ -118,11 +103,13 @@ func prepareSectors(totalSize int64, rawSectors []RawChartSector) []chartSector 
 			chartSector{
 				label: fmtName(s.Label, chartLabelWidth),
 				size:  s.Size,
+				usage: usage,
 			},
 		)
 	}
 
 	if others.size > 0 {
+		others.usage = float64(others.size) / float64(totalSize)
 		sectors = append(sectors, others)
 	}
 
@@ -134,7 +121,6 @@ func prepareSectors(totalSize int64, rawSectors []RawChartSector) []chartSector 
 
 	for i := range sectors {
 		sectors[i].color = chartColors[i]
-		sectors[i].usage = float64(sectors[i].size) / float64(totalSize)
 		sectors[i].startAngle = start
 		sectors[i].endAngle = start + sectors[i].usage*2*math.Pi
 
@@ -142,4 +128,29 @@ func prepareSectors(totalSize int64, rawSectors []RawChartSector) []chartSector 
 	}
 
 	return sectors
+}
+
+func legend(sectors []chartSector, width int) string {
+	l := make([]string, 0, len(sectors))
+	listPadding := 5
+
+	for _, s := range sectors {
+		label := fmtName(s.label, int(float64(width)*0.6))
+		size := fmtSize(s.size, false)
+
+		padding := strings.Repeat(
+			" ",
+			max(width-lipgloss.Width(label)-listPadding*2-lipgloss.Width(size), 0),
+		)
+
+		row := lipgloss.NewStyle().
+			Width(width).
+			Foreground(s.color).
+			Padding(0, listPadding).
+			Render(label + padding + fmtSize(s.size, false) + "\n")
+
+		l = append(l, row)
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, l...)
 }

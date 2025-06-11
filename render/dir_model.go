@@ -189,7 +189,15 @@ func (dm *DirModel) View() string {
 	bg := lipgloss.JoinVertical(lipgloss.Top, rows...)
 
 	if dm.showCart {
-		return OverlayCenter(dm.width, dm.height, bg, dm.viewChart())
+		chart := dm.viewChart()
+
+		return Overlay(
+			dm.width,
+			bg,
+			chart,
+			h(bg)-h(keyBindings)-h(summary)-h(chart),
+			dm.width-lipgloss.Width(chart),
+		)
 	}
 
 	return bg
@@ -248,8 +256,7 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 func (dm *DirModel) viewChart() string {
 	dialogBoxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#874BFD")).
-		Padding(1, 5)
+		BorderForeground(lipgloss.Color("#874BFD"))
 
 	chartSectors := make([]RawChartSector, 0, len(dm.nav.entry.Child))
 
@@ -260,9 +267,15 @@ func (dm *DirModel) viewChart() string {
 		})
 	}
 
-	c := chart(dm.width/2, dm.height/2, 30, dm.nav.entry.Size, chartSectors)
-
-	return dialogBoxStyle.Render(lipgloss.JoinVertical(lipgloss.Center, c))
+	return dialogBoxStyle.Render(
+		Chart(
+			dm.width/2,
+			dm.height/2,
+			25,
+			dm.nav.entry.Size,
+			chartSectors,
+		),
+	)
 }
 
 func (dm *DirModel) handleExploreKey() bool {
