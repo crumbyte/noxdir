@@ -28,6 +28,7 @@ const (
 	PENDING Mode = "PENDING"
 	READY   Mode = "READY"
 	INPUT   Mode = "INPUT"
+	DELETE  Mode = "DELETE"
 )
 
 type DirModel struct {
@@ -35,6 +36,7 @@ type DirModel struct {
 	dirsTable     *table.Model
 	topFilesTable *table.Model
 	topDirsTable  *table.Model
+	deleteDialog  *DeleteDialogModel
 	nav           *Navigation
 	filters       filter.FiltersList
 	mode          Mode
@@ -99,6 +101,14 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case EntryDeleted:
+		dm.mode, dm.deleteDialog = READY, nil
+
+		if msg.Deleted {
+			go func() {
+				teaProg.Send(EnqueueRefresh{})
+			}()
+		}
 	case UpdateDirState:
 		dm.mode = PENDING
 		runtime.GC()
@@ -169,16 +179,9 @@ func (dm *DirModel) View() string {
 		}
 	}
 
-	if dm.showTopDirs || dm.showTopFiles {
-		topTable := dm.topFilesTable
-		if dm.showTopDirs {
-			topTable = dm.topDirsTable
-		}
-
-		tft := topTable.View()
-
-		dirsTableHeight -= h(tft)
-		rows = append(rows, tft)
+	if topContent, render := dm.viewTop(); render {
+		dirsTableHeight -= h(topContent)
+		rows = append(rows, topContent)
 	}
 
 	dm.dirsTable.SetHeight(dirsTableHeight)
@@ -191,7 +194,7 @@ func (dm *DirModel) View() string {
 	if dm.showCart {
 		chart := dm.viewChart()
 
-		return Overlay(
+		bg = Overlay(
 			dm.width,
 			bg,
 			chart,
@@ -200,11 +203,33 @@ func (dm *DirModel) View() string {
 		)
 	}
 
+	if dm.mode == DELETE {
+		return OverlayCenter(
+			dm.width,
+			dm.height,
+			bg,
+			dm.deleteDialog.View(),
+		)
+	}
+
 	return bg
 }
 
+func (dm *DirModel) viewTop() (string, bool) {
+	if !dm.showTopDirs && !dm.showTopFiles {
+		return "", false
+	}
+
+	topTable := dm.topFilesTable
+	if dm.showTopDirs {
+		topTable = dm.topDirsTable
+	}
+
+	return topTable.View(), true
+}
+
 func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
-	if dm.mode != READY && dm.mode != INPUT {
+	if dm.mode == PENDING {
 		return false
 	}
 
@@ -217,6 +242,10 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 		}
 
 		dm.filters.ToggleFilter(filter.NameFilterID)
+	}
+
+	if dm.handleDeletion(bk, msg) {
+		return true
 	}
 
 	if dm.mode == INPUT {
@@ -263,7 +292,7 @@ func (dm *DirModel) viewChart() string {
 		})
 	}
 
-	return dialogBoxStyle.Render(
+	return chartBoxStyle.Render(
 		Chart(
 			dm.width/2,
 			dm.height/2,
@@ -281,6 +310,28 @@ func (dm *DirModel) handleExploreKey() bool {
 	}
 
 	return dm.nav.Explore(sr[1]) != nil
+}
+
+func (dm *DirModel) handleDeletion(bk bindingKey, msg tea.Msg) bool {
+	if bk == remove && dm.mode == READY {
+		sr := dm.dirsTable.SelectedRow()
+
+		dm.mode = DELETE
+		dm.deleteDialog = NewDeleteDialogModel(dm.nav, sr[1])
+
+		dm.updateTableData()
+
+		return true
+	}
+
+	if dm.mode == DELETE {
+		dm.deleteDialog.Update(msg)
+		dm.updateTableData()
+
+		return true
+	}
+
+	return false
 }
 
 func (dm *DirModel) updateTableData() {

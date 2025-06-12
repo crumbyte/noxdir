@@ -299,6 +299,19 @@ func (n *Navigation) Explore(path string) error {
 	return drive.Explore(fullPath)
 }
 
+func (n *Navigation) Delete(path string) error {
+	entry := n.entry.GetChild(path)
+	if entry == nil {
+		return nil
+	}
+
+	if err := os.RemoveAll(entry.Path); err != nil {
+		return fmt.Errorf("delete: path: %s: %w", path, err)
+	}
+
+	return nil
+}
+
 func (n *Navigation) lock() bool {
 	return !n.locked.Swap(true)
 }

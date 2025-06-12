@@ -35,6 +35,10 @@ var (
 
 	dialogBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("#ebbd34"))
+
+	chartBoxStyle = lipgloss.NewStyle().
+			Inherit(dialogBoxStyle).
 			BorderForeground(lipgloss.Color("240")).
 			BorderRight(false).
 			BorderBottom(false)

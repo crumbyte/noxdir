@@ -23,6 +23,7 @@ const updateTickerInterval = time.Millisecond * 500
 type (
 	UpdateDirState struct{}
 	ScanFinished   struct{}
+	EnqueueRefresh struct{}
 )
 
 var teaProg *tea.Program
@@ -51,6 +52,8 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case EnqueueRefresh:
+		vm.refresh()
 	case tea.KeyMsg:
 		bk := bindingKey(strings.ToLower(msg.String()))
 
@@ -64,9 +67,13 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case quit, cancel:
 			return vm, tea.Quit
 		case enter:
-			vm.levelDown()
+			if vm.dirModel.mode != DELETE || vm.nav.OnDrives() {
+				vm.levelDown()
+			}
 		case backspace:
-			vm.levelUp()
+			if vm.dirModel.mode != DELETE || vm.nav.OnDrives() {
+				vm.levelUp()
+			}
 		}
 	}
 

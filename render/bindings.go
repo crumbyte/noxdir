@@ -18,6 +18,7 @@ const (
 	enter             bindingKey = "enter"
 	explore           bindingKey = "e"
 	refresh           bindingKey = "r"
+	remove            bindingKey = "alt+d"
 	sortTotalCap      bindingKey = "alt+t"
 	sortTotalUsed     bindingKey = "alt+u"
 	sortTotalFree     bindingKey = "alt+f"
@@ -29,6 +30,8 @@ const (
 	toggleNameFilter  bindingKey = "ctrl+f"
 	toggleChart       bindingKey = "ctrl+w"
 	toggleHelp        bindingKey = "?"
+	left              bindingKey = "left"
+	right             bindingKey = "right"
 )
 
 var toggleHelpBinding = key.NewBinding(
@@ -174,9 +177,6 @@ var dirsKeyMap = [][]key.Binding{
 				helpDescStyle.Render(" - toggle name filter"),
 			),
 		),
-		toggleHelpBinding,
-	},
-	{
 		key.NewBinding(
 			key.WithKeys(toggleDirsFilter.String()),
 			key.WithHelp(
@@ -184,6 +184,8 @@ var dirsKeyMap = [][]key.Binding{
 				helpDescStyle.Render(" - toggle dirs only"),
 			),
 		),
+	},
+	{
 		key.NewBinding(
 			key.WithKeys(toggleFilesFilter.String()),
 			key.WithHelp(
@@ -205,5 +207,15 @@ var dirsKeyMap = [][]key.Binding{
 				helpDescStyle.Render(" - usage chart"),
 			),
 		),
+		key.NewBinding(
+			key.WithKeys(remove.String()),
+			key.WithHelp(
+				bindKeyStyle.Render(remove.String()),
+				helpDescStyle.Render(" - delete"),
+			),
+		),
+	},
+	{
+		toggleHelpBinding,
 	},
 }

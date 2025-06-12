@@ -17,13 +17,19 @@ func OverlayCenter(fullWidth, fullHeight int, background, overlay string) string
 	return Overlay(fullWidth, background, overlay, row, col)
 }
 
+// Overlay renders the provided overlay string over the background value. The
+// overlay will be rendered starting at the specified row and column. All
+// characters from the background will be properly wrapped accordingly without
+// breaking the ANSI sequences.
 func Overlay(_ int, background, overlay string, row, col int) string {
 	// wrappedBG := ansi.Hardwrap(background, fullWidth, true)
 
 	backgroundRows := strings.Split(background, "\n")
 	overlayRows := strings.Split(overlay, "\n")
 
+	// replace the background rows with the overlay rows
 	for i, overlayRow := range overlayRows {
+		// proceed only if there's enough space to render the overlay
 		if i+row >= len(backgroundRows) || i+row < 0 {
 			break
 		}
