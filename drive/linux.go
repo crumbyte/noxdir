@@ -4,11 +4,12 @@ package drive
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 	"unsafe"
@@ -127,23 +128,34 @@ func mounts() ([]string, error) {
 
 	scanner := bufio.NewScanner(mnt)
 
-	var mntList []string
+	mnts := make(map[string][]string)
 
 	for scanner.Scan() {
-		mountInfo := scanner.Bytes()
-		start := bytes.IndexByte(mountInfo, ' ')
-		if start == -1 {
+		segments := strings.Split(scanner.Text(), " ")
+		if len(segments) < 2 {
+			// if we dont have at least two fields, we can't really
+			// identify anything.
 			continue
 		}
 
-		end := bytes.IndexByte(mountInfo[start+1:], ' ')
-		if end == -1 {
+		if !strings.HasPrefix(segments[0], "/") {
+			// special filesystem
 			continue
 		}
 
-		mntList = append(
-			mntList, string(mountInfo[start+1:len(mountInfo[:start+1])+end]),
-		)
+		mnts[segments[0]] = append(mnts[segments[0]], segments[1])
+	}
+
+	// only return the shortest mount
+	mntList := make([]string, 0, len(mnts))
+	for mounts := range maps.Values(mnts) {
+		shortest := mounts[0]
+		for _, mnt := range mounts {
+			if len(mnt) < len(shortest) {
+				shortest = mnt
+			}
+		}
+		mntList = append(mntList, shortest)
 	}
 
 	return mntList, nil
