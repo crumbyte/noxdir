@@ -3,6 +3,7 @@ module github.com/crumbyte/noxdir
 go 1.24
 
 require (
+	git.sr.ht/~mpldr/go-indicators v1.3.0
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.4
 	github.com/charmbracelet/lipgloss v1.1.0
