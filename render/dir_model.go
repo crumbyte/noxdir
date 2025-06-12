@@ -308,7 +308,7 @@ func (dm *DirModel) updateTableData() {
 	dm.dirsTable.SetColumns(columns)
 	dm.dirsTable.SetCursor(0)
 
-	fillProgress := NewProgressBar(progressWidth, '🟥', ' ')
+	progBar.Width = progressWidth-1
 
 	rows := make([]table.Row, 0, len(dm.nav.Entry().Child))
 	dm.nav.Entry().SortChild()
@@ -326,7 +326,7 @@ func (dm *DirModel) updateTableData() {
 		}
 
 		parentUsage := float64(child.Size) / float64(dm.nav.ParentSize())
-		pgBar := fillProgress.ViewAs(parentUsage)
+		pgBar := progBar.GetBar(parentUsage, 1)
 
 		rows = append(
 			rows,
@@ -339,7 +339,7 @@ func (dm *DirModel) updateTableData() {
 				totalFiles,
 				time.Unix(child.ModTime, 0).Format("2006-01-02 15:04"),
 				strconv.FormatFloat(parentUsage*100, 'f', 2, 64) + " %",
-				pgBar,
+				"▕"+pgBar,
 			},
 		)
 	}
