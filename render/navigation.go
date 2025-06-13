@@ -121,12 +121,14 @@ func (n *Navigation) Entry() *structure.Entry {
 }
 
 func (n *Navigation) ParentSize() int64 {
+	minSize := int64(1)
+
 	if n.entry == nil {
 		//nolint:gosec // why not, let's overflow
-		return int64(n.currentDrive.UsedBytes)
+		return max(minSize, int64(n.currentDrive.UsedBytes))
 	}
 
-	return n.entry.Size
+	return max(minSize, n.entry.Size)
 }
 
 // Up changes the current tree level up to the previous one. It doesn't accept
@@ -299,6 +301,14 @@ func (n *Navigation) Explore(path string) error {
 	return drive.Explore(fullPath)
 }
 
+// Delete deletes the file or directory, including all internal content, from the
+// file system by the provided base path value. The entry lookup will be done
+// within the current active *Entry instance, limiting the deletion scope.
+//
+// If the entry was not found in the current active *Entry instance no error will
+// be returned.
+//
+// TODO: add soft delete
 func (n *Navigation) Delete(path string) error {
 	entry := n.entry.GetChild(path)
 	if entry == nil {

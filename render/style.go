@@ -42,4 +42,15 @@ var (
 			BorderForeground(lipgloss.Color("240")).
 			BorderRight(false).
 			BorderBottom(false)
+
+	confirmButtonStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#FFFDF5")).
+				Background(lipgloss.Color("#353533")).
+				Padding(0, 3).
+				Margin(1, 3)
+
+	activeButtonStyle = confirmButtonStyle.
+				Foreground(lipgloss.Color("#FFFDF5")).
+				Background(lipgloss.Color("#FF5F87")).
+				Underline(true)
 )

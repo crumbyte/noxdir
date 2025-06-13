@@ -12,6 +12,9 @@ type DeleteChoice int
 const (
 	CancelChoice DeleteChoice = iota
 	ConfirmChoice
+
+	deleteDialogWidth = 50
+	deleteNameWidth   = 40
 )
 
 type EntryDeleted struct {
@@ -68,31 +71,25 @@ func (ddm *DeleteDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (ddm *DeleteDialogModel) View() string {
-	buttonStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FFFDF5")).
-		Background(lipgloss.Color("#353533")).
-		Padding(0, 3).
-		Margin(1, 3)
-
-	activeButtonStyle := buttonStyle.
-		Foreground(lipgloss.Color("#FFFDF5")).
-		Background(lipgloss.Color("#FF5F87")).
-		Underline(true)
-
-	cancelBtn := activeButtonStyle.Render("No")
-	confirmBtn := buttonStyle.Render("Yes")
+	cancelBtn, confirmBtn := activeButtonStyle, confirmButtonStyle
 
 	if ddm.choice == ConfirmChoice {
-		confirmBtn = activeButtonStyle.Render("Yes")
-		cancelBtn = buttonStyle.Render("No")
+		cancelBtn, confirmBtn = confirmBtn, cancelBtn
 	}
 
 	question := lipgloss.NewStyle().
-		Width(50).
+		Width(deleteDialogWidth).
 		Align(lipgloss.Center).
-		Render("Confirm the deletion of: \n " + fmtName(ddm.targetPath, 40))
+		Render(
+			"Confirm the deletion of: \n " +
+				fmtName(ddm.targetPath, deleteNameWidth),
+		)
 
-	buttons := lipgloss.JoinHorizontal(lipgloss.Top, cancelBtn, confirmBtn)
+	buttons := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		cancelBtn.Render("No"),
+		confirmBtn.Render("Yes"),
+	)
 
 	return dialogBoxStyle.Render(
 		lipgloss.JoinVertical(lipgloss.Center, question, buttons),
