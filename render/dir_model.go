@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	entrySizeWidth      = 10
 	topFilesTableHeight = 16
 	colWidthRatio       = 0.13
 )
@@ -334,7 +335,7 @@ func (dm *DirModel) updateTableData() {
 				EntryIcon(child),
 				child.Name(),
 				fmtName(child.Name(), nameWidth),
-				fmtSize(child.Size, true),
+				FmtSize(child.Size, entrySizeWidth),
 				totalDirs,
 				totalFiles,
 				time.Unix(child.ModTime, 0).Format("2006-01-02 15:04"),
@@ -355,7 +356,7 @@ func (dm *DirModel) dirsSummary() string {
 		NewBarItem(dm.nav.Entry().Path, "", -1),
 		NewBarItem(string(dm.mode), "#FF8531", 0),
 		NewBarItem("SIZE", "#FF5F87", 0),
-		DefaultBarItem(fmtSize(dm.nav.Entry().Size, false)),
+		DefaultBarItem(FmtSize(dm.nav.Entry().Size, 0)),
 		NewBarItem("DIRS", "#FF5F87", 0),
 		DefaultBarItem(unitFmt(dm.nav.Entry().LocalDirs)),
 		NewBarItem("FILES", "#FF5F87", 0),
@@ -412,7 +413,7 @@ func (dm *DirModel) fillTopEntries(entries heap.Interface, tm *table.Model) {
 			EntryIcon(file),
 			file.Path,
 			path + topFileStyle.Render(file.Name()),
-			fmtSize(file.Size, true),
+			FmtSize(file.Size, entrySizeWidth),
 			time.Unix(file.ModTime, 0).Format("2006-01-02 15:04"),
 		}
 	}

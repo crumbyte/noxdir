@@ -11,6 +11,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const driveSizeWidth = 10
+
 type DriveModel struct {
 	driveColumns []Column
 	drivesTable  *table.Model
@@ -148,9 +150,9 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 			d.Path,
 			d.Volume,
 			d.FSName,
-			fmtSize(d.TotalBytes, true),
-			fmtSize(d.UsedBytes, true),
-			fmtSize(d.FreeBytes, true),
+			FmtSize(d.TotalBytes, driveSizeWidth),
+			FmtSize(d.UsedBytes, driveSizeWidth),
+			FmtSize(d.FreeBytes, driveSizeWidth),
 			strconv.FormatFloat(d.UsedPercent, 'f', 2, 64) + " %",
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
@@ -172,11 +174,11 @@ func (dm *DriveModel) drivesSummary() string {
 		NewBarItem("MODE", "#FF5F87", 0),
 		NewBarItem("Drives List", "", -1),
 		NewBarItem("CAPACITY", "#FF5F87", 0),
-		DefaultBarItem(fmtSize(dl.TotalCapacity, false)),
+		DefaultBarItem(FmtSize(dl.TotalCapacity, 0)),
 		NewBarItem("FREE", "#FF5F87", 0),
-		DefaultBarItem(fmtSize(dl.TotalFree, false)),
+		DefaultBarItem(FmtSize(dl.TotalFree, 0)),
 		NewBarItem("USED", "#FF5F87", 0),
-		DefaultBarItem(fmtSize(dl.TotalUsed, false)),
+		DefaultBarItem(FmtSize(dl.TotalUsed, 0)),
 	}
 
 	return statusBarStyle.Margin(1, 0, 1, 0).

@@ -136,7 +136,7 @@ func legend(sectors []chartSector, width int) string {
 
 	for _, s := range sectors {
 		label := fmtName(s.label, int(float64(width)*0.6))
-		size := fmtSize(s.size, false)
+		size := FmtSize(s.size, 0)
 
 		padding := strings.Repeat(
 			" ",
@@ -147,7 +147,7 @@ func legend(sectors []chartSector, width int) string {
 			Width(width).
 			Foreground(s.color).
 			Padding(0, listPadding).
-			Render(label + padding + fmtSize(s.size, false) + "\n")
+			Render(label + padding + FmtSize(s.size, 0) + "\n")
 
 		l = append(l, row)
 	}
