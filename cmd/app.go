@@ -170,6 +170,11 @@ func runApp(_ *cobra.Command, _ []string) error {
 		tea.WithAltScreen(),
 		tea.WithoutCatchPanics(),
 	)
+	defer func() {
+		// can't really do anything and dumping more text, makes it
+		// less legible.
+		_ = teaProg.ReleaseTerminal()
+	}()
 
 	render.SetTeaProgram(teaProg)
 
