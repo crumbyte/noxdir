@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -233,6 +234,10 @@ func resolveNavigation() (*render.Navigation, error) {
 
 	if root != "" {
 		root = strings.TrimSuffix(root, string(os.PathSeparator))
+
+		if root, err = filepath.Abs(root); err != nil {
+			return nil, fmt.Errorf("resolve absolute root rpath: %s", err.Error())
+		}
 
 		return render.NewRootNavigation(
 			structure.NewTree(

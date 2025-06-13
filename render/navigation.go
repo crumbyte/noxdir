@@ -90,7 +90,21 @@ func NewRootNavigation(t *structure.Tree) (*Navigation, error) {
 		return nil, errors.New("root is nil")
 	}
 
-	done, _ := t.TraverseAsync()
+	done, errChan := t.TraverseAsync()
+	if done == nil {
+		return nil, errors.New("root is nil")
+	}
+
+wait:
+	for {
+		select {
+		case <-errChan:
+			// ignore permission related errors for now
+		case <-done:
+			break wait
+		}
+	}
+
 	<-done
 	t.CalculateSize()
 
