@@ -18,7 +18,7 @@ const (
 	enter             bindingKey = "enter"
 	explore           bindingKey = "e"
 	refresh           bindingKey = "r"
-	remove            bindingKey = "alt+d"
+	remove            bindingKey = "!"
 	sortTotalCap      bindingKey = "alt+t"
 	sortTotalUsed     bindingKey = "alt+u"
 	sortTotalFree     bindingKey = "alt+f"
@@ -178,14 +178,21 @@ var dirsKeyMap = [][]key.Binding{
 			),
 		),
 		key.NewBinding(
+			key.WithKeys(toggleChart.String()),
+			key.WithHelp(
+				bindKeyStyle.Render(toggleChart.String()),
+				helpDescStyle.Render(" - usage chart"),
+			),
+		),
+	},
+	{
+		key.NewBinding(
 			key.WithKeys(toggleDirsFilter.String()),
 			key.WithHelp(
 				bindKeyStyle.Render(toggleDirsFilter.String()),
 				helpDescStyle.Render(" - toggle dirs only"),
 			),
 		),
-	},
-	{
 		key.NewBinding(
 			key.WithKeys(toggleFilesFilter.String()),
 			key.WithHelp(
@@ -198,13 +205,6 @@ var dirsKeyMap = [][]key.Binding{
 			key.WithHelp(
 				bindKeyStyle.Render(refresh.String()),
 				helpDescStyle.Render(" - refresh"),
-			),
-		),
-		key.NewBinding(
-			key.WithKeys(toggleChart.String()),
-			key.WithHelp(
-				bindKeyStyle.Render(toggleChart.String()),
-				helpDescStyle.Render(" - usage chart"),
 			),
 		),
 		key.NewBinding(

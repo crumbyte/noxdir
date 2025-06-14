@@ -35,12 +35,11 @@ var (
 
 	dialogBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("#ebbd34"))
+			BorderForeground(lipgloss.Color("#FF303E"))
 
 	chartBoxStyle = lipgloss.NewStyle().
 			Inherit(dialogBoxStyle).
 			BorderForeground(lipgloss.Color("240")).
-			BorderRight(false).
 			BorderBottom(false)
 
 	confirmButtonStyle = lipgloss.NewStyle().
@@ -51,6 +50,6 @@ var (
 
 	activeButtonStyle = confirmButtonStyle.
 				Foreground(lipgloss.Color("#FFFDF5")).
-				Background(lipgloss.Color("#FF5F87")).
+				Background(lipgloss.Color("#FF8531")).
 				Underline(true)
 )

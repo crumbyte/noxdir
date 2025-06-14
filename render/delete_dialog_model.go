@@ -77,13 +77,16 @@ func (ddm *DeleteDialogModel) View() string {
 		cancelBtn, confirmBtn = confirmBtn, cancelBtn
 	}
 
-	question := lipgloss.NewStyle().
+	textStyle := lipgloss.NewStyle().
 		Width(deleteDialogWidth).
 		Align(lipgloss.Center).
-		Render(
-			"Confirm the deletion of: \n " +
-				fmtName(ddm.targetPath, deleteNameWidth),
-		)
+		Bold(true)
+
+	confirm := textStyle.
+		Foreground(lipgloss.Color("#FF303E")).
+		Render("Confirm Deletion\n")
+
+	target := textStyle.Render(ddm.targetPath)
 
 	buttons := lipgloss.JoinHorizontal(
 		lipgloss.Top,
@@ -92,6 +95,10 @@ func (ddm *DeleteDialogModel) View() string {
 	)
 
 	return dialogBoxStyle.Render(
-		lipgloss.JoinVertical(lipgloss.Center, question, buttons),
+		lipgloss.JoinVertical(
+			lipgloss.Center,
+			lipgloss.JoinVertical(lipgloss.Top, confirm, target),
+			buttons,
+		),
 	)
 }
