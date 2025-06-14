@@ -6,6 +6,7 @@ import (
 
 	"github.com/crumbyte/noxdir/drive"
 
+	"git.sr.ht/~mpldr/go-indicators/progress"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -138,13 +139,16 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 	dm.drivesTable.SetColumns(columns)
 	dm.drivesTable.SetCursor(0)
 
-	diskFillProgress := NewProgressBar(progressWidth, '🟥', '🟩')
+	progBar.Width = progressWidth - 2
+	if progBar.Width < 0 {
+		progBar.Width = 0
+	}
 
 	allDrives := dm.nav.DrivesList().Sort(key, sortDesc)
 	rows := make([]table.Row, 0, len(allDrives))
 
 	for _, d := range allDrives {
-		pgBar := diskFillProgress.ViewAs(d.UsedPercent / 100)
+		pgBar := progBar.GetBar(d.UsedPercent, 100.0)
 		rows = append(rows, table.Row{
 			"⛃",
 			d.Path,
@@ -154,11 +158,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 			FmtSize(d.UsedBytes, driveSizeWidth),
 			FmtSize(d.FreeBytes, driveSizeWidth),
 			strconv.FormatFloat(d.UsedPercent, 'f', 2, 64) + " %",
-			lipgloss.JoinHorizontal(
-				lipgloss.Top,
-				strings.Repeat(" ", progressWidth-lipgloss.Width(pgBar)),
-				pgBar,
-			),
+			"▕" + pgBar + "▏",
 		})
 	}
 
@@ -204,4 +204,17 @@ func (dm *DriveModel) sortDrives(sortKey drive.SortKey) {
 
 func (dm *DriveModel) resetSort() {
 	dm.sortState = SortState{Key: drive.TotalUsedP, Desc: false}
+}
+
+var (
+	progBar = &progress.Progress{
+		Width: 0,
+	}
+	barStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.ANSIColor(9)).
+			Background(lipgloss.ANSIColor(10))
+)
+
+func init() {
+	progBar.SetStyle("block")
 }
