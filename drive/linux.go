@@ -190,6 +190,13 @@ func ReadDir(path string) ([]FileInfo, error) {
 
 	var n int
 
+	var stat unix.Stat_t
+	err = unix.Fstat(fd, &stat)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat file: %w", err)
+	}
+	deviceID := stat.Dev
+
 	for {
 		n, err = unix.Getdents(fd, *buf)
 		if err != nil {
@@ -214,11 +221,16 @@ func ReadDir(path string) ([]FileInfo, error) {
 				continue
 			}
 
-			var stat unix.Stat_t
-
 			err = unix.Fstatat(fd, name, &stat, unix.AT_SYMLINK_NOFOLLOW)
-			if err == nil && InoFilterInstance.Add(stat.Ino) {
-				fis = append(fis, NewFileInfo(name, &stat))
+			if err == nil {
+				if stat.Dev != deviceID {
+					offset += int(dirent.Reclen)
+
+					continue
+				}
+				if InoFilterInstance.Add(stat.Ino) {
+					fis = append(fis, NewFileInfo(name, &stat))
+				}
 			}
 
 			offset += int(dirent.Reclen)
