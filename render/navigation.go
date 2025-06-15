@@ -218,7 +218,7 @@ func (n *Navigation) Down(path string, cursor int, ocl OnChangeLevel) (chan stru
 	}
 
 	n.entryStack.push(&stackItem{entry: n.entry, cursor: cursor})
-	n.entry, n.cursor = entry, 0
+	n.entry, n.cursor = entry, -1
 
 	return nil, nil
 }

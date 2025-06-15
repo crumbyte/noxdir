@@ -346,19 +346,20 @@ func (dm *DirModel) updateTableData() {
 	colWidth := int(float64(dm.width-iconWidth-nameWidth) * colWidthRatio)
 	progressWidth := dm.width - (colWidth * 5) - iconWidth - nameWidth
 
-	columns := make([]table.Column, len(dm.columns))
+	if len(dm.dirsTable.Columns()) == 0 {
+		columns := make([]table.Column, len(dm.columns))
 
-	for i, c := range dm.columns {
-		columns[i] = table.Column{Title: c.Title, Width: colWidth}
+		for i, c := range dm.columns {
+			columns[i] = table.Column{Title: c.Title, Width: colWidth}
+		}
+
+		columns[0].Width = iconWidth
+		columns[1].Width = 0
+		columns[2].Width = nameWidth
+		columns[len(columns)-1].Width = progressWidth
+
+		dm.dirsTable.SetColumns(columns)
 	}
-
-	columns[0].Width = iconWidth
-	columns[1].Width = 0
-	columns[2].Width = nameWidth
-	columns[len(columns)-1].Width = progressWidth
-
-	dm.dirsTable.SetColumns(columns)
-	dm.dirsTable.SetCursor(0)
 
 	fillProgress := NewProgressBar(progressWidth, '🟥', ' ')
 
@@ -397,7 +398,13 @@ func (dm *DirModel) updateTableData() {
 	}
 
 	dm.dirsTable.SetRows(rows)
-	dm.dirsTable.SetCursor(dm.nav.cursor)
+
+	// if the level changed and the navigation cursor state has a valid value,
+	// then set the cursor; otherwise, the level wasn't changed, and the cursor
+	// value should not change.
+	if dm.nav.cursor < len(rows) && dm.dirsTable.Cursor() >= 0 {
+		dm.dirsTable.SetCursor(dm.nav.cursor)
+	}
 }
 
 func (dm *DirModel) dirsSummary() string {
