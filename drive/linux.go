@@ -188,16 +188,18 @@ func ReadDir(path string) ([]FileInfo, error) {
 
 	fis := make([]FileInfo, 0, 32)
 
-	var n int
+	var stat unix.Stat_t
+	err = unix.Fstat(fd, &stat)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat file: %w", err)
+	}
+	deviceID := stat.Dev
 
-	for {
+	n := -1 // initialize with normally impossible value
+	for n != 0 {
 		n, err = unix.Getdents(fd, *buf)
 		if err != nil {
 			return nil, fmt.Errorf("getdents error: %w", err)
-		}
-
-		if n == 0 {
-			break
 		}
 
 		offset := 0
@@ -214,10 +216,10 @@ func ReadDir(path string) ([]FileInfo, error) {
 				continue
 			}
 
-			var stat unix.Stat_t
-
 			err = unix.Fstatat(fd, name, &stat, unix.AT_SYMLINK_NOFOLLOW)
-			if err == nil && InoFilterInstance.Add(stat.Ino) {
+			if err == nil &&
+				InoFilterInstance.Add(stat.Ino) &&
+				stat.Dev == deviceID {
 				fis = append(fis, NewFileInfo(name, &stat))
 			}
 
