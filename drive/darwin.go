@@ -144,6 +144,8 @@ var direntBufPool = sync.Pool{
 }
 
 func ReadDir(path string) ([]FileInfo, error) {
+	var rootStat unix.Stat_t
+
 	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_DIRECTORY, 0)
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", path, err)
@@ -152,6 +154,10 @@ func ReadDir(path string) ([]FileInfo, error) {
 	defer func(fd int) {
 		_ = unix.Close(fd)
 	}(fd)
+
+	if err = unix.Fstat(fd, &rootStat); err != nil {
+		return nil, fmt.Errorf("stat %s: %w", path, err)
+	}
 
 	buf, ok := direntBufPool.Get().(*[]byte)
 	if !ok {
@@ -191,7 +197,8 @@ func ReadDir(path string) ([]FileInfo, error) {
 			var stat unix.Stat_t
 
 			err = unix.Fstatat(fd, name, &stat, unix.AT_SYMLINK_NOFOLLOW)
-			if err == nil && InoFilterInstance.Add(stat.Ino) {
+			// TODO: consider making device check optional
+			if err == nil && InoFilterInstance.Add(stat.Ino) && rootStat.Dev == stat.Dev {
 				fis = append(fis, NewFileInfo(name, &stat))
 			}
 

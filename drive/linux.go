@@ -170,6 +170,8 @@ var direntBufPool = sync.Pool{
 }
 
 func ReadDir(path string) ([]FileInfo, error) {
+	var rootStat unix.Stat_t
+
 	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_DIRECTORY, 0)
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", path, err)
@@ -188,18 +190,20 @@ func ReadDir(path string) ([]FileInfo, error) {
 
 	fis := make([]FileInfo, 0, 32)
 
-	var stat unix.Stat_t
-	err = unix.Fstat(fd, &stat)
-	if err != nil {
-		return nil, fmt.Errorf("failed to stat file: %w", err)
+	if err = unix.Fstat(fd, &rootStat); err != nil {
+		return nil, fmt.Errorf("stat %s: %w", path, err)
 	}
-	deviceID := stat.Dev
 
-	n := -1 // initialize with normally impossible value
-	for n != 0 {
+	var n int
+
+	for {
 		n, err = unix.Getdents(fd, *buf)
 		if err != nil {
 			return nil, fmt.Errorf("getdents error: %w", err)
+		}
+
+		if n == 0 {
+			break
 		}
 
 		offset := 0
@@ -216,10 +220,10 @@ func ReadDir(path string) ([]FileInfo, error) {
 				continue
 			}
 
+			var stat unix.Stat_t
+
 			err = unix.Fstatat(fd, name, &stat, unix.AT_SYMLINK_NOFOLLOW)
-			if err == nil &&
-				InoFilterInstance.Add(stat.Ino) &&
-				stat.Dev == deviceID {
+			if err == nil && InoFilterInstance.Add(stat.Ino) && stat.Dev == rootStat.Dev {
 				fis = append(fis, NewFileInfo(name, &stat))
 			}
 
