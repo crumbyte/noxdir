@@ -61,7 +61,6 @@ homebrew_casks:
       owner: crumbyte
       name: homebrew-noxdir
       branch: main
-      token: "{{ .Env.GITHUB_PERSONAL_AUTH_TOKEN }}"
 
 changelog:
   sort: asc
