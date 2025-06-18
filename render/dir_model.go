@@ -101,6 +101,8 @@ func (dm *DirModel) Init() tea.Cmd {
 func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
+	dm.nav.SetCursor(dm.dirsTable.Cursor())
+
 	switch msg := msg.(type) {
 	case EntryDeleted:
 		dm.mode, dm.deleteDialog = READY, nil
@@ -398,13 +400,7 @@ func (dm *DirModel) updateTableData() {
 	}
 
 	dm.dirsTable.SetRows(rows)
-
-	// if the level changed and the navigation cursor state has a valid value,
-	// then set the cursor; otherwise, the level wasn't changed, and the cursor
-	// value should not change.
-	if dm.nav.cursor < len(rows) && dm.dirsTable.Cursor() >= 0 {
-		dm.dirsTable.SetCursor(dm.nav.cursor)
-	}
+	dm.dirsTable.SetCursor(dm.nav.cursor)
 }
 
 func (dm *DirModel) dirsSummary() string {

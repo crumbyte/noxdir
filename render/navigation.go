@@ -173,6 +173,12 @@ func (n *Navigation) Up(ocl OnChangeLevel) {
 	n.entry, n.cursor = lastItem.entry, lastItem.cursor
 }
 
+// SetCursor preserves the current position of the table's cursor. The cursor
+// position should be updated on each action and used during rendering.
+func (n *Navigation) SetCursor(cursor int) {
+	n.cursor = cursor
+}
+
 // Down changes the current tree level down to the provided path. The path value
 // is a directory relative path within the currently active tree node.
 //
@@ -218,7 +224,7 @@ func (n *Navigation) Down(path string, cursor int, ocl OnChangeLevel) (chan stru
 	}
 
 	n.entryStack.push(&stackItem{entry: n.entry, cursor: cursor})
-	n.entry, n.cursor = entry, -1
+	n.entry, n.cursor = entry, 0
 
 	return nil, nil
 }
