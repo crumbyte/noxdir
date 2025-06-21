@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -11,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/klauspost/compress/zstd"
 )
 
 // DefaultCacheDir defines a default folder name that will store cache files.
@@ -66,9 +67,9 @@ func NewCache(opts ...Option) (*Cache, error) {
 // If the corresponding cache entry was not found the ErrNoCache error will be
 // returned.
 func (c *Cache) Get(key string, target any) error {
-	var rc io.ReadCloser
+	var decoder *json.Decoder
 
-	rc, err := os.Open(filepath.Join(c.cachePath, c.keyHash(key)))
+	cacheFile, err := os.Open(filepath.Join(c.cachePath, c.keyHash(key)))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return ErrNoCache
@@ -79,24 +80,28 @@ func (c *Cache) Get(key string, target any) error {
 
 	defer func(rc io.ReadCloser) {
 		_ = rc.Close()
-	}(rc)
+	}(cacheFile)
+
+	decoder = json.NewDecoder(cacheFile)
 
 	if c.compressionEnabled {
-		if rc, err = gzip.NewReader(rc); err != nil {
+		var r io.Reader
+
+		if r, err = zstd.NewReader(cacheFile); err != nil {
 			return err
 		}
+
+		decoder = json.NewDecoder(r)
 	}
 
-	if err = json.NewDecoder(rc).Decode(target); err != nil {
-		return err
-	}
-
-	return nil
+	return decoder.Decode(target)
 }
 
 // Set creates a new cache entry for specified key or overrides the existing one.
 // The val instance must support JSON marshalling.
 func (c *Cache) Set(key string, val any) error {
+	var encoder *json.Encoder
+
 	cacheFile, err := c.initEntryCache(key)
 	if err != nil {
 		return err
@@ -106,32 +111,19 @@ func (c *Cache) Set(key string, val any) error {
 		_ = f.Close()
 	}(cacheFile)
 
-	rawData, err := json.Marshal(val)
-	if err != nil {
-		return err
-	}
+	encoder = json.NewEncoder(cacheFile)
 
-	if err = c.compress(cacheFile, rawData); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *Cache) compress(w io.WriteCloser, data []byte) error {
 	if c.compressionEnabled {
-		w = gzip.NewWriter(w)
+		var r io.Writer
 
-		defer func(wc io.WriteCloser) {
-			_ = wc.Close()
-		}(w)
+		if r, err = zstd.NewWriter(cacheFile); err != nil {
+			return err
+		}
+
+		encoder = json.NewEncoder(r)
 	}
 
-	if _, err := w.Write(data); err != nil {
-		return err
-	}
-
-	return nil
+	return encoder.Encode(val)
 }
 
 func (c *Cache) initEntryCache(key string) (io.WriteCloser, error) {
