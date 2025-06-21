@@ -1,5 +1,33 @@
 package structure
 
+type TopFiles struct {
+	EntrySizeHeap
+}
+
+func (tf *TopFiles) Scan(root *Entry) {
+	if !root.IsDir {
+		return
+	}
+
+	var currentNode *Entry
+
+	queue := []*Entry{root}
+
+	for len(queue) > 0 {
+		currentNode, queue = queue[0], queue[1:]
+
+		for _, child := range currentNode.Child {
+			if child.IsDir {
+				queue = append(queue, child)
+
+				continue
+			}
+
+			tf.PushSafe(child)
+		}
+	}
+}
+
 type TopDirs struct {
 	EntrySizeHeap
 }

@@ -99,6 +99,10 @@ func (vm *ViewModel) levelDown() {
 		sr = vm.driveModel.drivesTable.SelectedRow()
 	}
 
+	if len(sr) < 2 {
+		return
+	}
+
 	done, errChan := vm.nav.Down(
 		sr[1],
 		cursor,
@@ -161,7 +165,8 @@ func (vm *ViewModel) refresh() {
 
 	done, errChan, err := vm.nav.RefreshEntry()
 	if err != nil {
-		panic(err)
+		// TODO: the error might occur only if there were no directories in stack
+		return
 	}
 
 	if done == nil {

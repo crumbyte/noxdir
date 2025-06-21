@@ -14,7 +14,7 @@ import (
 const maxTopFiles = 16
 
 var (
-	TopFilesInstance = EntrySizeHeap{size: maxTopFiles}
+	TopFilesInstance = TopFiles{EntrySizeHeap: EntrySizeHeap{size: maxTopFiles}}
 	TopDirsInstance  = TopDirs{EntrySizeHeap: EntrySizeHeap{size: maxTopFiles}}
 )
 

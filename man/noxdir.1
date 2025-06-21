@@ -11,6 +11,8 @@ noxdir \- a terminal utility for visualizing file system usage.
 [\fB-r\fR|\fB--root\fR \fIDIR\fR]
 [\fB-l\fR|\fB--size-limit\fR \fISIZE_RANGE\fR]
 [\fB-h\fR|\fB--help\fR]
+[\fB--color-schema\fR]
+[\fB-c\fR|\fB--use-cache\fR]
 
 .SH DESCRIPTION
 .B NoxDir
@@ -60,6 +62,18 @@ NOTE: Using this flag leads to inaccurate total sizes for directories (filtered 
 .IP \(bu 2
 --size-limit=":1TB"
 .RE
+
+.TP
+.BR -l ", " --color-schema " " \fISTRINGS\fR
+Set the color schema configuration file. The file contains a custom color settings for the UI elements.
+
+.TP
+.BR -c ", " --use-cache
+Force the application to cache the data. With cache enabled, the full file system scan will be performed only once. After that, the cache will be used as long as the flag is provided. The cache will always store the last session data. In order to update the cache and the application's state, use the "r" (refresh) command on a target directory.
+
+Default: false
+
+Example: \fB--use-cache\fR
 
 .TP
 .BR -h ", " --help

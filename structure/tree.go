@@ -1,7 +1,6 @@
 package structure
 
 import (
-	"container/heap"
 	"errors"
 	"path/filepath"
 	"runtime"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/crumbyte/noxdir/drive"
+	"github.com/crumbyte/noxdir/pkg/cache"
 )
 
 const (
@@ -54,12 +54,26 @@ func WithFileInfoFilter(fl []drive.FileInfoFilter) TreeOpt {
 	}
 }
 
+func WithCache(c *cache.Cache) TreeOpt {
+	return func(t *Tree) {
+		t.cache = c
+	}
+}
+
+func WithPartialRoot() TreeOpt {
+	return func(t *Tree) {
+		t.partialRoot = true
+	}
+}
+
 // Tree provides a set of method for building and traversing the *Entry tree.
 type Tree struct {
 	root             *Entry
+	cache            *cache.Cache
 	exclude          []string
 	fiFilters        []drive.FileInfoFilter
 	calculateSizeSem uint32
+	partialRoot      bool
 }
 
 func NewTree(root *Entry, opts ...TreeOpt) *Tree {
@@ -135,11 +149,17 @@ func (t *Tree) CalculateSize() {
 // after the traverse finishes the execution. In the first case, the numbers
 // will not be accurate but can be used to display the progress of the traversing
 // process gradually.
-func (t *Tree) Traverse() error {
+func (t *Tree) Traverse(skipCache bool) error {
 	var (
 		errList     []error
 		currentNode *Entry
 	)
+
+	if !skipCache && t.cache != nil {
+		if err := t.cache.Get(t.root.Path, t.root); err == nil {
+			return nil
+		}
+	}
 
 	drive.InoFilterInstance.Reset()
 
@@ -162,12 +182,18 @@ func (t *Tree) Traverse() error {
 	return errors.Join(errList...)
 }
 
-func (t *Tree) TraverseAsync() (chan struct{}, chan error) {
+func (t *Tree) PersistCache() error {
+	if t.cache == nil || t.partialRoot || t.root == nil {
+		return nil
+	}
+
+	return t.cache.Set(t.root.Path, t.root)
+}
+
+func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 	var wg sync.WaitGroup
 
 	drive.InoFilterInstance.Reset()
-	TopFilesInstance.Reset()
-	heap.Init(&TopFilesInstance)
 
 	if t.root == nil || !t.root.IsDir {
 		return nil, nil
@@ -175,6 +201,14 @@ func (t *Tree) TraverseAsync() (chan struct{}, chan error) {
 
 	queue := make(chan *Entry, bfsQueueSize)
 	done, errChan := make(chan struct{}), make(chan error, 1)
+
+	if !skipCache && t.cache != nil {
+		if err := t.cache.Get(t.root.Path, t.root); err == nil {
+			close(done)
+
+			return done, errChan
+		}
+	}
 
 	queue <- t.root
 
@@ -274,10 +308,7 @@ func (t *Tree) handleEntry(e *Entry, onNewDir func(*Entry), onErr func(error)) {
 			continue
 		}
 
-		fe := NewFileEntry(childPath, child.Size(), child.ModTime())
-
-		TopFilesInstance.PushSafe(fe)
-		e.AddChild(fe)
+		e.AddChild(NewFileEntry(childPath, child.Size(), child.ModTime()))
 	}
 }
 

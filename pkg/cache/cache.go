@@ -6,13 +6,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
-// DefaultCachePath defines a default path for storing file cache entries.
-const DefaultCachePath = "./cache"
+// DefaultCacheDir defines a default folder name that will store cache files.
+const DefaultCacheDir = "noxdir"
 
 // ErrNoCache defines an error that may occur if the requested cache entry was
 // not found.
@@ -21,19 +23,11 @@ var ErrNoCache = errors.New("cache entry not found")
 // Option defines a type for providing configuration options for Cache instance.
 type Option func(*Cache)
 
-// WithCacheDir allows setting a custom path for storing cache files. By default,
-// DefaultCachePath will be used.
-func WithCacheDir(dir string) Option {
-	return func(c *Cache) {
-		c.cachePath = dir
-	}
-}
-
 // WithCompress enables or disables compression of cache files. By default it's
 // enabled.
-func WithCompress(enable bool) Option {
+func WithCompress() Option {
 	return func(c *Cache) {
-		c.compressionEnabled = enable
+		c.compressionEnabled = true
 	}
 }
 
@@ -46,17 +40,25 @@ type Cache struct {
 	compressionEnabled bool
 }
 
-func NewCache(opts ...Option) *Cache {
-	c := &Cache{
-		cachePath:          DefaultCachePath,
-		compressionEnabled: true,
-	}
+func NewCache(opts ...Option) (*Cache, error) {
+	c := &Cache{}
 
 	for _, opt := range opts {
 		opt(c)
 	}
 
-	return c
+	cachePath, err := resolveCacheDir(DefaultCacheDir)
+	if err != nil {
+		return nil, fmt.Errorf("resolve cache dir: %w", err)
+	}
+
+	if err = os.MkdirAll(cachePath, 0600); err != nil {
+		return nil, fmt.Errorf("create cache dir: %w", err)
+	}
+
+	c.cachePath = cachePath
+
+	return c, nil
 }
 
 // Get retrieves a cache entry by its key and maps data to the provided target.
@@ -64,7 +66,9 @@ func NewCache(opts ...Option) *Cache {
 // If the corresponding cache entry was not found the ErrNoCache error will be
 // returned.
 func (c *Cache) Get(key string, target any) error {
-	cacheFile, err := os.Open(filepath.Join(c.cachePath, c.keyHash(key)))
+	var rc io.ReadCloser
+
+	rc, err := os.Open(filepath.Join(c.cachePath, c.keyHash(key)))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return ErrNoCache
@@ -73,16 +77,17 @@ func (c *Cache) Get(key string, target any) error {
 		return err
 	}
 
-	defer func(f *os.File) {
-		_ = f.Close()
-	}(cacheFile)
+	defer func(rc io.ReadCloser) {
+		_ = rc.Close()
+	}(rc)
 
-	rawCache, err := c.decompress(cacheFile)
-	if err != nil {
-		return err
+	if c.compressionEnabled {
+		if rc, err = gzip.NewReader(rc); err != nil {
+			return err
+		}
 	}
 
-	if err = json.Unmarshal(rawCache, target); err != nil {
+	if err = json.NewDecoder(rc).Decode(target); err != nil {
 		return err
 	}
 
@@ -116,38 +121,17 @@ func (c *Cache) Set(key string, val any) error {
 func (c *Cache) compress(w io.WriteCloser, data []byte) error {
 	if c.compressionEnabled {
 		w = gzip.NewWriter(w)
-	}
 
-	defer func(wc io.WriteCloser) {
-		_ = wc.Close()
-	}(w)
+		defer func(wc io.WriteCloser) {
+			_ = wc.Close()
+		}(w)
+	}
 
 	if _, err := w.Write(data); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (c *Cache) decompress(r io.ReadCloser) ([]byte, error) {
-	var err error
-
-	if c.compressionEnabled {
-		if r, err = gzip.NewReader(r); err != nil {
-			return nil, err
-		}
-	}
-
-	defer func(rc io.ReadCloser) {
-		_ = rc.Close()
-	}(r)
-
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
 }
 
 func (c *Cache) initEntryCache(key string) (io.WriteCloser, error) {
@@ -170,4 +154,24 @@ func (c *Cache) keyHash(key string) string {
 	h.Write([]byte(key))
 
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+func resolveCacheDir(appName string) (string, error) {
+	switch runtime.GOOS {
+	case "windows":
+		localAppData := os.Getenv("LocalAppData")
+		if len(localAppData) == 0 {
+			return "", errors.New("local app data folder not found")
+		}
+
+		return filepath.Join(localAppData, appName), nil
+
+	default:
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("get home dir: %w", err)
+		}
+
+		return filepath.Join(homeDir, ".cache", appName), nil
+	}
 }

@@ -90,7 +90,7 @@ func NewRootNavigation(t *structure.Tree) (*Navigation, error) {
 		return nil, errors.New("root is nil")
 	}
 
-	done, errChan := t.TraverseAsync()
+	done, errChan := t.TraverseAsync(true)
 	if done == nil {
 		return nil, errors.New("root is nil")
 	}
@@ -160,6 +160,11 @@ func (n *Navigation) Up(ocl OnChangeLevel) {
 	defer n.unlock()
 
 	if n.entryStack.len() == 0 {
+		if err := n.tree.PersistCache(); err != nil {
+			// ignore caching error
+			_ = err
+		}
+
 		n.state, n.cursor = Drives, 0
 
 		return
@@ -202,7 +207,7 @@ func (n *Navigation) Down(path string, cursor int, ocl OnChangeLevel) (chan stru
 		n.currentDrive = n.drives.DriveInfo(path)
 		n.tree.SetRoot(n.entry)
 
-		doneChan, errChan := n.tree.TraverseAsync()
+		doneChan, errChan := n.tree.TraverseAsync(false)
 
 		go func() {
 			<-doneChan
@@ -253,8 +258,6 @@ func (n *Navigation) RefreshEntry() (chan struct{}, chan error, error) {
 		return nil, nil, nil
 	}
 
-	defer n.unlock()
-
 	for n.entryStack.len() > 0 || n.entry != nil {
 		_, err := os.Lstat(n.entry.Path)
 		if err == nil {
@@ -273,19 +276,22 @@ func (n *Navigation) RefreshEntry() (chan struct{}, chan error, error) {
 			n.entry, n.cursor = nil, 0
 		}
 
+		n.unlock()
+
 		return nil, nil, fmt.Errorf("lstat: %w", err)
 	}
 
 	if n.entry == nil {
 		n.state, n.cursor = Drives, 0
+		n.unlock()
 
 		return nil, nil, nil
 	}
 
 	n.entry.Child = nil
 
-	t := structure.NewTree(n.entry)
-	doneChan, errChan := t.TraverseAsync()
+	t := structure.NewTree(n.entry, structure.WithPartialRoot())
+	doneChan, errChan := t.TraverseAsync(true)
 
 	go func() {
 		<-doneChan

@@ -11,6 +11,7 @@ import (
 
 	"github.com/crumbyte/noxdir/drive"
 	"github.com/crumbyte/noxdir/filter"
+	"github.com/crumbyte/noxdir/pkg/cache"
 	"github.com/crumbyte/noxdir/render"
 	"github.com/crumbyte/noxdir/structure"
 
@@ -27,6 +28,9 @@ var (
 	noEmptyDirs     bool
 	noHidden        bool
 	colorSchemaPath string
+	useCache        bool
+
+	tree *structure.Tree
 
 	appCmd = &cobra.Command{
 		Use:   "noxdir",
@@ -38,6 +42,15 @@ selected drive and presents the space consumption in a clear, user-friendly layo
 
 🔗 Learn more: https://github.com/crumbyte/noxdir`,
 		RunE: runApp,
+		PostRun: func(_ *cobra.Command, _ []string) {
+			if tree == nil || !useCache {
+				return
+			}
+
+			if err := tree.PersistCache(); err != nil {
+				printError(err.Error())
+			}
+		},
 	}
 )
 
@@ -143,6 +156,25 @@ Example: --no-hidden (provide a flag)
 color settings for the UI elements.
 `,
 	)
+
+	appCmd.PersistentFlags().BoolVarP(
+		&useCache,
+		"use-cache",
+		"c",
+		false,
+		`Force the application to cache the data. With cache enabled, the full
+file system scan will be performed only once. After that, the cache will be
+used as long as the flag is provided.
+
+The cache will always store the last session data. In order to update the
+cache and the application's state, use the "r" (refresh) command on a 
+target directory.
+
+Default value is "false".
+
+Example: -c|--use-cache (provide a flag)
+`,
+	)
 }
 
 func Execute() {
@@ -225,8 +257,9 @@ func initViewModel() (*render.ViewModel, error) {
 
 func resolveNavigation() (*render.Navigation, error) {
 	var (
-		opts []structure.TreeOpt
-		fif  []drive.FileInfoFilter
+		opts          []structure.TreeOpt
+		fif           []drive.FileInfoFilter
+		cacheInstance *cache.Cache
 	)
 
 	if len(exclude) > 0 {
@@ -248,7 +281,18 @@ func resolveNavigation() (*render.Navigation, error) {
 		fif = append(fif, drive.HiddenFilter)
 	}
 
-	opts = append(opts, structure.WithFileInfoFilter(fif))
+	if useCache {
+		cacheInstance, err = cache.NewCache(cache.WithCompress())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	opts = append(
+		opts,
+		structure.WithFileInfoFilter(fif),
+		structure.WithCache(cacheInstance),
+	)
 
 	if root != "" {
 		root = strings.TrimSuffix(root, string(os.PathSeparator))
@@ -257,15 +301,17 @@ func resolveNavigation() (*render.Navigation, error) {
 			return nil, fmt.Errorf("resolve absolute root rpath: %s", err.Error())
 		}
 
-		return render.NewRootNavigation(
-			structure.NewTree(
-				structure.NewDirEntry(root, time.Now().Unix()),
-				opts...,
-			),
+		tree = structure.NewTree(
+			structure.NewDirEntry(root, time.Now().Unix()),
+			append(opts, structure.WithPartialRoot())...,
 		)
+
+		return render.NewRootNavigation(tree)
 	}
 
-	return render.NewNavigation(structure.NewTree(nil, opts...)), nil
+	tree = structure.NewTree(nil, opts...)
+
+	return render.NewNavigation(tree), nil
 }
 
 func printError(errMsg string) {

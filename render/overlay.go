@@ -50,6 +50,7 @@ func Overlay(_ int, background, overlay string, row, col int) string {
 
 func truncateLeft(line string, padding int) string {
 	if strings.Contains(line, "\n") {
+		// TODO: get rid of this panic
 		panic("line must not contain newline")
 	}
 

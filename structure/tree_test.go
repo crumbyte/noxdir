@@ -75,7 +75,7 @@ func TestTree_Traverse(t *testing.T) {
 	e := structure.NewDirEntry(entryRoot, 0)
 	tree := structure.NewTree(e)
 
-	require.NoError(t, tree.Traverse())
+	require.NoError(t, tree.Traverse(true))
 	tree.CalculateSize()
 
 	require.Equal(t, uint64(4), e.LocalDirs)
@@ -131,7 +131,7 @@ func TestTree_TraverseExclude(t *testing.T) {
 					e, structure.WithExclude(data.exclude),
 				)
 
-				require.NoError(t, tree.Traverse())
+				require.NoError(t, tree.Traverse(true))
 				tree.CalculateSize()
 
 				require.Equal(t, data.expectedDirsCnt, e.TotalDirs)
@@ -152,7 +152,7 @@ func TestTree_TraverseAsync(t *testing.T) {
 	e := structure.NewDirEntry(entryRoot, 0)
 	tree := structure.NewTree(e)
 
-	done, errCh := tree.TraverseAsync()
+	done, errCh := tree.TraverseAsync(true)
 
 	select {
 	case err = <-errCh:

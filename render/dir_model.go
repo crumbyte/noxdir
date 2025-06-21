@@ -126,6 +126,7 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		dm.updateTableData()
 
 		dm.topFilesTable.SetRows(nil)
+		structure.TopFilesInstance.Scan(dm.nav.Entry())
 		dm.fillTopEntries(&structure.TopFilesInstance, dm.topFilesTable)
 
 		dm.topDirsTable.SetRows(nil)
