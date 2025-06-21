@@ -67,7 +67,7 @@ func NewCache(opts ...Option) (*Cache, error) {
 // If the corresponding cache entry was not found the ErrNoCache error will be
 // returned.
 func (c *Cache) Get(key string, target any) error {
-	var decoder *json.Decoder
+	var r io.Reader
 
 	cacheFile, err := os.Open(filepath.Join(c.cachePath, c.keyHash(key)))
 	if err != nil {
@@ -78,15 +78,13 @@ func (c *Cache) Get(key string, target any) error {
 		return err
 	}
 
-	defer func(rc io.ReadCloser) {
-		_ = rc.Close()
-	}(cacheFile)
+	defer func() {
+		_ = cacheFile.Close()
+	}()
 
-	decoder = json.NewDecoder(cacheFile)
+	decoder := json.NewDecoder(cacheFile)
 
 	if c.compressionEnabled {
-		var r io.Reader
-
 		if r, err = zstd.NewReader(cacheFile); err != nil {
 			return err
 		}
@@ -100,30 +98,28 @@ func (c *Cache) Get(key string, target any) error {
 // Set creates a new cache entry for specified key or overrides the existing one.
 // The val instance must support JSON marshalling.
 func (c *Cache) Set(key string, val any) error {
-	var encoder *json.Encoder
+	var (
+		cacheFile io.WriteCloser
+		err       error
+	)
 
-	cacheFile, err := c.initEntryCache(key)
+	cacheFile, err = c.initEntryCache(key)
 	if err != nil {
 		return err
 	}
 
-	defer func(f io.WriteCloser) {
-		_ = f.Close()
-	}(cacheFile)
-
-	encoder = json.NewEncoder(cacheFile)
+	defer func() {
+		_ = cacheFile.Close()
+	}()
 
 	if c.compressionEnabled {
-		var r io.Writer
-
-		if r, err = zstd.NewWriter(cacheFile); err != nil {
+		//TODO: consider using WithEncoderDict
+		if cacheFile, err = zstd.NewWriter(cacheFile); err != nil {
 			return err
 		}
-
-		encoder = json.NewEncoder(r)
 	}
 
-	return encoder.Encode(val)
+	return json.NewEncoder(cacheFile).Encode(val)
 }
 
 func (c *Cache) initEntryCache(key string) (io.WriteCloser, error) {
