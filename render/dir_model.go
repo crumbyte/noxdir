@@ -39,6 +39,8 @@ type DirModel struct {
 	topDirsTable  *table.Model
 	deleteDialog  *DeleteDialogModel
 	nav           *Navigation
+	scanPG        *PG
+	usagePG       *PG
 	filters       filter.FiltersList
 	mode          Mode
 	lastErr       []error
@@ -60,6 +62,9 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		filters...,
 	)
 
+	usagePG := style.CS().UsageProgressBar
+	usagePG.EmptyChar = " "
+
 	dm := &DirModel{
 		columns: []Column{
 			{Title: ""},
@@ -78,6 +83,8 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		topDirsTable:  buildTable(),
 		mode:          PENDING,
 		nav:           nav,
+		scanPG:        &style.CS().ScanProgressBar,
+		usagePG:       &usagePG,
 	}
 
 	s := table.DefaultStyles()
@@ -126,13 +133,13 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		dm.updateTableData()
 
 		dm.topFilesTable.SetRows(nil)
-		structure.TopFilesInstance.Scan(dm.nav.Entry())
-		dm.fillTopEntries(&structure.TopFilesInstance, dm.topFilesTable)
-
 		dm.topDirsTable.SetRows(nil)
-		structure.TopDirsInstance.Scan(dm.nav.Entry())
-		dm.fillTopEntries(&structure.TopDirsInstance, dm.topDirsTable)
 
+		structure.TopEntriesInstance.ScanFiles(dm.nav.Entry())
+		structure.TopEntriesInstance.ScanDirs(dm.nav.Entry())
+
+		dm.fillTopEntries(structure.TopEntriesInstance.Files(), dm.topFilesTable)
+		dm.fillTopEntries(structure.TopEntriesInstance.Dirs(), dm.topDirsTable)
 	case tea.WindowSizeMsg:
 		dm.updateSize(msg.Width, msg.Height)
 		dm.filters.Update(msg)
@@ -164,7 +171,13 @@ func (dm *DirModel) View() string {
 		)
 	}
 
-	dirsTableHeight := dm.height - h(keyBindings) - (h(summary) * 2)
+	pgBar := summary
+
+	if dm.mode == PENDING {
+		pgBar = dm.viewProgress()
+	}
+
+	dirsTableHeight := dm.height - h(keyBindings) - h(summary) - h(pgBar)
 
 	rows := []string{keyBindings, summary}
 
@@ -190,7 +203,7 @@ func (dm *DirModel) View() string {
 
 	dm.dirsTable.SetHeight(dirsTableHeight)
 
-	rows = append(rows, dm.dirsTable.View(), summary)
+	rows = append(rows, dm.dirsTable.View(), pgBar)
 	slices.Reverse(rows)
 
 	bg := lipgloss.JoinVertical(lipgloss.Top, rows...)
@@ -364,7 +377,7 @@ func (dm *DirModel) updateTableData() {
 
 	dm.dirsTable.SetColumns(columns)
 
-	fillProgress := NewProgressBar(progressWidth, '🟥', ' ')
+	fillProgress := dm.usagePG.New(progressWidth)
 
 	rows := make([]table.Row, 0, len(dm.nav.Entry().Child))
 	dm.nav.Entry().SortChild()
@@ -486,6 +499,15 @@ func (dm *DirModel) updateSize(width, height int) {
 	dm.topDirsTable.SetWidth(width)
 
 	dm.updateTableData()
-	dm.fillTopEntries(&structure.TopFilesInstance, dm.topFilesTable)
-	dm.fillTopEntries(&structure.TopDirsInstance, dm.topDirsTable)
+
+	dm.fillTopEntries(structure.TopEntriesInstance.Files(), dm.topFilesTable)
+	dm.fillTopEntries(structure.TopEntriesInstance.Dirs(), dm.topDirsTable)
+}
+
+func (dm *DirModel) viewProgress() string {
+	completed := (float64(dm.nav.Entry().Size) / float64(dm.nav.currentDrive.UsedBytes)) - 0.01
+
+	return style.StatusBar().Margin(1, 0, 1, 0).Render(
+		dm.scanPG.New(dm.width).ViewAs(completed),
+	)
 }

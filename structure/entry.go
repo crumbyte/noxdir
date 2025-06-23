@@ -11,13 +11,6 @@ import (
 	"sync"
 )
 
-const maxTopFiles = 16
-
-var (
-	TopFilesInstance = TopFiles{EntrySizeHeap: EntrySizeHeap{size: maxTopFiles}}
-	TopDirsInstance  = TopDirs{EntrySizeHeap: EntrySizeHeap{size: maxTopFiles}}
-)
-
 // Entry contains the information about a single directory or a file instance
 // within the file system. If the entry represents a directory instance, it has
 // access to its child elements.
@@ -96,12 +89,24 @@ func (e *Entry) Ext() string {
 	return strings.ToLower(e.Path[li+1:])
 }
 
-// Entries returns an iterator for the current node's child elements. Depending
-// on the provided argument, the iterator yields either directories or files.
-func (e *Entry) Entries(dirs bool) iter.Seq[*Entry] {
+// EntriesByType returns an iterator for the current node's child elements.
+// Depending on the provided argument, the iterator yields either directories
+// or files.
+func (e *Entry) EntriesByType(dirs bool) iter.Seq[*Entry] {
 	return func(yield func(*Entry) bool) {
 		for i := range e.Child {
 			if e.Child[i].IsDir == dirs && !yield(e.Child[i]) {
+				break
+			}
+		}
+	}
+}
+
+// Entries returns an iterator for all the current node's child elements.
+func (e *Entry) Entries() iter.Seq[*Entry] {
+	return func(yield func(*Entry) bool) {
+		for i := range e.Child {
+			if !yield(e.Child[i]) {
 				break
 			}
 		}

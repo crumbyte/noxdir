@@ -16,6 +16,7 @@ type DriveModel struct {
 	driveColumns []Column
 	drivesTable  *table.Model
 	nav          *Navigation
+	usagePG      *PG
 	sortState    SortState
 	height       int
 	width        int
@@ -40,6 +41,7 @@ func NewDriveModel(n *Navigation) *DriveModel {
 		driveColumns: dc,
 		sortState:    SortState{Key: drive.TotalUsedP, Desc: true},
 		drivesTable:  buildTable(),
+		usagePG:      &style.CS().UsageProgressBar,
 	}
 }
 
@@ -137,7 +139,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 	dm.drivesTable.SetColumns(columns)
 	dm.drivesTable.SetCursor(0)
 
-	diskFillProgress := NewProgressBar(progressWidth, '🟥', '🟩')
+	diskFillProgress := dm.usagePG.New(progressWidth)
 
 	allDrives := dm.nav.DrivesList().Sort(key, sortDesc)
 	rows := make([]table.Row, 0, len(allDrives))

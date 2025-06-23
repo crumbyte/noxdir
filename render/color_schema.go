@@ -66,6 +66,8 @@ type ColorSchema struct {
 	ActiveButtonText  string          `json:"activeButtonText"`
 	ActiveButtonBG    string          `json:"activeButtonBackground"`
 	FilterText        string          `json:"filterText"`
+	ScanProgressBar   PG              `json:"scanProgressBar"`
+	UsageProgressBar  PG              `json:"usageProgressBar"`
 }
 
 // DecodeFileColorSchema reads the color schema from the file by the provided
@@ -90,6 +92,17 @@ func DecodeFileColorSchema(path string, cs *ColorSchema) error {
 
 func DefaultColorSchema() ColorSchema {
 	return ColorSchema{
+		ScanProgressBar: PG{
+			ColorProfile: 0,
+			StartColor:   "#833AB4",
+			EndColor:     "#FCB045",
+		},
+		UsageProgressBar: PG{
+			ColorProfile: 3,
+			FullChar:     "🟥",
+			EmptyChar:    "🟩",
+			HidePercent:  true,
+		},
 		StatusBar: StatusBarColors{
 			VersionBG: "#8338EC",
 			Text:      "#C1C6B2",

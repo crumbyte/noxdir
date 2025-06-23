@@ -42,5 +42,19 @@
   "confirmButtonBackground": "#353533",
   "activeButtonText": "#FFFDF5",
   "activeButtonBackground": "#FF8531",
-  "filterText": "#EBBD34"
+  "filterText": "#EBBD34",
+  "scanProgressBar": {
+    "colorProfile": 0,
+    "startColor": "#833AB4",
+    "endColor": "#FCB045",
+    "fullChar": "",
+    "emptyChar": "",
+    "showPercent": true
+  },
+  "usageProgressBar": {
+    "colorProfile": 3,
+    "fullChar": "🟥",
+    "emptyChar": "🟩",
+    "showPercent": false
+  }
 }
