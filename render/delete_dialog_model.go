@@ -14,7 +14,6 @@ const (
 	ConfirmChoice
 
 	deleteDialogWidth = 50
-	deleteNameWidth   = 40
 )
 
 type EntryDeleted struct {

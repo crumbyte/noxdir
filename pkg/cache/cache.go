@@ -3,7 +3,6 @@ package cache
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -21,6 +20,19 @@ const DefaultCacheDir = "noxdir"
 // not found.
 var ErrNoCache = errors.New("cache entry not found")
 
+type Encoder interface {
+	Encode(any) error
+}
+
+type Decoder interface {
+	Decode(any) error
+}
+
+type (
+	NewEncoder func(io.Writer) Encoder
+	NewDecoder func(io.Reader) Decoder
+)
+
 // Option defines a type for providing configuration options for Cache instance.
 type Option func(*Cache)
 
@@ -37,12 +49,17 @@ func WithCompress() Option {
 // can be restored by the corresponding key. The cache files will be stored at
 // configured path or default DefaultCachePath will be used.
 type Cache struct {
+	ei                 NewEncoder
+	di                 NewDecoder
 	cachePath          string
 	compressionEnabled bool
 }
 
-func NewCache(opts ...Option) (*Cache, error) {
-	c := &Cache{}
+func NewCache(ne NewEncoder, nd NewDecoder, opts ...Option) (*Cache, error) {
+	c := &Cache{
+		ei: ne,
+		di: nd,
+	}
 
 	for _, opt := range opts {
 		opt(c)
@@ -82,14 +99,14 @@ func (c *Cache) Get(key string, target any) error {
 		_ = cacheFile.Close()
 	}()
 
-	decoder := json.NewDecoder(cacheFile)
+	decoder := c.di(cacheFile)
 
 	if c.compressionEnabled {
 		if r, err = zstd.NewReader(cacheFile); err != nil {
 			return err
 		}
 
-		decoder = json.NewDecoder(r)
+		decoder = c.di(r)
 	}
 
 	return decoder.Decode(target)
@@ -119,7 +136,7 @@ func (c *Cache) Set(key string, val any) error {
 		}
 	}
 
-	return json.NewEncoder(cacheFile).Encode(val)
+	return c.ei(cacheFile).Encode(val)
 }
 
 func (c *Cache) initEntryCache(key string) (io.WriteCloser, error) {

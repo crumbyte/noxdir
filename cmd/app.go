@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime/debug"
@@ -282,7 +283,14 @@ func resolveNavigation() (*render.Navigation, error) {
 	}
 
 	if useCache {
-		cacheInstance, err = cache.NewCache(cache.WithCompress())
+		cacheInstance, err = cache.NewCache(
+			func(w io.Writer) cache.Encoder {
+				return structure.NewEncoder(w)
+			},
+			func(r io.Reader) cache.Decoder {
+				return structure.NewDecoder(r)
+			},
+		)
 		if err != nil {
 			return nil, err
 		}
