@@ -202,12 +202,14 @@ func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 	queue := make(chan *Entry, bfsQueueSize)
 	done, errChan := make(chan struct{}), make(chan error, 1)
 
-	if !skipCache && t.cache != nil {
-		if err := t.cache.Get(t.root.Path, t.root); err == nil {
-			close(done)
+	if !skipCache && t.cache != nil && t.cache.Has(t.root.Path) {
+		go func() {
+			if err := t.cache.Get(t.root.Path, t.root); err == nil {
+				close(done)
+			}
+		}()
 
-			return done, errChan
-		}
+		return done, errChan
 	}
 
 	queue <- t.root
@@ -240,7 +242,7 @@ func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 		}
 	}
 
-	for range runtime.GOMAXPROCS(-1) * 2 {
+	for range runtime.NumCPU() * 2 {
 		wg.Add(1)
 		go worker()
 	}

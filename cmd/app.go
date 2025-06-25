@@ -30,6 +30,7 @@ var (
 	noHidden        bool
 	colorSchemaPath string
 	useCache        bool
+	clearCache      bool
 
 	tree *structure.Tree
 
@@ -176,6 +177,17 @@ Default value is "false".
 Example: -c|--use-cache (provide a flag)
 `,
 	)
+
+	appCmd.PersistentFlags().BoolVarP(
+		&clearCache,
+		"clear-cache",
+		"",
+		false,
+		`Delete all cache files from the application's directory.
+
+Example: --clear-cache (provide a flag)
+`,
+	)
 }
 
 func Execute() {
@@ -282,7 +294,7 @@ func resolveNavigation() (*render.Navigation, error) {
 		fif = append(fif, drive.HiddenFilter)
 	}
 
-	if useCache {
+	if useCache || clearCache {
 		cacheInstance, err = cache.NewCache(
 			func(w io.Writer) cache.Encoder {
 				return structure.NewEncoder(w)
@@ -290,6 +302,8 @@ func resolveNavigation() (*render.Navigation, error) {
 			func(r io.Reader) cache.Decoder {
 				return structure.NewDecoder(r)
 			},
+			clearCache,
+			cache.WithCompress(),
 		)
 		if err != nil {
 			return nil, err

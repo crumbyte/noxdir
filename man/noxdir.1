@@ -1,4 +1,4 @@
-.TH NOXDIR 1 "June 2025" "noxdir 0.1.3" "User Commands"
+.TH NOXDIR 1 "June 2025" "noxdir 0.2.2" "User Commands"
 
 .SH NAME
 noxdir \- a terminal utility for visualizing file system usage.
@@ -13,6 +13,7 @@ noxdir \- a terminal utility for visualizing file system usage.
 [\fB-h\fR|\fB--help\fR]
 [\fB--color-schema\fR]
 [\fB-c\fR|\fB--use-cache\fR]
+[\fB--clear-cache\fR]
 
 .SH DESCRIPTION
 .B NoxDir
@@ -74,6 +75,12 @@ Force the application to cache the data. With cache enabled, the full file syste
 Default: false
 
 Example: \fB--use-cache\fR
+
+.TP
+.BR --clear-cache
+Delete all cache files from the application's directory.
+
+Example: \fB--clear-cache\fR
 
 .TP
 .BR -h ", " --help
