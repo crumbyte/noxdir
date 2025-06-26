@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/crumbyte/noxdir/filter"
+	"github.com/crumbyte/noxdir/render/table"
 	"github.com/crumbyte/noxdir/structure"
 
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -421,16 +421,16 @@ func (dm *DirModel) dirsSummary() string {
 	items := []*BarItem{
 		NewBarItem(Version, style.cs.StatusBar.VersionBG, 0),
 		NewBarItem("PATH", style.cs.StatusBar.Dirs.PathBG, 0),
-		NewBarItem(dm.nav.Entry().Path, "", -1),
+		NewBarItem(dm.nav.Entry().Path, style.cs.StatusBar.BG, -1),
 		NewBarItem(string(dm.mode), style.cs.StatusBar.Dirs.ModeBG, 0),
 		NewBarItem("SIZE", style.cs.StatusBar.Dirs.SizeBG, 0),
-		DefaultBarItem(FmtSize(dm.nav.Entry().Size, 0)),
+		NewBarItem(FmtSize(dm.nav.Entry().Size, 0), style.cs.StatusBar.BG, 0),
 		NewBarItem("DIRS", style.cs.StatusBar.Dirs.DirsBG, 0),
-		DefaultBarItem(unitFmt(dm.nav.Entry().LocalDirs)),
+		NewBarItem(unitFmt(dm.nav.Entry().LocalDirs), style.cs.StatusBar.BG, 0),
 		NewBarItem("FILES", style.cs.StatusBar.Dirs.FilesBG, 0),
-		DefaultBarItem(unitFmt(dm.nav.Entry().LocalFiles)),
+		NewBarItem(unitFmt(dm.nav.Entry().LocalFiles), style.cs.StatusBar.BG, 0),
 		NewBarItem("ERRORS", style.cs.StatusBar.Dirs.ErrorBG, 0),
-		DefaultBarItem(unitFmt(uint64(len(dm.lastErr)))),
+		NewBarItem(unitFmt(uint64(len(dm.lastErr))), style.cs.StatusBar.BG, 0),
 	}
 
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(

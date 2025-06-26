@@ -54,6 +54,7 @@ type StatusBarColors struct {
 type ColorSchema struct {
 	StatusBar         StatusBarColors `json:"statusBar"`
 	ChartColors       ChartColors     `json:"chart"`
+	CellText          string          `json:"cellText"`
 	TableHeaderBorder string          `json:"tableHeaderBorder"`
 	SelectedRowText   string          `json:"selectedRowText"`
 	SelectedRowBG     string          `json:"selectedRowBackground"`
@@ -135,6 +136,7 @@ func DefaultColorSchema() ColorSchema {
 			Sector8: "#ff85a1",
 			Sector9: "#b5838d",
 		},
+		CellText:          "",
 		TableHeaderBorder: "240",
 		SelectedRowText:   "#262626",
 		SelectedRowBG:     "#EBBD34",

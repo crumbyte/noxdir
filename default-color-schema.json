@@ -31,6 +31,7 @@
     "sector8": "#ff85a1",
     "sector9": "#b5838d"
   },
+  "cellText": "",
   "tableHeaderBorder": "240",
   "selectedRowText": "#262626",
   "selectedRowBackground": "#EBBD34",

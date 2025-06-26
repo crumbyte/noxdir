@@ -5,15 +5,15 @@ import (
 	"time"
 
 	"github.com/crumbyte/noxdir/drive"
+	"github.com/crumbyte/noxdir/render/table"
 	"github.com/crumbyte/noxdir/structure"
 
 	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-const Version = "v0.2.0"
+const Version = "v0.2.2"
 
 const updateTickerInterval = time.Millisecond * 500
 
@@ -202,12 +202,13 @@ func SetTeaProgram(tp *tea.Program) {
 }
 
 func buildTable() *table.Model {
-	tbl := table.New(table.WithFocused(true))
+	tbl := table.New()
 
 	s := table.DefaultStyles()
 	s.Header = *style.TableHeader()
-	s.Cell = lipgloss.NewStyle()
 	s.Selected = *style.SelectedRow()
+	s.Cell = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(style.CS().CellText))
 
 	tbl.SetStyles(s)
 

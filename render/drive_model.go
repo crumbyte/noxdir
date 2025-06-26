@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/crumbyte/noxdir/drive"
+	"github.com/crumbyte/noxdir/render/table"
 
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -173,13 +173,13 @@ func (dm *DriveModel) drivesSummary() string {
 	items := []*BarItem{
 		NewBarItem(Version, style.CS().StatusBar.VersionBG, 0),
 		NewBarItem("MODE", style.CS().StatusBar.Drives.ModeBG, 0),
-		NewBarItem("Drives List", "", -1),
+		NewBarItem("Drives List", style.CS().StatusBar.BG, -1),
 		NewBarItem("CAPACITY", style.CS().StatusBar.Drives.CapacityBG, 0),
-		DefaultBarItem(FmtSize(dl.TotalCapacity, 0)),
+		NewBarItem(FmtSize(dl.TotalCapacity, 0), style.CS().StatusBar.BG, 0),
 		NewBarItem("FREE", style.CS().StatusBar.Drives.FreeBG, 0),
-		DefaultBarItem(FmtSize(dl.TotalFree, 0)),
+		NewBarItem(FmtSize(dl.TotalFree, 0), style.CS().StatusBar.BG, 0),
 		NewBarItem("USED", style.CS().StatusBar.Drives.UsedBG, 0),
-		DefaultBarItem(FmtSize(dl.TotalUsed, 0)),
+		NewBarItem(FmtSize(dl.TotalUsed, 0), style.CS().StatusBar.BG, 0),
 	}
 
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(
