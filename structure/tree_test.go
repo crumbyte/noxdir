@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -214,6 +215,75 @@ func TestEntry_AddChild(t *testing.T) {
 	require.EqualValues(t, 3, e.LocalFiles)
 	require.EqualValues(t, 3, e.TotalFiles)
 	require.EqualValues(t, 3, e.TotalDirs)
+}
+
+func TestEntry_Diff(t *testing.T) {
+	currentState := &structure.Entry{
+		Path: "root",
+
+		Child: []*structure.Entry{
+			{Path: "root_file_1"},
+			{Path: "root_file_2"},
+			{
+				Path: "level1",
+				Child: []*structure.Entry{
+					{Path: "level1_file_1"},
+					{Path: "level1_file_2"},
+					{
+						Path: "level2",
+						Child: []*structure.Entry{
+							{Path: "level2_file_1"},
+							{Path: "level2_file_2"},
+						},
+						IsDir: true,
+					},
+				},
+				IsDir: true,
+			},
+		},
+		IsDir: true,
+	}
+
+	newState := &structure.Entry{
+		Path: "root",
+		Child: []*structure.Entry{
+			{Path: "root_file_2"},
+			{Path: "root_file_5"},
+			{
+				Path: "level1",
+				Child: []*structure.Entry{
+					{Path: "level1_file_2"},
+					{Path: "level1_file_5"},
+					{
+						Path: "level2",
+						Child: []*structure.Entry{
+							{Path: "level2_file_2"},
+							{Path: "level2_file_5"},
+						},
+						IsDir: true,
+					},
+				},
+				IsDir: true,
+			},
+		},
+		IsDir: true,
+	}
+
+	diff := currentState.Diff(newState)
+
+	require.Len(t, diff.Added, 3)
+	require.Len(t, diff.Removed, 3)
+
+	expectedAdded := []string{"root_file_5", "level1_file_5", "level2_file_5"}
+	expectedRemoved := []string{"root_file_1", "level1_file_1", "level2_file_1"}
+
+	for _, added := range diff.Added {
+		require.True(t, slices.Contains(expectedAdded, added.Name()), added.Name())
+	}
+
+	for _, removed := range diff.Removed {
+		require.True(t, slices.Contains(expectedRemoved, removed.Name()), removed.Name())
+	}
 }
 
 func verifyEntryStructure(t *testing.T, e *structure.Entry, te *testEntry) {

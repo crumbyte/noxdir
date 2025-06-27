@@ -11,6 +11,65 @@ import (
 	"sync"
 )
 
+type EntryPair struct {
+	Old *Entry
+	New *Entry
+}
+
+type Diff struct {
+	Added   []*Entry
+	Same    []EntryPair
+	Removed []*Entry
+}
+
+type EntryList []*Entry
+
+func (el EntryList) Diff(newList EntryList) Diff {
+	d := Diff{
+		Added:   make([]*Entry, 0),
+		Same:    make([]EntryPair, 0),
+		Removed: make([]*Entry, 0),
+	}
+
+	if len(newList) == 0 {
+		return d
+	}
+
+	for _, newChild := range newList {
+		added := true
+
+		for _, oldChild := range el {
+			if newChild.Path == oldChild.Path && newChild.IsDir == oldChild.IsDir {
+				added, d.Same = false, append(d.Same, EntryPair{oldChild, newChild})
+
+				break
+			}
+		}
+
+		if added {
+			d.Added = append(d.Added, newChild)
+		}
+	}
+
+	for _, oldChild := range el {
+		removed := true
+
+		for _, newChild := range newList {
+			if oldChild.Path == newChild.Path && oldChild.IsDir == newChild.IsDir {
+				removed = false
+
+				break
+			}
+		}
+
+		if removed {
+			d.Removed = append(d.Removed, oldChild)
+		}
+	}
+
+	return d
+}
+
 // Entry contains the information about a single directory or a file instance
 // within the file system. If the entry represents a directory instance, it has
 // access to its child elements.
@@ -162,4 +221,52 @@ func (e *Entry) SortChild() *Entry {
 	})
 
 	return e
+}
+
+func (e *Entry) Copy() *Entry {
+	return &Entry{
+		Path:       e.Path,
+		Child:      make([]*Entry, 0, len(e.Child)),
+		IsDir:      e.IsDir,
+		ModTime:    e.ModTime,
+		Size:       e.Size,
+		LocalDirs:  e.LocalDirs,
+		LocalFiles: e.LocalFiles,
+		TotalDirs:  e.TotalDirs,
+		TotalFiles: e.TotalFiles,
+	}
+}
+
+func (e *Entry) Diff(ne *Entry) Diff {
+	var ep EntryPair
+
+	d := Diff{Added: make([]*Entry, 0), Removed: make([]*Entry, 0)}
+
+	queue := []EntryPair{{Old: e, New: ne}}
+
+	for len(queue) > 0 {
+		ep, queue = queue[0], queue[1:]
+
+		if len(ep.Old.Child) == 0 {
+			break
+		}
+
+		diff := EntryList(ep.Old.Child).Diff(ep.New.Child)
+
+		if len(diff.Added) > 0 {
+			d.Added = append(d.Added, diff.Added...)
+		}
+
+		if len(diff.Removed) > 0 {
+			d.Removed = append(d.Removed, diff.Removed...)
+		}
+
+		for _, sameEntries := range diff.Same {
+			if sameEntries.Old.IsDir {
+				queue = append(queue, sameEntries)
+			}
+		}
+	}
+
+	return d
 }
