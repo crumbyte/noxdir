@@ -4,71 +4,13 @@ import (
 	"bytes"
 	"cmp"
 	"iter"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
 )
-
-type EntryPair struct {
-	Old *Entry
-	New *Entry
-}
-
-type Diff struct {
-	Added   []*Entry
-	Same    []EntryPair
-	Removed []*Entry
-}
-
-type EntryList []*Entry
-
-func (el EntryList) Diff(newList EntryList) Diff {
-	d := Diff{
-		Added:   make([]*Entry, 0),
-		Same:    make([]EntryPair, 0),
-		Removed: make([]*Entry, 0),
-	}
-
-	if len(newList) == 0 {
-		return d
-	}
-
-	for _, newChild := range newList {
-		added := true
-
-		for _, oldChild := range el {
-			if newChild.Path == oldChild.Path && newChild.IsDir == oldChild.IsDir {
-				added, d.Same = false, append(d.Same, EntryPair{oldChild, newChild})
-
-				break
-			}
-		}
-
-		if added {
-			d.Added = append(d.Added, newChild)
-		}
-	}
-
-	for _, oldChild := range el {
-		removed := true
-
-		for _, newChild := range newList {
-			if oldChild.Path == newChild.Path && oldChild.IsDir == newChild.IsDir {
-				removed = false
-
-				break
-			}
-		}
-
-		if removed {
-			d.Removed = append(d.Removed, oldChild)
-		}
-	}
-
-	return d
-}
 
 // Entry contains the information about a single directory or a file instance
 // within the file system. If the entry represents a directory instance, it has
@@ -242,30 +184,93 @@ func (e *Entry) Diff(ne *Entry) Diff {
 
 	d := Diff{Added: make([]*Entry, 0), Removed: make([]*Entry, 0)}
 
-	queue := []EntryPair{{Old: e, New: ne}}
+	queue := []EntryPair{{e, ne}}
 
 	for len(queue) > 0 {
 		ep, queue = queue[0], queue[1:]
 
-		if len(ep.Old.Child) == 0 {
+		if len(ep[0].Child) == 0 {
 			break
 		}
 
-		diff := EntryList(ep.Old.Child).Diff(ep.New.Child)
+		diff := EntryList(ep[0].Child).Diff(ep[1].Child)
 
-		if len(diff.Added) > 0 {
-			d.Added = append(d.Added, diff.Added...)
-		}
-
-		if len(diff.Removed) > 0 {
-			d.Removed = append(d.Removed, diff.Removed...)
-		}
+		d.Added = append(d.Added, diff.Added...)
+		d.Removed = append(d.Removed, diff.Removed...)
 
 		for _, sameEntries := range diff.Same {
-			if sameEntries.Old.IsDir {
+			if sameEntries[0].IsDir {
 				queue = append(queue, sameEntries)
 			}
 		}
+	}
+
+	return d
+}
+
+type EntryPair [2]*Entry
+
+type Diff struct {
+	Same    []EntryPair
+	Added   []*Entry
+	Removed []*Entry
+}
+
+func (d *Diff) TotalAdded() int64 {
+	total := int64(0)
+
+	for _, entry := range d.Added {
+		total += entry.Size
+	}
+
+	return total
+}
+
+func (d *Diff) TotalRemoved() int64 {
+	total := int64(0)
+
+	for _, entry := range d.Removed {
+		total += entry.Size
+	}
+
+	return total
+}
+
+type EntryList []*Entry
+
+func (el EntryList) Diff(newList EntryList) Diff {
+	d := Diff{
+		Same:    make([]EntryPair, 0),
+		Added:   make([]*Entry, 0),
+		Removed: make([]*Entry, 0),
+	}
+
+	if len(newList) == 0 {
+		return d
+	}
+
+	elMap := make(map[string]*Entry, len(el))
+
+	for _, entry := range el {
+		elMap[entry.Path] = entry
+	}
+
+	for _, newChild := range newList {
+		oldChild, ok := elMap[newChild.Path]
+
+		if ok && oldChild.IsDir == newChild.IsDir {
+			d.Same = append(d.Same, EntryPair{oldChild, newChild})
+
+			delete(elMap, newChild.Path)
+
+			continue
+		}
+
+		d.Added = append(d.Added, newChild)
+	}
+
+	for removed := range maps.Values(elMap) {
+		d.Removed = append(d.Removed, removed)
 	}
 
 	return d
