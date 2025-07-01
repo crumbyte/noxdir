@@ -7,7 +7,7 @@ before:
 
 signs:
   - artifacts: checksum
-    cmd: gpg2
+    cmd: gpg
     args:
       - "--batch"
       - "-u"
@@ -16,6 +16,36 @@ signs:
       - "${signature}"
       - "--detach-sign"
       - "${artifact}"
+
+nfpms:
+  - package_name: noxdir
+    file_name_template: "{{ .ConventionalFileName }}"
+    homepage: "https://github.com/crumbyte/noxdir"
+    description: "Terminal utility for visualizing file system usage."
+    maintainer: crumbyte <oleksiivodotyiets@gmail.com>
+    license: MIT
+    formats:
+      - apk
+      - deb
+      - rpm
+      - termux.deb
+      - archlinux
+    contents:
+      # man page
+      - src: ./man/noxdir.1
+        dst: /usr/share/man/man1/noxdir.1
+      # completions
+      - src: ./completion/noxdir.bash
+        dst: /usr/share/bash-completion/completions/noxdir
+      - src: ./completion/noxdir.zsh
+        dst: /usr/share/zsh/site-functions/_noxdir
+      - src: ./completion/noxdir.fish
+        dst: /usr/share/fish/vendor_completions.d/noxdir.fish
+      # docs
+      - src: ./LICENSE
+        dst: /usr/share/doc/noxdir/LICENSE
+      - src: ./README.md
+        dst: /usr/share/doc/noxdir/README.md
 
 builds:
   - id: noxdir
