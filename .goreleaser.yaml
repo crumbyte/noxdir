@@ -7,7 +7,7 @@ before:
 
 signs:
   - artifacts: checksum
-    cmd: gpg
+    cmd: gpg2
     args:
       - "--batch"
       - "-u"
