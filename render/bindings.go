@@ -32,6 +32,7 @@ const (
 	toggleHelp        bindingKey = "?"
 	left              bindingKey = "left"
 	right             bindingKey = "right"
+	diff              bindingKey = "+"
 )
 
 func ToggleHelpBinding() key.Binding {
@@ -132,6 +133,7 @@ func DrivesKeyMap() [][]key.Binding {
 	}
 }
 
+//nolint:funlen
 func DirsKeyMap() [][]key.Binding {
 	return [][]key.Binding{
 		{
@@ -226,6 +228,13 @@ func DirsKeyMap() [][]key.Binding {
 		},
 		{
 			ToggleHelpBinding(),
+			key.NewBinding(
+				key.WithKeys(diff.String()),
+				key.WithHelp(
+					style.BindKey().Render(diff.String()),
+					style.Help().Render(" - toggle diff"),
+				),
+			),
 		},
 	}
 }

@@ -93,7 +93,9 @@ func (ddm *DeleteDialogModel) View() string {
 		confirmBtn.Render("Yes"),
 	)
 
-	return style.DialogBox().Render(
+	return style.DialogBox().BorderForeground(
+		lipgloss.Color("#FF303E"),
+	).Render(
 		lipgloss.JoinVertical(
 			lipgloss.Center,
 			lipgloss.JoinVertical(lipgloss.Top, confirm, target),

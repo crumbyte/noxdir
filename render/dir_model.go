@@ -30,6 +30,7 @@ const (
 	READY   Mode = "READY"
 	INPUT   Mode = "INPUT"
 	DELETE  Mode = "DELETE"
+	DIFF    Mode = "DIFF"
 )
 
 type DirModel struct {
@@ -38,6 +39,7 @@ type DirModel struct {
 	topFilesTable *table.Model
 	topDirsTable  *table.Model
 	deleteDialog  *DeleteDialogModel
+	diff          *DiffModel
 	nav           *Navigation
 	scanPG        *PG
 	usagePG       *PG
@@ -81,6 +83,7 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		dirsTable:     buildTable(),
 		topFilesTable: buildTable(),
 		topDirsTable:  buildTable(),
+		diff:          NewDiffModel(nav),
 		mode:          PENDING,
 		nav:           nav,
 		scanPG:        &style.CS().ScanProgressBar,
@@ -142,11 +145,16 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		dm.fillTopEntries(structure.TopEntriesInstance.Dirs(), dm.topDirsTable)
 	case tea.WindowSizeMsg:
 		dm.updateSize(msg.Width, msg.Height)
+		dm.diff.Update(msg)
 		dm.filters.Update(msg)
 	case tea.KeyMsg:
 		if dm.nav.OnDrives() || dm.handleKeyBindings(msg) {
 			return dm, nil
 		}
+	}
+
+	if dm.mode == DIFF {
+		dm.diff.Update(msg)
 	}
 
 	if dm.nav.OnDrives() {
@@ -220,6 +228,15 @@ func (dm *DirModel) View() string {
 		)
 	}
 
+	if dm.mode == DIFF {
+		return OverlayCenter(
+			dm.width,
+			dm.height,
+			bg,
+			dm.diff.View(),
+		)
+	}
+
 	if dm.mode == DELETE {
 		return OverlayCenter(
 			dm.width,
@@ -251,24 +268,16 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 	}
 
 	bk := bindingKey(strings.ToLower(msg.String()))
-	if bk == toggleNameFilter {
-		if dm.mode == READY {
-			dm.mode = INPUT
-		} else {
-			dm.mode = READY
-		}
 
-		dm.filters.ToggleFilter(filter.NameFilterID)
-	}
-
-	if dm.handleDeletion(bk, msg) {
+	if dm.handleFilter(bk, msg) {
 		return true
 	}
 
-	if dm.mode == INPUT {
-		dm.filters.Update(msg)
-		dm.updateTableData()
+	if dm.handleDiff(bk, msg) {
+		return true
+	}
 
+	if dm.handleDeletion(bk, msg) {
 		return true
 	}
 
@@ -330,6 +339,27 @@ func (dm *DirModel) handleExploreKey() bool {
 	return dm.nav.Explore(sr[1]) != nil
 }
 
+func (dm *DirModel) handleFilter(bk bindingKey, msg tea.Msg) bool {
+	if bk == toggleNameFilter {
+		if dm.mode == READY {
+			dm.mode = INPUT
+		} else {
+			dm.mode = READY
+		}
+
+		dm.filters.ToggleFilter(filter.NameFilterID)
+	}
+
+	if dm.mode == INPUT {
+		dm.filters.Update(msg)
+		dm.updateTableData()
+
+		return true
+	}
+
+	return false
+}
+
 func (dm *DirModel) handleDeletion(bk bindingKey, msg tea.Msg) bool {
 	if bk == remove && dm.mode == READY {
 		sr := dm.dirsTable.SelectedRow()
@@ -345,6 +375,30 @@ func (dm *DirModel) handleDeletion(bk bindingKey, msg tea.Msg) bool {
 	if dm.mode == DELETE {
 		dm.deleteDialog.Update(msg)
 		dm.updateTableData()
+
+		return true
+	}
+
+	return false
+}
+
+func (dm *DirModel) handleDiff(bk bindingKey, msg tea.Msg) bool {
+	if bk == diff && dm.mode == READY {
+		dm.mode = DIFF
+		dm.diff.Run(dm.width, dm.height)
+
+		return true
+	}
+
+	if bk == diff && dm.mode == DIFF {
+		dm.mode = READY
+		dm.updateTableData()
+
+		return true
+	}
+
+	if dm.mode == DIFF {
+		dm.diff.Update(msg)
 
 		return true
 	}

@@ -348,6 +348,29 @@ func (n *Navigation) Delete(path string) error {
 	return nil
 }
 
+func (n *Navigation) Diff() (*structure.Tree, chan *structure.Diff, chan error) {
+	if n.OnDrives() || !n.lock() || n.entry == nil {
+		return nil, nil, nil
+	}
+
+	diffChan := make(chan *structure.Diff)
+	entry := n.entry.Copy()
+	tree := structure.NewTree(entry, structure.WithPartialRoot())
+
+	doneChan, errChan := tree.TraverseAsync(true)
+
+	go func() {
+		<-doneChan
+
+		diffChan <- n.entry.Diff(entry)
+		close(diffChan)
+
+		n.unlock()
+	}()
+
+	return tree, diffChan, errChan
+}
+
 func (n *Navigation) lock() bool {
 	return !n.locked.Swap(true)
 }

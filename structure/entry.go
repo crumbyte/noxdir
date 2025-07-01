@@ -179,7 +179,7 @@ func (e *Entry) Copy() *Entry {
 	}
 }
 
-func (e *Entry) Diff(ne *Entry) Diff {
+func (e *Entry) Diff(ne *Entry) *Diff {
 	var ep EntryPair
 
 	d := Diff{Added: make([]*Entry, 0), Removed: make([]*Entry, 0)}
@@ -188,10 +188,6 @@ func (e *Entry) Diff(ne *Entry) Diff {
 
 	for len(queue) > 0 {
 		ep, queue = queue[0], queue[1:]
-
-		if len(ep[0].Child) == 0 {
-			break
-		}
 
 		diff := EntryList(ep[0].Child).Diff(ep[1].Child)
 
@@ -205,7 +201,7 @@ func (e *Entry) Diff(ne *Entry) Diff {
 		}
 	}
 
-	return d
+	return d.Sort()
 }
 
 type EntryPair [2]*Entry
@@ -216,30 +212,50 @@ type Diff struct {
 	Removed []*Entry
 }
 
-func (d *Diff) TotalAdded() int64 {
-	total := int64(0)
+func (d *Diff) Sort() *Diff {
+	slices.SortFunc(d.Added, func(a, b *Entry) int {
+		return cmp.Compare(b.Size, a.Size)
+	})
 
-	for _, entry := range d.Added {
-		total += entry.Size
-	}
+	slices.SortFunc(d.Removed, func(a, b *Entry) int {
+		return cmp.Compare(b.Size, a.Size)
+	})
 
-	return total
+	return d
 }
 
-func (d *Diff) TotalRemoved() int64 {
+func DiffStats(entries []*Entry) (int, int, int64) {
+	dirs, files := 0, 0
 	total := int64(0)
 
-	for _, entry := range d.Removed {
+	for _, entry := range entries {
 		total += entry.Size
+
+		if entry.IsDir {
+			dirs++
+
+			continue
+		}
+
+		files++
 	}
 
-	return total
+	return dirs, files, total
 }
 
+// EntryList contains a set of *Entry instances. It can represent a list of child
+// entries.
 type EntryList []*Entry
 
-func (el EntryList) Diff(newList EntryList) Diff {
-	d := Diff{
+// Diff returns the delta between the current and the provided EntryList instances.
+// As a result, it returns the Diff instance containing Diff.Added, Diff.Removed,
+// and Diff.Same entries.
+//
+// It uses a straightforward approach by comparing the EntryList items one by one
+// for each set. If there is an item in the provided EntryList that does not
+// exist in the current EntryList, then it is considered to be "added".
+func (el EntryList) Diff(newList EntryList) *Diff {
+	d := &Diff{
 		Same:    make([]EntryPair, 0),
 		Added:   make([]*Entry, 0),
 		Removed: make([]*Entry, 0),
