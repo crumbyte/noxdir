@@ -267,14 +267,10 @@ func (m *Model) headersView() string {
 func (m *Model) renderRow(r int) string {
 	cols := make([]string, 0, len(m.cols))
 
-	style := lipgloss.NewStyle().Inline(true)
-
 	for i, value := range m.rows[r] {
 		if m.cols[i].Width <= 0 {
 			continue
 		}
-
-		style = style.Width(m.cols[i].Width).MaxWidth(m.cols[i].Width)
 
 		renderer := m.styles.Cell
 
@@ -282,14 +278,13 @@ func (m *Model) renderRow(r int) string {
 			renderer = m.styles.Selected
 		}
 
-		cols = append(
-			cols,
-			renderer.Render(
-				style.Render(
-					runewidth.Truncate(value, m.cols[i].Width, "…"),
-				),
-			),
-		)
+		cell := lipgloss.NewStyle().
+			Width(m.cols[i].Width).
+			MaxWidth(m.cols[i].Width).
+			Inline(true).
+			Render(value)
+
+		cols = append(cols, renderer.Render(cell))
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, cols...)

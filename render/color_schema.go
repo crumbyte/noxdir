@@ -143,7 +143,7 @@ func DefaultColorSchema() ColorSchema {
 		TopFilesText:      "#EBBD34",
 		HelpText:          "#696868",
 		BindingText:       "#FFBF69",
-		DialogBoxBorder:   "#FF303E",
+		DialogBoxBorder:   "240",
 		ConfirmButtonText: "#FFFDF5",
 		ConfirmButtonBG:   "#353533",
 		ActiveButtonText:  "#FFFDF5",
