@@ -154,7 +154,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 			FmtSize(d.TotalBytes, driveSizeWidth),
 			FmtSize(d.UsedBytes, driveSizeWidth),
 			FmtSize(d.FreeBytes, driveSizeWidth),
-			FmtUsage(d.UsedPercent / 100),
+			FmtUsage(d.UsedPercent/100, 80, colWidth),
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
 				strings.Repeat(" ", max(0, progressWidth-lipgloss.Width(pgBar))),

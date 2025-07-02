@@ -37,6 +37,12 @@ Obtain the latest optimized binary from
 the [Releases](https://github.com/crumbyte/noxdir/releases) page. The
 application is self-contained and requires no installation process.
 
+### Go install (Go 1.24+)
+
+```bash
+go install github.com/crumbyte/noxdir@latest
+```
+
 ### Build from source (Go 1.24+)
 
 ```bash

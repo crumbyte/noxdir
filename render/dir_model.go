@@ -457,11 +457,11 @@ func (dm *DirModel) updateTableData() {
 				EntryIcon(child),
 				child.Name(),
 				FmtName(child.Name(), nameWidth),
-				FmtSize(child.Size, entrySizeWidth),
+				FmtSizeColor(child.Size, entrySizeWidth, colWidth),
 				totalDirs,
 				totalFiles,
 				time.Unix(child.ModTime, 0).Format("2006-01-02 15:04"),
-				FmtUsage(parentUsage),
+				FmtUsage(parentUsage, 20, colWidth),
 				pgBar,
 			},
 		)
@@ -536,7 +536,7 @@ func (dm *DirModel) fillTopEntries(entries heap.Interface, tm *table.Model) {
 			EntryIcon(file),
 			file.Path,
 			path + style.TopFiles().Render(file.Name()),
-			FmtSize(file.Size, entrySizeWidth),
+			FmtSizeColor(file.Size, entrySizeWidth, colSize),
 			time.Unix(file.ModTime, 0).Format("2006-01-02 15:04"),
 		}
 	}
