@@ -141,8 +141,7 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		structure.TopEntriesInstance.ScanFiles(dm.nav.Entry())
 		structure.TopEntriesInstance.ScanDirs(dm.nav.Entry())
 
-		dm.fillTopEntries(structure.TopEntriesInstance.Files(), dm.topFilesTable)
-		dm.fillTopEntries(structure.TopEntriesInstance.Dirs(), dm.topDirsTable)
+		dm.updateTopEntries()
 	case tea.WindowSizeMsg:
 		dm.updateSize(msg.Width, msg.Height)
 		dm.diff.Update(msg)
@@ -460,7 +459,7 @@ func (dm *DirModel) updateTableData() {
 				FmtSizeColor(child.Size, entrySizeWidth, colWidth),
 				totalDirs,
 				totalFiles,
-				time.Unix(child.ModTime, 0).Format("2006-01-02 15:04"),
+				time.Unix(child.ModTime, 0).Format("Jan 02 15:04"),
 				FmtUsage(parentUsage, 20, colWidth),
 				pgBar,
 			},
@@ -492,7 +491,7 @@ func (dm *DirModel) dirsSummary() string {
 	)
 }
 
-func (dm *DirModel) fillTopEntries(entries heap.Interface, tm *table.Model) {
+func (dm *DirModel) fillTopEntries(entries heap.Interface, tm *table.Model, title string) {
 	iconWidth := 5
 	colSize := int(float64(dm.width-iconWidth) * colWidthRatio)
 	nameWidth := dm.width - (colSize * 2) - iconWidth
@@ -500,7 +499,7 @@ func (dm *DirModel) fillTopEntries(entries heap.Interface, tm *table.Model) {
 	columns := []table.Column{
 		{Title: "", Width: iconWidth},
 		{Title: "", Width: 0},
-		{Title: "Name", Width: nameWidth},
+		{Title: title, Width: nameWidth},
 		{Title: "Size", Width: colSize},
 		{Title: "Last Change", Width: colSize},
 	}
@@ -537,7 +536,7 @@ func (dm *DirModel) fillTopEntries(entries heap.Interface, tm *table.Model) {
 			file.Path,
 			path + style.TopFiles().Render(file.Name()),
 			FmtSizeColor(file.Size, entrySizeWidth, colSize),
-			time.Unix(file.ModTime, 0).Format("2006-01-02 15:04"),
+			time.Unix(file.ModTime, 0).Format("Jan 02 15:04"),
 		}
 	}
 
@@ -553,9 +552,7 @@ func (dm *DirModel) updateSize(width, height int) {
 	dm.topDirsTable.SetWidth(width)
 
 	dm.updateTableData()
-
-	dm.fillTopEntries(structure.TopEntriesInstance.Files(), dm.topFilesTable)
-	dm.fillTopEntries(structure.TopEntriesInstance.Dirs(), dm.topDirsTable)
+	dm.updateTopEntries()
 }
 
 func (dm *DirModel) viewProgress() string {
@@ -563,5 +560,15 @@ func (dm *DirModel) viewProgress() string {
 
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(
 		dm.scanPG.New(dm.width).ViewAs(completed),
+	)
+}
+
+func (dm *DirModel) updateTopEntries() {
+	dm.fillTopEntries(
+		structure.TopEntriesInstance.Files(), dm.topFilesTable, "Top Files",
+	)
+
+	dm.fillTopEntries(
+		structure.TopEntriesInstance.Dirs(), dm.topDirsTable, "Top Directories",
 	)
 }

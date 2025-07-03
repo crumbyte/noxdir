@@ -66,7 +66,7 @@ func NewStatusBar(items []*BarItem, totalWidth int) string {
 	for i := range items {
 		item := items[i]
 
-		if i == len(items)-1 {
+		if i == len(items)-1 || !borderEnabled() {
 			item.border = 0
 		}
 
@@ -131,4 +131,8 @@ func newBarBlockStyle(bi *BarItem) lipgloss.Style {
 	}
 
 	return s
+}
+
+func borderEnabled() bool {
+	return style.CS().StatusBarBorder
 }

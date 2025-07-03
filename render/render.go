@@ -13,7 +13,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-const Version = "v0.2.2"
+const Version = "v0.3.0"
 
 const updateTickerInterval = time.Millisecond * 500
 

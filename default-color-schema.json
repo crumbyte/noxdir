@@ -44,6 +44,7 @@
   "activeButtonText": "#FFFDF5",
   "activeButtonBackground": "#FF8531",
   "filterText": "#EBBD34",
+  "statusBarBorder": true,
   "scanProgressBar": {
     "colorProfile": 0,
     "startColor": "#833AB4",
