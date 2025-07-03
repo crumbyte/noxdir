@@ -33,6 +33,15 @@ brew tap crumbyte/noxdir
 brew install --cask noxdir
 ```
 
+### Linux
+```bash
+curl -s https://crumbyte.github.io/noxdir/scripts/install.sh | bash
+```
+
+```bash
+curl -s https://crumbyte.github.io/noxdir/scripts/install.sh | bash -s -- v0.3.0
+```
+
 ### Pre-compiled Binaries
 
 Obtain the latest optimized binary from
