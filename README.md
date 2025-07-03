@@ -2,6 +2,7 @@
 
 [![Build](https://github.com/crumbyte/noxdir/actions/workflows/build.yml/badge.svg)](https://github.com/crumbyte/noxdir/actions/workflows/build.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/crumbyte/noxdir)](https://goreportcard.com/report/github.com/crumbyte/noxdir)
+![GitHub Release](https://img.shields.io/github/v/release/crumbyte/noxdir)
 
 **NoxDir** is a high-performance, cross-platform command-line tool for
 visualizing and exploring your file system usage. It detects mounted drives or
@@ -25,7 +26,8 @@ cleanup workflow.
 
 ## 📦 Installation
 
-### 🍺 Homebrew (macOS cask)
+### 🍺 Homebrew
+
 ```bash
 brew tap crumbyte/noxdir
 brew install --cask noxdir
@@ -80,7 +82,70 @@ to immediately see the biggest files on the drive, or `ctrl+e` to
 see the biggest directories. Use `ctrl+f` to filter entries by their names or
 `,` and `.` to show only files or directories.
 
-Also, NoxDir accepts flags on a startup. Here's a list of currently available
+## 🔍 Viewing Changes (Delta Mode)
+
+The diff is calculated be performing a scan of the **current** directory and compares it with the cached version you
+currently have. If the caching was not enabled for the previous session the diff will show nothing.
+
+NoxDir can display file system changes since your last session. It highlights added or deleted files and directories, as
+well as changes in disk space usage.
+
+> Caching must be enabled (`--use-cache` or `-c`) for diffs to work.
+
+To view changes in the current directory, press the `+` key (toggle diff). NoxDir will compare the current state of the
+directory with its cached version and display the difference:
+
+![diff!](/img/diff.png "diff")
+
+The diff is calculated by scanning only the current directory and comparing it against the previously cached state. If
+no cache exists from the previous session, no differences will be shown.
+
+## 🗂️ Caching for Faster Scanning
+
+Scanning can take time, especially on volumes with many small files and directories (e.g., log folders or
+`node_modules`). To improve performance in such cases, NoxDir supports caching.
+
+When the `--use-cache (-c)` flag is provided, NoxDir will attempt to use an existing cache file for the selected drive
+or volume. If no cache file exists, it performs a full scan and saves the result to a cache file for future use.
+
+If a cache file is found, the full scan is skipped by default (unless you explicitly want to see the structure delta).
+Scanning is then performed **on demand** using the `r` (refresh) key, which updates the cache after the session ends.
+
+Cache file locations:
+
+* Windows: `%LOCALAPPDATA%\.noxdir\cache` (e.g., `C:\Users\{user}\AppData\Local\.noxdir\cache`)
+* Linux/macOS: `~/.noxdir/cache`
+
+To clear all cached data, use the `--clear-cache` flag.
+
+## 🎨 Colors Customization
+
+NoxDir supports color schema customization via the `--color-schema` flag. You can provide a JSON configuration to adjust
+colors, borders, glyph rendering, and more.
+
+A full example schema (including all default settings) is
+available [here](https://github.com/crumbyte/noxdir/blob/main/default-color-schema.json). You can also provide a partial
+config that
+overrides only specific values.
+
+Example:
+
+```json
+{
+  "statusBarBorder": false,
+  "usageProgressBar": {
+    "fullChar": "█",
+    "emptyChar": "░"
+  }
+}
+```
+
+In this example, the status bar border is disabled, and the usage progress bar is rendered using ANSI characters (█, ░)
+instead of emojis (🟥, 🟩).
+
+## 🚩 Flags
+
+NoxDir accepts flags on a startup. Here's a list of currently available
 CLI flags:
 
 ```
@@ -88,6 +153,10 @@ Usage:
   noxdir [flags]
 
 Flags:
+      --clear-cache           Delete all cache files from the application's directory.
+
+                              Example: --clear-cache (provide a flag)
+
       --color-schema string   Set the color schema configuration file. The file contains a custom
                               color settings for the UI elements.
 

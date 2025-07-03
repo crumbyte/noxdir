@@ -27,11 +27,11 @@ func NewDriveModel(n *Navigation) *DriveModel {
 	dc := []Column{
 		{},
 		{Title: "Path"},
-		{Title: "Volume Name"},
+		{Title: "Volume"},
 		{Title: "File System"},
-		{Title: "Total Space", SortKey: drive.TotalCap},
-		{Title: "Used Space", SortKey: drive.TotalUsed},
-		{Title: "Free Space", SortKey: drive.TotalFree},
+		{Title: "Total", SortKey: drive.TotalCap},
+		{Title: "Used", SortKey: drive.TotalUsed},
+		{Title: "Free", SortKey: drive.TotalFree},
 		{Title: "Usage", SortKey: drive.TotalUsedP},
 		{},
 	}
@@ -117,10 +117,10 @@ func (dm *DriveModel) View() string {
 }
 
 func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
-	pathWidth, iconWidth := 30, 5
+	pathWidth, iconWidth := 20, 5
 	tableWidth := dm.width
 
-	colWidth := int(float64(tableWidth) * 0.07)
+	colWidth := int(float64(tableWidth) * 0.085)
 	progressWidth := tableWidth - (colWidth * 6) - iconWidth - pathWidth
 
 	columns := make([]table.Column, len(dm.driveColumns))

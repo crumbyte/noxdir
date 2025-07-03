@@ -69,6 +69,7 @@ type ColorSchema struct {
 	FilterText        string          `json:"filterText"`
 	ScanProgressBar   PG              `json:"scanProgressBar"`
 	UsageProgressBar  PG              `json:"usageProgressBar"`
+	StatusBarBorder   bool            `json:"statusBarBorder"`
 }
 
 // DecodeFileColorSchema reads the color schema from the file by the provided
@@ -149,5 +150,6 @@ func DefaultColorSchema() ColorSchema {
 		ActiveButtonText:  "#FFFDF5",
 		ActiveButtonBG:    "#FF8531",
 		FilterText:        "#EBBD34",
+		StatusBarBorder:   true,
 	}
 }
