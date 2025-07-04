@@ -9,24 +9,23 @@ import (
 )
 
 const (
-	maxSectors      = 7
+	// maxSectors defines the maximum number of sectors on the chart. All sectors
+	// that exceed this limit will be merged into a single sector.
+	maxSectors = 8
+
+	// chartLabelWidth limits the width of the sector's label.
 	chartLabelWidth = 50
-	aspectFix       = 2.4
 )
 
 var defaultChartColors = []lipgloss.Color{
-	"#ffbe0b",
-	"#fb5607",
-	"#ff006e",
-	"#8338ec",
-	"#3a86ff",
-	"#00f5d4",
-	"#fef9ef",
-	"#ff85a1",
-	"#b5838d",
+	"#ffbe0b", "#fb5607", "#ff006e", "#8338ec", "#3a86ff",
+	"#00f5d4", "#fef9ef", "#ff85a1", "#b5838d",
 }
 
-type RawChartSector struct {
+// SectorInfo contains the initial sector info. All other data of the sector will
+// be derived during rendering. The color of the sector cannot be set explicitly
+// and will be chosen based on the sector's position.
+type SectorInfo struct {
 	Label string
 	Size  int64
 }
@@ -40,25 +39,54 @@ type chartSector struct {
 	endAngle   float64
 }
 
-func Chart(width, height, radius int, totalSize int64, raw []RawChartSector, colors []lipgloss.Color) string {
-	sb := strings.Builder{}
+// Chart represents a chart renderer instance. It contains the initial chart
+// settings, including available width and height, the chart radius, and the
+// aspect ratio fix, which is responsible for adjusting the circle form depending
+// on the ratio of the terminal's font width and height.
+type Chart struct {
+	colors         []lipgloss.Color
+	width          int
+	height         int
+	radius         int
+	aspectRatioFix float64
+}
 
-	if len(colors) < 9 {
+func NewChart(width, height, radius int, aspectRationFix float64, colors []lipgloss.Color) *Chart {
+	// the number of colors must not be lower than the number of maxSectors
+	// plus one "merged" sector.
+	if len(colors) < maxSectors+1 {
 		colors = defaultChartColors
 	}
 
-	sectors := prepareSectors(totalSize, raw, colors)
+	return &Chart{
+		colors:         colors,
+		width:          width,
+		height:         height,
+		radius:         radius,
+		aspectRatioFix: aspectRationFix,
+	}
+}
 
-	centerX, centerY := width/2/2, height/2
+// Render renders a chart window including the chart itself and the corresponding
+// legend. The chart form visual correctness depends on the current aspect ratio
+// fix value.
+func (c *Chart) Render(totalSize int64, raw []SectorInfo) string {
+	sb := strings.Builder{}
 
-	for y := range height {
-		for x := range width / 2 {
+	sectors := c.prepareSectors(totalSize, raw)
+
+	// The chart center should be placed at the center of the left half of the
+	// provided window area
+	centerX, centerY := c.width/2/2, c.height/2
+
+	for y := range c.height {
+		for x := range c.width / 2 {
 			dx := float64(x - centerX)
-			dy := float64(y-centerY) * aspectFix
+			dy := float64(y-centerY) * c.aspectRatioFix
 
 			dist := math.Sqrt(dx*dx + dy*dy)
 
-			if dist > float64(radius) {
+			if dist > float64(c.radius) {
 				sb.WriteByte(' ')
 
 				continue
@@ -84,19 +112,19 @@ func Chart(width, height, radius int, totalSize int64, raw []RawChartSector, col
 	}
 
 	return lipgloss.JoinHorizontal(
-		lipgloss.Center, sb.String(), legend(sectors, width/2),
+		lipgloss.Center, sb.String(), legend(sectors, c.width/2),
 	)
 }
 
-func prepareSectors(totalSize int64, rawSectors []RawChartSector, colors []lipgloss.Color) []chartSector {
-	sectors := make([]chartSector, 0, len(rawSectors))
+func (c *Chart) prepareSectors(totalSize int64, si []SectorInfo) []chartSector {
+	sectors := make([]chartSector, 0, len(si))
 
 	others := chartSector{label: "Others"}
 
-	for i, s := range rawSectors {
+	for i, s := range si {
 		usage := float64(s.Size) / float64(totalSize)
 
-		if i > maxSectors {
+		if i >= maxSectors {
 			others.size += s.Size
 
 			continue
@@ -124,7 +152,7 @@ func prepareSectors(totalSize int64, rawSectors []RawChartSector, colors []lipgl
 	start := 0.0
 
 	for i := range sectors {
-		sectors[i].color = colors[i]
+		sectors[i].color = c.colors[i]
 		sectors[i].startAngle = start
 		sectors[i].endAngle = start + sectors[i].usage*2*math.Pi
 
