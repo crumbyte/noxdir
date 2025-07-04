@@ -14,6 +14,7 @@ noxdir \- a terminal utility for visualizing file system usage.
 [\fB--color-schema\fR]
 [\fB-c\fR|\fB--use-cache\fR]
 [\fB--clear-cache\fR]
+[\fB--simple-color\fR]
 
 .SH DESCRIPTION
 .B NoxDir
@@ -83,6 +84,12 @@ Delete all cache files from the application's directory.
 Example: \fB--clear-cache\fR
 
 .TP
+.BR --simple-color
+Use a simplified color schema without emojis and glyphs.
+
+Example: \fB--simple-color\fR
+
+.TP
 .BR -h ", " --help
 Show help and usage information.
 
@@ -95,6 +102,10 @@ Scan a drive interactively:
 .TP
 Start app from the current root:
 .B noxdir -r .
+
+.TP
+Remove emojis, glyphs, and gradients:
+.B noxdir --simple-color .
 
 .TP
 Exclude node_modules and Steam cache folders:
