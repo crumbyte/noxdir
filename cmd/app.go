@@ -31,6 +31,7 @@ var (
 	colorSchemaPath string
 	useCache        bool
 	clearCache      bool
+	simpleCS        bool
 
 	tree *structure.Tree
 
@@ -186,6 +187,17 @@ Example: -c|--use-cache (provide a flag)
 		`Delete all cache files from the application's directory.
 
 Example: --clear-cache (provide a flag)
+`,
+	)
+
+	appCmd.PersistentFlags().BoolVarP(
+		&simpleCS,
+		"simple-color",
+		"",
+		false,
+		`Use a simplified color schema without emojis and glyphs.
+
+Example: --simple-color (provide a flag)
 `,
 	)
 }
@@ -345,9 +357,12 @@ func printError(errMsg string) {
 func initColorSchema() error {
 	cs := render.DefaultColorSchema()
 
+	if simpleCS {
+		cs = render.SimpleColorSchema()
+	}
+
 	if len(colorSchemaPath) != 0 {
-		err := render.DecodeFileColorSchema(colorSchemaPath, &cs)
-		if err != nil {
+		if err := render.DecodeColorSchema(colorSchemaPath, &cs); err != nil {
 			return err
 		}
 	}

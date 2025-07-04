@@ -73,10 +73,10 @@ type ColorSchema struct {
 	StatusBarBorder   bool            `json:"statusBarBorder"`
 }
 
-// DecodeFileColorSchema reads the color schema from the file by the provided
+// DecodeColorSchema reads the color schema from the file by the provided
 // path and applies it to the *ColorSchema instance. An error will be returned
 // if the path is invalid or the JSON color schema content cannot be decoded.
-func DecodeFileColorSchema(path string, cs *ColorSchema) error {
+func DecodeColorSchema(path string, cs *ColorSchema) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("open color schema file %s: %w", path, err)
@@ -154,4 +154,20 @@ func DefaultColorSchema() ColorSchema {
 		FilterText:        "#EBBD34",
 		StatusBarBorder:   true,
 	}
+}
+
+func SimpleColorSchema() ColorSchema {
+	dcs := DefaultColorSchema()
+
+	dcs.StatusBarBorder = false
+	dcs.ScanProgressBar = PG{ColorProfile: 3}
+
+	dcs.UsageProgressBar = PG{
+		ColorProfile: 3,
+		FullChar:     "█",
+		EmptyChar:    "░",
+		HidePercent:  true,
+	}
+
+	return dcs
 }
