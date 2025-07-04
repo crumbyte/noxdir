@@ -7,7 +7,6 @@ import (
 )
 
 type ChartColors struct {
-	AspectRatioFix float64 `json:"aspectRatioFix"`
 	Border         string  `json:"border"`
 	Sector1        string  `json:"sector1"`
 	Sector2        string  `json:"sector2"`
@@ -18,6 +17,7 @@ type ChartColors struct {
 	Sector7        string  `json:"sector7"`
 	Sector8        string  `json:"sector8"`
 	Sector9        string  `json:"sector9"`
+	AspectRatioFix float64 `json:"aspectRatioFix"`
 }
 
 type DrivesStatusBarColors struct {
