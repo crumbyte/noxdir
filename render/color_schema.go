@@ -7,16 +7,17 @@ import (
 )
 
 type ChartColors struct {
-	Border  string `json:"border"`
-	Sector1 string `json:"sector1"`
-	Sector2 string `json:"sector2"`
-	Sector3 string `json:"sector3"`
-	Sector4 string `json:"sector4"`
-	Sector5 string `json:"sector5"`
-	Sector6 string `json:"sector6"`
-	Sector7 string `json:"sector7"`
-	Sector8 string `json:"sector8"`
-	Sector9 string `json:"sector9"`
+	AspectRatioFix float64 `json:"aspectRatioFix"`
+	Border         string  `json:"border"`
+	Sector1        string  `json:"sector1"`
+	Sector2        string  `json:"sector2"`
+	Sector3        string  `json:"sector3"`
+	Sector4        string  `json:"sector4"`
+	Sector5        string  `json:"sector5"`
+	Sector6        string  `json:"sector6"`
+	Sector7        string  `json:"sector7"`
+	Sector8        string  `json:"sector8"`
+	Sector9        string  `json:"sector9"`
 }
 
 type DrivesStatusBarColors struct {
@@ -126,16 +127,17 @@ func DefaultColorSchema() ColorSchema {
 			},
 		},
 		ChartColors: ChartColors{
-			Border:  "240",
-			Sector1: "#ffbe0b",
-			Sector2: "#fb5607",
-			Sector3: "#ff006e",
-			Sector4: "#8338ec",
-			Sector5: "#3a86ff",
-			Sector6: "#00f5d4",
-			Sector7: "#fef9ef",
-			Sector8: "#ff85a1",
-			Sector9: "#b5838d",
+			AspectRatioFix: 2.4,
+			Border:         "240",
+			Sector1:        "#ffbe0b",
+			Sector2:        "#fb5607",
+			Sector3:        "#ff006e",
+			Sector4:        "#8338ec",
+			Sector5:        "#3a86ff",
+			Sector6:        "#00f5d4",
+			Sector7:        "#fef9ef",
+			Sector8:        "#ff85a1",
+			Sector9:        "#b5838d",
 		},
 		CellText:          "",
 		TableHeaderBorder: "240",

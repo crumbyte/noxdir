@@ -308,25 +308,21 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 }
 
 func (dm *DirModel) viewChart() string {
-	chartSectors := make([]RawChartSector, 0, len(dm.nav.entry.Child))
+	si := make([]SectorInfo, 0, len(dm.nav.entry.Child))
 
 	for _, child := range dm.nav.entry.Child {
-		chartSectors = append(chartSectors, RawChartSector{
-			Label: child.Name(),
-			Size:  child.Size,
-		})
+		si = append(si, SectorInfo{Label: child.Name(), Size: child.Size})
 	}
 
-	return style.ChartBox().Render(
-		Chart(
-			dm.width/2,
-			dm.height/2,
-			dm.height/2,
-			dm.nav.entry.Size,
-			chartSectors,
-			style.ChartColors(),
-		),
+	c := NewChart(
+		dm.width/2,
+		int(float64(dm.height)*0.43),
+		int(float64(dm.height)*0.43),
+		style.CS().ChartColors.AspectRatioFix,
+		style.ChartColors(),
 	)
+
+	return style.ChartBox().Render(c.Render(dm.nav.entry.Size, si))
 }
 
 func (dm *DirModel) handleExploreKey() bool {

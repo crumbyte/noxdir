@@ -20,6 +20,7 @@
     }
   },
   "chart": {
+    "aspectRatioFix": 2.4,
     "border": "240",
     "sector1": "#ffbe0b",
     "sector2": "#fb5607",
