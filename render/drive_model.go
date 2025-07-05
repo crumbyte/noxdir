@@ -12,6 +12,8 @@ import (
 
 const driveSizeWidth = 10
 
+type RefreshDrives struct{}
+
 type DriveModel struct {
 	driveColumns []Column
 	drivesTable  *table.Model
@@ -82,6 +84,8 @@ func (dm *DriveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return dm, nil
 			}
 		}
+	case RefreshDrives:
+		dm.updateTableData(dm.sortState.Key, dm.sortState.Desc)
 	}
 
 	if !dm.nav.OnDrives() {
