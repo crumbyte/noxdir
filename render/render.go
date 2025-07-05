@@ -157,7 +157,10 @@ func (vm *ViewModel) levelUp() {
 func (vm *ViewModel) refresh() {
 	if vm.nav.OnDrives() {
 		vm.nav.RefreshDrives()
-		vm.driveModel.Update(nil)
+
+		vm.driveModel.Update(RefreshDrives{})
+
+		return
 	}
 
 	done, errChan, err := vm.nav.RefreshEntry()
