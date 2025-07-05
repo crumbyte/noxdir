@@ -212,6 +212,10 @@ type Diff struct {
 	Removed []*Entry
 }
 
+func (d *Diff) Empty() bool {
+	return len(d.Added) == 0 && len(d.Removed) == 0
+}
+
 func (d *Diff) Sort() *Diff {
 	slices.SortFunc(d.Added, func(a, b *Entry) int {
 		return cmp.Compare(b.Size, a.Size)

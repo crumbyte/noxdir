@@ -3,8 +3,10 @@ package render
 import (
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/crumbyte/noxdir/drive"
 	"github.com/crumbyte/noxdir/render/table"
 	"github.com/crumbyte/noxdir/structure"
 
@@ -71,6 +73,12 @@ func (dm *DiffModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		runtime.GC()
 		dm.updateTableData()
+	case tea.KeyMsg:
+		bk := bindingKey(strings.ToLower(msg.String()))
+
+		if bk == explore {
+			dm.handleExploreKey()
+		}
 	}
 
 	t, _ := dm.table.Update(msg)
@@ -80,23 +88,38 @@ func (dm *DiffModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (dm *DiffModel) View() string {
-	var pgBar string
+	hasDiff := dm.diff != nil && !dm.diff.Empty()
+
+	rows, message := make([]string, 0, 3), "No delta found for: "+dm.nav.Entry().Path
+
+	messageStyle := lipgloss.NewStyle().
+		Align(lipgloss.Center).
+		Width(dm.width).
+		Bold(true)
 
 	if !dm.ready {
-		pgBar = dm.viewProgress()
+		rows = append(
+			rows,
+			dm.viewProgress(),
+			messageStyle.Render("Scanning the delta for: "+dm.nav.Entry().Path),
+		)
 	}
 
-	rows := make([]string, 0, 3)
+	if dm.ready && hasDiff {
+		total := dm.viewStats()
+		dm.table.SetHeight(dm.height - lipgloss.Height(total))
 
-	if pgBar != "" {
-		rows = append(rows, pgBar)
+		rows = append(
+			rows,
+			messageStyle.Render("Current delta for: "+dm.nav.Entry().Path),
+			dm.table.View(),
+			total,
+		)
 	}
 
-	total := dm.viewStats()
-
-	dm.table.SetHeight(dm.height - lipgloss.Height(total))
-
-	rows = append(rows, dm.table.View(), total)
+	if dm.ready && !hasDiff {
+		rows = append(rows, messageStyle.Render(message))
+	}
 
 	return style.DialogBox().Render(
 		lipgloss.NewStyle().Padding(0, 1, 0, 1).Render(
@@ -144,6 +167,15 @@ func (dm *DiffModel) Run(width, height int) {
 	}()
 }
 
+func (dm *DiffModel) handleExploreKey() bool {
+	sr := dm.table.SelectedRow()
+	if len(sr) < 2 {
+		return true
+	}
+
+	return drive.Explore(sr[2]) != nil
+}
+
 func (dm *DiffModel) updateTableData() {
 	if dm.targetTree == nil || dm.diff == nil {
 		return
@@ -182,7 +214,7 @@ func (dm *DiffModel) updateTableData() {
 			table.Row{
 				addedIcon,
 				EntryIcon(child),
-				child.Name(),
+				child.Path,
 				FmtName(child.Path, nameWidth),
 				FmtSize(child.Size, entrySizeWidth),
 			},
@@ -195,7 +227,7 @@ func (dm *DiffModel) updateTableData() {
 			table.Row{
 				removedIcon,
 				EntryIcon(child),
-				child.Name(),
+				child.Path,
 				FmtName(child.Path, nameWidth),
 				FmtSize(child.Size, entrySizeWidth),
 			},

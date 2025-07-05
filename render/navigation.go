@@ -301,22 +301,22 @@ func (n *Navigation) RefreshEntry() (chan struct{}, chan error, error) {
 	return doneChan, errChan, nil
 }
 
-func (n *Navigation) Explore(path string) error {
-	if len(path) == 0 {
+func (n *Navigation) Explore(name string) error {
+	if len(name) == 0 {
 		return nil
 	}
 
 	var fullPath string
 
 	if n.OnDrives() {
-		d := n.drives.DriveInfo(path)
+		d := n.drives.DriveInfo(name)
 		if d == nil {
 			return nil
 		}
 
 		fullPath = d.Path
 	} else {
-		entry := n.entry.GetChild(path)
+		entry := n.entry.GetChild(name)
 		if entry == nil {
 			return nil
 		}
