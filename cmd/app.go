@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/crumbyte/noxdir/config"
 	"github.com/crumbyte/noxdir/drive"
 	"github.com/crumbyte/noxdir/filter"
 	"github.com/crumbyte/noxdir/pkg/cache"
@@ -32,6 +33,7 @@ var (
 	useCache        bool
 	clearCache      bool
 	simpleCS        bool
+	settings        *config.Settings
 
 	tree *structure.Tree
 
@@ -46,7 +48,7 @@ selected drive and presents the space consumption in a clear, user-friendly layo
 🔗 Learn more: https://github.com/crumbyte/noxdir`,
 		RunE: runApp,
 		PostRun: func(_ *cobra.Command, _ []string) {
-			if tree == nil || !useCache {
+			if tree == nil || !settings.UseCache {
 				return
 			}
 
@@ -216,12 +218,54 @@ func Execute() {
 	}
 }
 
+func initConfig() (*config.Settings, error) {
+	var err error
+
+	settings, err = config.LoadSettings()
+	if err != nil {
+		return nil, err
+	}
+
+	if colorSchemaPath != "" {
+		settings.ColorSchema = colorSchemaPath
+	}
+
+	if simpleCS {
+		settings.SimpleColor = simpleCS
+	}
+
+	if noHidden {
+		settings.NoHidden = true
+	}
+
+	if noEmptyDirs {
+		settings.NoEmptyDirs = true
+	}
+
+	if useCache {
+		settings.UseCache = true
+	}
+
+	if len(exclude) != 0 {
+		settings.Exclude = exclude
+	}
+
+	return settings, nil
+}
+
 func runApp(_ *cobra.Command, _ []string) error {
-	if err := initColorSchema(); err != nil {
+	var err error
+
+	settings, err = initConfig()
+	if err != nil {
 		return err
 	}
 
-	vm, err := initViewModel()
+	if err = initColorSchema(settings); err != nil {
+		return err
+	}
+
+	vm, err := initViewModel(settings)
 	if err != nil {
 		return err
 	}
@@ -255,15 +299,15 @@ func runApp(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func initViewModel() (*render.ViewModel, error) {
-	nav, err := resolveNavigation()
+func initViewModel(s *config.Settings) (*render.ViewModel, error) {
+	nav, err := resolveNavigation(s)
 	if err != nil {
 		return nil, err
 	}
 
 	var dirModelFilters []filter.EntryFilter
 
-	if noEmptyDirs {
+	if s.NoEmptyDirs {
 		dirModelFilters = append(dirModelFilters, &filter.EmptyDirFilter{})
 	}
 
@@ -280,15 +324,15 @@ func initViewModel() (*render.ViewModel, error) {
 	return vm, nil
 }
 
-func resolveNavigation() (*render.Navigation, error) {
+func resolveNavigation(s *config.Settings) (*render.Navigation, error) {
 	var (
 		opts          []structure.TreeOpt
 		fif           []drive.FileInfoFilter
 		cacheInstance *cache.Cache
 	)
 
-	if len(exclude) > 0 {
-		opts = append(opts, structure.WithExclude(exclude))
+	if len(s.Exclude) > 0 {
+		opts = append(opts, structure.WithExclude(s.Exclude))
 	}
 
 	sizeLimitFilter, err := parseSizeLimit()
@@ -302,11 +346,11 @@ func resolveNavigation() (*render.Navigation, error) {
 		fif = append(fif, sizeLimitFilter)
 	}
 
-	if noHidden {
+	if s.NoHidden {
 		fif = append(fif, drive.HiddenFilter)
 	}
 
-	if useCache || clearCache {
+	if s.UseCache || clearCache {
 		cacheInstance, err = cache.NewCache(
 			func(w io.Writer) cache.Encoder {
 				return structure.NewEncoder(w)
@@ -315,6 +359,7 @@ func resolveNavigation() (*render.Navigation, error) {
 				return structure.NewDecoder(r)
 			},
 			clearCache,
+			s.Path,
 			cache.WithCompress(),
 		)
 		if err != nil {
@@ -354,15 +399,15 @@ func printError(errMsg string) {
 	}
 }
 
-func initColorSchema() error {
+func initColorSchema(s *config.Settings) error {
 	cs := render.DefaultColorSchema()
 
-	if simpleCS {
+	if s.SimpleColor {
 		cs = render.SimpleColorSchema()
 	}
 
-	if len(colorSchemaPath) != 0 {
-		if err := render.DecodeColorSchema(colorSchemaPath, &cs); err != nil {
+	if len(s.ColorSchema) != 0 {
+		if err := render.DecodeColorSchema(s.ColorSchema, &cs); err != nil {
 			return err
 		}
 	}

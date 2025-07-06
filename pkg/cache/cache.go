@@ -9,16 +9,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/klauspost/compress/zstd"
 )
 
-const (
-	//TODO: must be injected when the full config will be implemented
-	configDir = ".noxdir"
-	cacheDir  = "cache"
-)
+const cacheDir = "cache"
 
 // ErrNoCache defines an error that may occur if the requested cache entry was
 // not found.
@@ -70,24 +65,18 @@ type Cache struct {
 	compressionEnabled bool
 }
 
-func NewCache(ne NewEncoder, nd NewDecoder, clearCache bool, opts ...Option) (*Cache, error) {
+func NewCache(ne NewEncoder, nd NewDecoder, clearCache bool, appPath string, opts ...Option) (*Cache, error) {
 	c := &Cache{
-		ei: ne,
-		di: nd,
+		ei:        ne,
+		di:        nd,
+		cachePath: filepath.Join(appPath, cacheDir),
 	}
 
 	for _, opt := range opts {
 		opt(c)
 	}
 
-	cachePath, err := resolveCacheDir(configDir, cacheDir)
-	if err != nil {
-		return nil, fmt.Errorf("resolve cache dir: %w", err)
-	}
-
-	c.cachePath = cachePath
-
-	if err = c.initCacheDir(clearCache); err != nil {
+	if err := c.initCacheDir(clearCache); err != nil {
 		return nil, err
 	}
 
@@ -208,24 +197,4 @@ func (c *Cache) keyHash(key string) string {
 	h.Write([]byte(key))
 
 	return hex.EncodeToString(h.Sum(nil))
-}
-
-func resolveCacheDir(configDir, cacheDir string) (string, error) {
-	switch runtime.GOOS {
-	case "windows":
-		localAppData := os.Getenv("LocalAppData")
-		if len(localAppData) == 0 {
-			return "", errors.New("local app data folder not found")
-		}
-
-		return filepath.Join(localAppData, configDir, cacheDir), nil
-
-	default:
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return "", fmt.Errorf("get home dir: %w", err)
-		}
-
-		return filepath.Join(homeDir, configDir, cacheDir), nil
-	}
 }
