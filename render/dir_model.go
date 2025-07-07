@@ -467,10 +467,24 @@ func (dm *DirModel) updateTableData() {
 }
 
 func (dm *DirModel) dirsSummary() string {
-	items := []*BarItem{
+	items := make([]*BarItem, 0, 13)
+
+	items = append(
+		items,
 		NewBarItem(Version, style.cs.StatusBar.VersionBG, 0),
 		NewBarItem("PATH", style.cs.StatusBar.Dirs.PathBG, 0),
 		NewBarItem(dm.nav.Entry().Path, style.cs.StatusBar.BG, -1),
+	)
+
+	if dm.nav.cacheEnabled {
+		items = append(
+			items,
+			NewBarItem("CACHED", style.CS().StatusBar.VersionBG, 0),
+		)
+	}
+
+	items = append(
+		items,
 		NewBarItem(string(dm.mode), style.cs.StatusBar.Dirs.ModeBG, 0),
 		NewBarItem("SIZE", style.cs.StatusBar.Dirs.SizeBG, 0),
 		NewBarItem(FmtSize(dm.nav.Entry().Size, 0), style.cs.StatusBar.BG, 0),
@@ -480,7 +494,7 @@ func (dm *DirModel) dirsSummary() string {
 		NewBarItem(unitFmt(dm.nav.Entry().LocalFiles), style.cs.StatusBar.BG, 0),
 		NewBarItem("ERRORS", style.cs.StatusBar.Dirs.ErrorBG, 0),
 		NewBarItem(unitFmt(uint64(len(dm.lastErr))), style.cs.StatusBar.BG, 0),
-	}
+	)
 
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(
 		NewStatusBar(items, dm.width),
