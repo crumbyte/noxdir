@@ -13,9 +13,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-const Version = "v0.3.0"
+const (
+	Version = "v0.3.0"
 
-const updateTickerInterval = time.Millisecond * 500
+	updateTickerInterval = time.Millisecond * 500
+)
 
 type (
 	UpdateDirState struct{}

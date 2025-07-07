@@ -68,13 +68,15 @@ type Navigation struct {
 	state        State
 	cursor       int
 	locked       atomic.Bool
+	cacheEnabled bool
 }
 
-func NewNavigation(t *structure.Tree) *Navigation {
+func NewNavigation(t *structure.Tree, cacheEnabled bool) *Navigation {
 	n := &Navigation{
-		tree:       t,
-		state:      Drives,
-		entryStack: &entryStack{},
+		tree:         t,
+		state:        Drives,
+		entryStack:   &entryStack{},
+		cacheEnabled: cacheEnabled,
 	}
 
 	n.RefreshDrives()
@@ -108,7 +110,7 @@ wait:
 	<-done
 	t.CalculateSize()
 
-	n := NewNavigation(t)
+	n := NewNavigation(t, false)
 
 	n.state = Dirs
 	n.entry = t.Root()

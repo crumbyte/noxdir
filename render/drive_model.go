@@ -174,17 +174,30 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 func (dm *DriveModel) drivesSummary() string {
 	dl := dm.nav.DrivesList()
 
-	items := []*BarItem{
+	items := make([]*BarItem, 0, 10)
+	items = append(
+		items,
 		NewBarItem(Version, style.CS().StatusBar.VersionBG, 0),
 		NewBarItem("MODE", style.CS().StatusBar.Drives.ModeBG, 0),
 		NewBarItem("Drives List", style.CS().StatusBar.BG, -1),
+	)
+
+	if dm.nav.cacheEnabled {
+		items = append(
+			items,
+			NewBarItem("CACHED", style.CS().StatusBar.VersionBG, 0),
+		)
+	}
+
+	items = append(
+		items,
 		NewBarItem("CAPACITY", style.CS().StatusBar.Drives.CapacityBG, 0),
 		NewBarItem(FmtSize(dl.TotalCapacity, 0), style.CS().StatusBar.BG, 0),
 		NewBarItem("FREE", style.CS().StatusBar.Drives.FreeBG, 0),
 		NewBarItem(FmtSize(dl.TotalFree, 0), style.CS().StatusBar.BG, 0),
 		NewBarItem("USED", style.CS().StatusBar.Drives.UsedBG, 0),
 		NewBarItem(FmtSize(dl.TotalUsed, 0), style.CS().StatusBar.BG, 0),
-	}
+	)
 
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(
 		NewStatusBar(items, dm.width),

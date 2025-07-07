@@ -390,7 +390,7 @@ func resolveNavigation(s *config.Settings) (*render.Navigation, error) {
 
 	tree = structure.NewTree(nil, opts...)
 
-	return render.NewNavigation(tree), nil
+	return render.NewNavigation(tree, s.UseCache), nil
 }
 
 func printError(errMsg string) {
