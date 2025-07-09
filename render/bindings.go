@@ -33,6 +33,7 @@ const (
 	left              bindingKey = "left"
 	right             bindingKey = "right"
 	diff              bindingKey = "+"
+	openConfig        bindingKey = "%"
 )
 
 func ToggleHelpBinding() key.Binding {
@@ -127,6 +128,13 @@ func DrivesKeyMap() [][]key.Binding {
 				key.WithHelp(
 					style.BindKey().Render(refresh.String()),
 					style.Help().Render(" - refresh"),
+				),
+			),
+			key.NewBinding(
+				key.WithKeys(openConfig.String()),
+				key.WithHelp(
+					style.BindKey().Render(openConfig.String()),
+					style.Help().Render(" - open config"),
 				),
 			),
 		},
@@ -233,6 +241,13 @@ func DirsKeyMap() [][]key.Binding {
 				key.WithHelp(
 					style.BindKey().Render(diff.String()),
 					style.Help().Render(" - toggle diff"),
+				),
+			),
+			key.NewBinding(
+				key.WithKeys(openConfig.String()),
+				key.WithHelp(
+					style.BindKey().Render(openConfig.String()),
+					style.Help().Render(" - open config"),
 				),
 			),
 		},

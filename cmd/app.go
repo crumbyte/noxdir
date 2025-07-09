@@ -385,12 +385,12 @@ func resolveNavigation(s *config.Settings) (*render.Navigation, error) {
 			append(opts, structure.WithPartialRoot())...,
 		)
 
-		return render.NewRootNavigation(tree)
+		return render.NewRootNavigation(tree, *settings)
 	}
 
 	tree = structure.NewTree(nil, opts...)
 
-	return render.NewNavigation(tree, s.UseCache), nil
+	return render.NewNavigation(tree, *settings), nil
 }
 
 func printError(errMsg string) {

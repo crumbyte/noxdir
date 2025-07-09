@@ -50,6 +50,10 @@ func LoadSettings() (*Settings, error) {
 	return &s, nil
 }
 
+func (s Settings) ConfigPath() string {
+	return filepath.Join(s.Path, FileName)
+}
+
 func ResolveConfigPath(configDir string) (string, error) {
 	configPath, err := os.UserHomeDir()
 	if err != nil {

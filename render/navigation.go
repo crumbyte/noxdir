@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync/atomic"
 
+	"github.com/crumbyte/noxdir/config"
 	"github.com/crumbyte/noxdir/drive"
 	"github.com/crumbyte/noxdir/structure"
 )
@@ -65,18 +66,20 @@ type Navigation struct {
 	drives       *drive.List
 	currentDrive *drive.Info
 	entryStack   *entryStack
+	settings     config.Settings
 	state        State
 	cursor       int
 	locked       atomic.Bool
 	cacheEnabled bool
 }
 
-func NewNavigation(t *structure.Tree, cacheEnabled bool) *Navigation {
+func NewNavigation(t *structure.Tree, s config.Settings) *Navigation {
 	n := &Navigation{
 		tree:         t,
 		state:        Drives,
 		entryStack:   &entryStack{},
-		cacheEnabled: cacheEnabled,
+		settings:     s,
+		cacheEnabled: s.UseCache,
 	}
 
 	n.RefreshDrives()
@@ -87,7 +90,7 @@ func NewNavigation(t *structure.Tree, cacheEnabled bool) *Navigation {
 // NewRootNavigation creates navigation for a predefined root directory entry.
 // It starts the blocking traversal immediately rather than in interactive mode.
 // Therefore, a root with a wide subdirectory structure might cause a delay.
-func NewRootNavigation(t *structure.Tree) (*Navigation, error) {
+func NewRootNavigation(t *structure.Tree, s config.Settings) (*Navigation, error) {
 	if t.Root() == nil {
 		return nil, errors.New("root is nil")
 	}
@@ -110,12 +113,18 @@ wait:
 	<-done
 	t.CalculateSize()
 
-	n := NewNavigation(t, false)
+	n := NewNavigation(t, s)
+	n.cacheEnabled = false
 
 	n.state = Dirs
 	n.entry = t.Root()
 
 	return n, nil
+}
+
+// Settings returns the current application's settings.
+func (n *Navigation) Settings() config.Settings {
+	return n.settings
 }
 
 // OnDrives checks whether the current navigation state is Drives or not.
