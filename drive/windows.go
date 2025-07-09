@@ -4,7 +4,9 @@ package drive
 
 import (
 	"fmt"
+	"os/exec"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 	"unsafe"
@@ -227,10 +229,10 @@ func spaceUsage(path string) (driveSpace, error) {
 	return ds, nil
 }
 
-// Explore explores the directory using Windows API. If the provided path is a
+// ExploreFallback explores the directory using Windows API. If the provided path is a
 // valid directory path, it will open it in the file explorer in a new window.
 // Otherwise, an error will be returned.
-func Explore(path string) error {
+func ExploreFallback(path string) error {
 	pathPtr, err := winapi.UTF16PtrFromString(path)
 	if err != nil {
 		return fmt.Errorf("drive: UTF16PtrFromString: %w", err)
@@ -249,6 +251,23 @@ func Explore(path string) error {
 	}
 
 	return nil
+}
+
+// Explore explores the directory using the PowerShell command execution. If the
+// provided path is a valid directory path, it will open it in the file explorer
+// in a new window. Otherwise, an error will be returned.
+func Explore(path string) error {
+	//nolint:gosec // because of the one text editor that shouldn't exist
+	cmd := exec.Command(
+		"powershell",
+		"-Command",
+		fmt.Sprintf("Start-Process -FilePath %q", strings.TrimSpace(path)),
+	)
+
+	// Detach stdio to prevent terminal pollution
+	cmd.Stdout, cmd.Stderr, cmd.Stdin = nil, nil, nil
+
+	return cmd.Start()
 }
 
 // ReadDir reads the provided directory and returns its entries as a slice of

@@ -61,6 +61,10 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch bk {
+		case openConfig:
+			if err := drive.Explore(vm.nav.Settings().ConfigPath()); err != nil {
+				return vm, nil
+			}
 		case refresh:
 			vm.refresh()
 		case quit, cancel:
