@@ -146,8 +146,8 @@ linters:
 
     govet:
       enable-all: true
-#      disable:
-#        - fieldalignment # too strict
+      disable:
+        - fieldalignment # too much false positive checks
       # Settings per analyzer.
       settings:
         shadow:
