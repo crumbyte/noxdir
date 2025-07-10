@@ -28,12 +28,12 @@ type DrivesStatusBarColors struct {
 }
 
 type DirsStatusBarColors struct {
-	PathBG  string `json:"pathBackground"`
-	ModeBG  string `json:"modeBackground"`
-	SizeBG  string `json:"sizeBackground"`
-	DirsBG  string `json:"dirsBackground"`
-	FilesBG string `json:"filesBackground"`
-	ErrorBG string `json:"errorBackground"`
+	PathBG      string `json:"pathBackground"`
+	ModeBG      string `json:"modeBackground"`
+	SizeBG      string `json:"sizeBackground"`
+	DirsBG      string `json:"dirsBackground"`
+	FilesBG     string `json:"filesBackground"`
+	RowsCounter string `json:"rowsCounter"`
 }
 
 type StatusBarColors struct {
@@ -118,12 +118,12 @@ func DefaultColorSchema() ColorSchema {
 				UsedBG:     "#FF5F87",
 			},
 			Dirs: DirsStatusBarColors{
-				PathBG:  "#FF5F87",
-				ModeBG:  "#FF8531",
-				SizeBG:  "#FF5F87",
-				DirsBG:  "#FF5F87",
-				FilesBG: "#FF5F87",
-				ErrorBG: "#FF303E",
+				PathBG:      "#FF5F87",
+				ModeBG:      "#FF8531",
+				SizeBG:      "#FF5F87",
+				DirsBG:      "#FF5F87",
+				FilesBG:     "#FF5F87",
+				RowsCounter: "#d81159",
 			},
 		},
 		ChartColors: ChartColors{

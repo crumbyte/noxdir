@@ -16,7 +16,7 @@
       "sizeBackground": "#FF5F87",
       "dirsBackground": "#FF5F87",
       "filesBackground": "#FF5F87",
-      "errorBackground": "#FF303E"
+      "rowsCounter": "#d81159"
     }
   },
   "chart": {

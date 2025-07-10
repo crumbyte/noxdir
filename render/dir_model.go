@@ -2,6 +2,7 @@ package render
 
 import (
 	"container/heap"
+	"fmt"
 	"os"
 	"runtime"
 	"slices"
@@ -35,17 +36,16 @@ const (
 
 type DirModel struct {
 	columns       []Column
+	mode          Mode
 	dirsTable     *table.Model
 	topFilesTable *table.Model
 	topDirsTable  *table.Model
 	deleteDialog  *DeleteDialogModel
 	diff          *DiffModel
+	usagePG       *PG
 	nav           *Navigation
 	scanPG        *PG
-	usagePG       *PG
 	filters       filter.FiltersList
-	mode          Mode
-	lastErr       []error
 	height        int
 	width         int
 	showTopFiles  bool
@@ -492,8 +492,15 @@ func (dm *DirModel) dirsSummary() string {
 		NewBarItem(unitFmt(dm.nav.Entry().LocalDirs), style.cs.StatusBar.BG, 0),
 		NewBarItem("FILES", style.cs.StatusBar.Dirs.FilesBG, 0),
 		NewBarItem(unitFmt(dm.nav.Entry().LocalFiles), style.cs.StatusBar.BG, 0),
-		NewBarItem("ERRORS", style.cs.StatusBar.Dirs.ErrorBG, 0),
-		NewBarItem(unitFmt(uint64(len(dm.lastErr))), style.cs.StatusBar.BG, 0),
+		NewBarItem(
+			fmt.Sprintf(
+				"%d:%d",
+				dm.dirsTable.Cursor()+1,
+				len(dm.dirsTable.Rows()),
+			),
+			style.cs.StatusBar.Dirs.RowsCounter,
+			0,
+		),
 	)
 
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(
