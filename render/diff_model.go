@@ -41,7 +41,7 @@ func NewDiffModel(n *Navigation) *DiffModel {
 			{Title: ""},
 			{Title: ""},
 			{Title: ""},
-			{Title: "Name"},
+			{Title: "Entry Path"},
 			{Title: "Size"},
 		},
 	}
@@ -109,12 +109,7 @@ func (dm *DiffModel) View() string {
 		total := dm.viewStats()
 		dm.table.SetHeight(dm.height - lipgloss.Height(total))
 
-		rows = append(
-			rows,
-			messageStyle.Render("Current delta for: "+dm.nav.Entry().Path),
-			dm.table.View(),
-			total,
-		)
+		rows = append(rows, dm.table.View(), total)
 	}
 
 	if dm.ready && !hasDiff {
@@ -249,25 +244,27 @@ func (dm *DiffModel) viewStats() string {
 	remDirs, remFiles, remSize := structure.DiffStats(dm.diff.Removed)
 
 	statStyle := lipgloss.NewStyle().Bold(true).Underline(true)
+	addedStat := statStyle.Foreground(lipgloss.Color("#06923E"))
+	removedStat := statStyle.Foreground(lipgloss.Color("#FF303E"))
 
 	addedStats := lipgloss.JoinHorizontal(
 		lipgloss.Center,
 		"ADDED: ",
-		statStyle.Render(FmtSize(addedSize, 0)),
+		addedStat.Render(FmtSize(addedSize, 0)),
 		", directories - ",
-		statStyle.Render(strconv.Itoa(addedDirs)),
+		addedStat.Render(strconv.FormatUint(addedDirs, 10)),
 		", files - ",
-		statStyle.Render(strconv.Itoa(addedFiles)),
+		addedStat.Render(strconv.FormatUint(addedFiles, 10)),
 	)
 
 	removedStats := lipgloss.JoinHorizontal(
 		lipgloss.Center,
 		"REMOVED: ",
-		statStyle.Render(FmtSize(remSize, 0)),
+		removedStat.Render(FmtSize(remSize, 0)),
 		", directories - ",
-		statStyle.Render(strconv.Itoa(remDirs)),
+		removedStat.Render(strconv.FormatUint(remDirs, 10)),
 		", files - ",
-		statStyle.Render(strconv.Itoa(remFiles)),
+		removedStat.Render(strconv.FormatUint(remFiles, 10)),
 	)
 
 	return lipgloss.NewStyle().Width(dm.width).
