@@ -228,15 +228,16 @@ func (d *Diff) Sort() *Diff {
 	return d
 }
 
-func DiffStats(entries []*Entry) (int, int, int64) {
-	dirs, files := 0, 0
+func DiffStats(entries []*Entry) (uint64, uint64, int64) {
+	dirs, files := uint64(0), uint64(0)
 	total := int64(0)
 
 	for _, entry := range entries {
 		total += entry.Size
 
 		if entry.IsDir {
-			dirs++
+			dirs += entry.TotalDirs + 1
+			files += entry.TotalFiles
 
 			continue
 		}
