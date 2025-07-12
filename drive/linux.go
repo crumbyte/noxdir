@@ -149,7 +149,7 @@ func mounts() ([]string, error) {
 
 		devKey := segments[0] + strconv.FormatUint(uint64(stat.Ino), 10)
 
-		devMntMap[devKey] = append(devMntMap[segments[0]], segments[1])
+		devMntMap[devKey] = append(devMntMap[devKey], segments[1])
 	}
 
 	// only return the shortest mount
