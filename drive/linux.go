@@ -6,9 +6,9 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"maps"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -117,18 +117,16 @@ func mntInfo(path string) (*Info, bool, error) {
 }
 
 func mounts() ([]string, error) {
-	mnt, err := os.Open(mountInfoPath)
+	mountsFile, err := os.Open(mountInfoPath)
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", mountInfoPath, err)
 	}
 
-	defer func(mnt *os.File) {
-		_ = mnt.Close()
-	}(mnt)
+	defer func() {
+		_ = mountsFile.Close()
+	}()
 
-	scanner := bufio.NewScanner(mnt)
-
-	mnts := make(map[string][]string)
+	scanner, devMntMap := bufio.NewScanner(mountsFile), make(map[string][]string)
 
 	for scanner.Scan() {
 		segments := strings.Split(scanner.Text(), " ")
@@ -143,18 +141,29 @@ func mounts() ([]string, error) {
 			continue
 		}
 
-		mnts[segments[0]] = append(mnts[segments[0]], segments[1])
+		var stat unix.Stat_t
+
+		if err = unix.Stat(segments[1], &stat); err != nil {
+			return nil, fmt.Errorf("failed to stat %s: %w", segments[1], err)
+		}
+
+		devKey := segments[0] + strconv.FormatUint(uint64(stat.Ino), 10)
+
+		devMntMap[devKey] = append(devMntMap[segments[0]], segments[1])
 	}
 
 	// only return the shortest mount
-	mntList := make([]string, 0, len(mnts))
-	for mounts := range maps.Values(mnts) {
-		shortest := mounts[0]
-		for _, mnt := range mounts {
+	mntList := make([]string, 0, len(devMntMap))
+
+	for _, devMounts := range devMntMap {
+		shortest := devMounts[0]
+
+		for _, mnt := range devMounts {
 			if len(mnt) < len(shortest) {
 				shortest = mnt
 			}
 		}
+
 		mntList = append(mntList, shortest)
 	}
 
