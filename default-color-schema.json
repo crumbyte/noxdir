@@ -36,6 +36,8 @@
   "tableHeaderBorder": "240",
   "selectedRowText": "#262626",
   "selectedRowBackground": "#EBBD34",
+  "markedRowText": "#262626",
+  "markedRowBackground": "#eae2b7",
   "topFilesText": "#EBBD34",
   "helpText": "#696868",
   "bindingText": "#FFBF69",

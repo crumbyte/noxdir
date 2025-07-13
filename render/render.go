@@ -99,6 +99,7 @@ func (vm *ViewModel) levelDown() {
 	cursor := vm.dirModel.dirsTable.Cursor()
 
 	if vm.nav.OnDrives() {
+		vm.driveModel.drivesTable.ResetMarked()
 		sr = vm.driveModel.drivesTable.SelectedRow()
 	}
 
@@ -110,6 +111,7 @@ func (vm *ViewModel) levelDown() {
 		sr[1],
 		cursor,
 		func(_ *structure.Entry, _ State) {
+			vm.dirModel.dirsTable.ResetMarked()
 			vm.dirModel.filters.Reset()
 			vm.dirModel.updateTableData()
 		},
@@ -149,12 +151,14 @@ func (vm *ViewModel) levelDown() {
 func (vm *ViewModel) levelUp() {
 	vm.nav.Up(func(_ *structure.Entry, _ State) {
 		if vm.nav.OnDrives() {
+			vm.driveModel.drivesTable.ResetMarked()
 			vm.driveModel.resetSort()
 			vm.driveModel.updateTableData(drive.TotalUsedP, true)
 
 			return
 		}
 
+		vm.dirModel.dirsTable.ResetMarked()
 		vm.dirModel.filters.Reset()
 		vm.dirModel.updateTableData()
 	})
@@ -164,6 +168,7 @@ func (vm *ViewModel) refresh() {
 	if vm.nav.OnDrives() {
 		vm.nav.RefreshDrives()
 
+		vm.driveModel.drivesTable.ResetMarked()
 		vm.driveModel.Update(RefreshDrives{})
 
 		return
@@ -216,6 +221,7 @@ func buildTable() *table.Model {
 	s := table.DefaultStyles()
 	s.Header = *style.TableHeader()
 	s.Selected = *style.SelectedRow()
+	s.Marked = *style.MarkedRow()
 	s.Cell = lipgloss.NewStyle().
 		Foreground(lipgloss.Color(style.CS().CellText))
 

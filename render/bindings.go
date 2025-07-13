@@ -250,6 +250,13 @@ func DirsKeyMap() [][]key.Binding {
 					style.Help().Render(" - open config"),
 				),
 			),
+			key.NewBinding(
+				key.WithKeys("/"),
+				key.WithHelp(
+					style.BindKey().Render("/"),
+					style.Help().Render(" - mark row"),
+				),
+			),
 		},
 	}
 }
