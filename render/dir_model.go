@@ -135,6 +135,7 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		dm.nav.tree.CalculateSize()
 		dm.updateTableData()
 
+		dm.dirsTable.ResetMarked()
 		dm.topFilesTable.SetRows(nil)
 		dm.topDirsTable.SetRows(nil)
 
@@ -357,10 +358,19 @@ func (dm *DirModel) handleFilter(bk bindingKey, msg tea.Msg) bool {
 
 func (dm *DirModel) handleDeletion(bk bindingKey, msg tea.Msg) bool {
 	if bk == remove && dm.mode == READY {
-		sr := dm.dirsTable.SelectedRow()
-
 		dm.mode = DELETE
-		dm.deleteDialog = NewDeleteDialogModel(dm.nav, sr[1])
+
+		var target []string
+
+		for _, r := range dm.dirsTable.MarkedRows() {
+			target = append(target, r[1])
+		}
+
+		if len(target) == 0 {
+			target = append(target, dm.dirsTable.SelectedRow()[1])
+		}
+
+		dm.deleteDialog = NewDeleteDialogModel(dm.nav, target)
 
 		dm.updateTableData()
 

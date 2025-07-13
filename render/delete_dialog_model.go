@@ -23,11 +23,11 @@ type EntryDeleted struct {
 
 type DeleteDialogModel struct {
 	nav        *Navigation
-	targetPath string
+	targetPath []string
 	choice     DeleteChoice
 }
 
-func NewDeleteDialogModel(nav *Navigation, targetPath string) *DeleteDialogModel {
+func NewDeleteDialogModel(nav *Navigation, targetPath []string) *DeleteDialogModel {
 	return &DeleteDialogModel{
 		choice:     CancelChoice,
 		targetPath: targetPath,
@@ -54,7 +54,11 @@ func (ddm *DeleteDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 		if ddm.choice == ConfirmChoice {
-			deleted, err = true, ddm.nav.Delete(ddm.targetPath)
+			for _, path := range ddm.targetPath {
+				err = ddm.nav.Delete(path)
+			}
+
+			deleted = true
 		}
 
 		go func() {
@@ -85,7 +89,9 @@ func (ddm *DeleteDialogModel) View() string {
 		Foreground(lipgloss.Color("#FF303E")).
 		Render("Confirm Deletion\n")
 
-	target := textStyle.Render(ddm.targetPath)
+	target := textStyle.Render(
+		lipgloss.JoinVertical(lipgloss.Center, ddm.targetPath...),
+	)
 
 	buttons := lipgloss.JoinHorizontal(
 		lipgloss.Top,

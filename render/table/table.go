@@ -16,6 +16,7 @@ type Model struct {
 	Help     help.Model
 	rows     []Row
 	viewport viewport.Model
+	marked   map[int]struct{}
 	cursor   int
 	start    int
 	end      int
@@ -35,6 +36,7 @@ type KeyMap struct {
 	PageDown   key.Binding
 	GotoTop    key.Binding
 	GotoBottom key.Binding
+	MarkRow    key.Binding
 }
 
 // DefaultKeyMap returns a default set of keybindings.
@@ -64,6 +66,10 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("end", "G"),
 			key.WithHelp("G/end", "go to end"),
 		),
+		MarkRow: key.NewBinding(
+			key.WithKeys("/"),
+			key.WithHelp("/", "mark row"),
+		),
 	}
 }
 
@@ -71,11 +77,13 @@ type Styles struct {
 	Header   lipgloss.Style
 	Cell     lipgloss.Style
 	Selected lipgloss.Style
+	Marked   lipgloss.Style
 }
 
 func DefaultStyles() Styles {
 	return Styles{
 		Selected: lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("212")),
+		Marked:   lipgloss.NewStyle().Foreground(lipgloss.Color("214")),
 		Header:   lipgloss.NewStyle().Bold(true).Padding(0, 1),
 		Cell:     lipgloss.NewStyle().Padding(0, 1),
 	}
@@ -90,10 +98,10 @@ func New() Model {
 	m := Model{
 		cursor:   0,
 		viewport: viewport.New(0, 20),
-
-		KeyMap: DefaultKeyMap(),
-		Help:   help.New(),
-		styles: DefaultStyles(),
+		KeyMap:   DefaultKeyMap(),
+		Help:     help.New(),
+		styles:   DefaultStyles(),
+		marked:   make(map[int]struct{}),
 	}
 
 	m.UpdateViewport()
@@ -120,6 +128,8 @@ func (m *Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.GotoTop()
 	case key.Matches(keyMsg, m.KeyMap.GotoBottom):
 		m.GotoBottom()
+	case key.Matches(keyMsg, m.KeyMap.MarkRow):
+		m.MarkSelected()
 	}
 
 	return *m, nil
@@ -157,6 +167,18 @@ func (m *Model) SelectedRow() Row {
 
 func (m *Model) Rows() []Row {
 	return m.rows
+}
+
+func (m *Model) MarkedRows() []Row {
+	rows := make([]Row, 0, len(m.marked))
+
+	for i := range m.rows {
+		if _, ok := m.marked[i]; ok {
+			rows = append(rows, m.rows[i])
+		}
+	}
+
+	return rows
 }
 
 func (m *Model) Columns() []Column {
@@ -198,6 +220,22 @@ func (m *Model) Cursor() int {
 func (m *Model) SetCursor(n int) {
 	m.cursor = clamp(n, 0, len(m.rows)-1)
 	m.UpdateViewport()
+}
+
+func (m *Model) MarkSelected() {
+	cursor := clamp(m.cursor, 0, len(m.rows)-1)
+
+	if _, ok := m.marked[cursor]; ok {
+		delete(m.marked, cursor)
+	} else {
+		m.marked[clamp(m.cursor, 0, len(m.rows)-1)] = struct{}{}
+	}
+
+	m.UpdateViewport()
+}
+
+func (m *Model) ResetMarked() {
+	m.marked = make(map[int]struct{})
 }
 
 func (m *Model) MoveUp(n int) {
@@ -273,6 +311,10 @@ func (m *Model) renderRow(r int) string {
 		}
 
 		renderer := m.styles.Cell
+
+		if _, ok := m.marked[r]; ok {
+			renderer = m.styles.Marked
+		}
 
 		if r == m.cursor {
 			renderer = m.styles.Selected

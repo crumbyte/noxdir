@@ -59,6 +59,8 @@ type ColorSchema struct {
 	TableHeaderBorder string          `json:"tableHeaderBorder"`
 	SelectedRowText   string          `json:"selectedRowText"`
 	SelectedRowBG     string          `json:"selectedRowBackground"`
+	MarkedRowText     string          `json:"markedRowText"`
+	MarkedRowBG       string          `json:"markedRowBackground"`
 	TopFilesText      string          `json:"topFilesText"`
 	HelpText          string          `json:"helpText"`
 	BindingText       string          `json:"bindingText"`
@@ -143,6 +145,8 @@ func DefaultColorSchema() ColorSchema {
 		TableHeaderBorder: "240",
 		SelectedRowText:   "#262626",
 		SelectedRowBG:     "#EBBD34",
+		MarkedRowText:     "#262626",
+		MarkedRowBG:       "#eae2b7",
 		TopFilesText:      "#EBBD34",
 		HelpText:          "#696868",
 		BindingText:       "#FFBF69",

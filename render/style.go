@@ -80,6 +80,22 @@ func (s *Style) SelectedRow() *lipgloss.Style {
 	return cv
 }
 
+func (s *Style) MarkedRow() *lipgloss.Style {
+	cv, ok := s.cache["markedRow"]
+	if !ok {
+		cs := lipgloss.NewStyle().
+			Foreground(lipgloss.Color(s.cs.MarkedRowText)).
+			Background(lipgloss.Color(s.cs.MarkedRowBG)).
+			Bold(false)
+
+		s.cache["markedRow"] = &cs
+
+		return &cs
+	}
+
+	return cv
+}
+
 func (s *Style) StatusBar() *lipgloss.Style {
 	cv, ok := s.cache["statusBar"]
 	if !ok {
