@@ -20,12 +20,12 @@ case "$OS" in
 esac
 
 # Normalize ARCH
-case "$ARCH" in
-  x86_64|amd64) ARCH="amd64" ;;
-  aarch64|arm64) ARCH="arm64" ;;
-  i386|i686) ARCH="i386" ;;
-  *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
-esac
+# case "$ARCH" in
+#  x86_64|amd64) ARCH="amd64" ;;
+#  aarch64|arm64) ARCH="arm64" ;;
+#  i386|i686) ARCH="i386" ;;
+#  *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
+# esac
 
 # Get version
 if [[ "$VERSION" == "latest" ]]; then
