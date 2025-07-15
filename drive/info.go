@@ -21,10 +21,12 @@ type Info struct {
 	Path        string  `json:"path"`
 	Volume      string  `json:"volume"`
 	FSName      string  `json:"fsName"`
+	Device      string  `json:"device"`
 	TotalBytes  uint64  `json:"total"`
 	FreeBytes   uint64  `json:"free"`
 	UsedBytes   uint64  `json:"used"`
 	UsedPercent float64 `json:"usedPercent"`
+	IsDev       uint8   `json:"isDev"`
 }
 
 type List struct {
@@ -32,6 +34,7 @@ type List struct {
 	TotalCapacity uint64
 	TotalUsed     uint64
 	TotalFree     uint64
+	MountsLayout  bool
 }
 
 func (l *List) All() map[string]*Info {
@@ -64,6 +67,8 @@ func (l *List) Sort(sk SortKey, desc bool) []*Info {
 		func(a, b *Info) int {
 			var compared int
 
+			compared = cmp.Compare(a.Device, b.Device)
+
 			switch sk {
 			case TotalCap:
 				compared = cmp.Compare(a.TotalBytes, b.TotalBytes)
@@ -77,6 +82,10 @@ func (l *List) Sort(sk SortKey, desc bool) []*Info {
 
 			if desc {
 				compared *= -1
+			}
+
+			if compared == 0 {
+				return cmp.Compare(b.IsDev, a.IsDev)
 			}
 
 			return compared
