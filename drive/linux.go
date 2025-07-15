@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"maps"
 	"os"
 	"os/exec"
 	"strings"
@@ -59,7 +58,10 @@ func NewList() (*List, error) {
 		return nil, err
 	}
 
-	list := &List{pathInfoMap: make(map[string]*Info, len(mntList))}
+	list := &List{
+		MountsLayout: true,
+		pathInfoMap:  make(map[string]*Info, len(mntList)),
+	}
 
 	for i := range mntList {
 		info, excluded, mntErr := mntInfo(mntList[i])
@@ -69,10 +71,18 @@ func NewList() (*List, error) {
 			continue
 		}
 
-		list.pathInfoMap[mntList[i]] = info
-		list.TotalCapacity += info.TotalBytes
-		list.TotalFree += info.FreeBytes
-		list.TotalUsed += info.UsedBytes
+		if _, ok := list.pathInfoMap[mntList[i].dev]; !ok {
+			devInfo := *info
+			devInfo.IsDev = 1
+
+			list.pathInfoMap[mntList[i].dev] = &devInfo
+
+			list.TotalCapacity += info.TotalBytes
+			list.TotalFree += info.FreeBytes
+			list.TotalUsed += info.UsedBytes
+		}
+
+		list.pathInfoMap[mntList[i].root] = info
 	}
 
 	return list, nil
@@ -87,10 +97,10 @@ func NewFileInfo(name string, data *unix.Stat_t) FileInfo {
 	}
 }
 
-func mntInfo(path string) (*Info, bool, error) {
+func mntInfo(path mountInfo) (*Info, bool, error) {
 	var stat unix.Statfs_t
 
-	if err := unix.Statfs(path, &stat); err != nil {
+	if err := unix.Statfs(path.root, &stat); err != nil {
 		return nil, false, fmt.Errorf("failed to statfs: %w", err)
 	}
 
@@ -105,7 +115,8 @@ func mntInfo(path string) (*Info, bool, error) {
 	usedBlocks := stat.Blocks - stat.Bfree
 
 	info := &Info{
-		Path:        path,
+		Path:        path.root,
+		Device:      path.dev,
 		FSName:      fsTypesMap[int64(stat.Type)],
 		TotalBytes:  stat.Blocks * blockSize,
 		FreeBytes:   stat.Bfree * blockSize,
@@ -116,24 +127,29 @@ func mntInfo(path string) (*Info, bool, error) {
 	return info, false, nil
 }
 
-func mounts() ([]string, error) {
-	mnt, err := os.Open(mountInfoPath)
+type mountInfo struct {
+	root string
+	dev  string
+}
+
+func mounts() ([]mountInfo, error) {
+	mountsFile, err := os.Open(mountInfoPath)
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", mountInfoPath, err)
 	}
 
-	defer func(mnt *os.File) {
-		_ = mnt.Close()
-	}(mnt)
+	defer func() {
+		_ = mountsFile.Close()
+	}()
 
-	scanner := bufio.NewScanner(mnt)
-
-	mnts := make(map[string][]string)
+	scanner := bufio.NewScanner(mountsFile)
+	mntList := make([]mountInfo, 0)
 
 	for scanner.Scan() {
 		segments := strings.Split(scanner.Text(), " ")
+
 		if len(segments) < 2 {
-			// if we dont have at least two fields, we can't really
+			// if we don't have at least two fields, we can't really
 			// identify anything.
 			continue
 		}
@@ -143,19 +159,9 @@ func mounts() ([]string, error) {
 			continue
 		}
 
-		mnts[segments[0]] = append(mnts[segments[0]], segments[1])
-	}
-
-	// only return the shortest mount
-	mntList := make([]string, 0, len(mnts))
-	for mounts := range maps.Values(mnts) {
-		shortest := mounts[0]
-		for _, mnt := range mounts {
-			if len(mnt) < len(shortest) {
-				shortest = mnt
-			}
-		}
-		mntList = append(mntList, shortest)
+		mntList = append(
+			mntList, mountInfo{root: segments[1], dev: segments[0]},
+		)
 	}
 
 	return mntList, nil

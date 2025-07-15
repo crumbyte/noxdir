@@ -1,6 +1,7 @@
 package render
 
 import (
+	"runtime"
 	"strings"
 
 	"github.com/crumbyte/noxdir/drive"
@@ -28,6 +29,7 @@ type DriveModel struct {
 func NewDriveModel(n *Navigation) *DriveModel {
 	dc := []Column{
 		{},
+		{},
 		{Title: "Path"},
 		{Title: "Volume"},
 		{Title: "File System"},
@@ -36,6 +38,11 @@ func NewDriveModel(n *Navigation) *DriveModel {
 		{Title: "Free", SortKey: drive.TotalFree},
 		{Title: "Usage", SortKey: drive.TotalUsedP},
 		{},
+	}
+
+	if runtime.GOOS == "linux" {
+		dc[2].Title = "Device"
+		dc[3].Title = "Mount"
 	}
 
 	return &DriveModel{
@@ -125,7 +132,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 	tableWidth := dm.width
 
 	colWidth := int(float64(tableWidth) * 0.085)
-	progressWidth := tableWidth - (colWidth * 6) - iconWidth - pathWidth
+	progressWidth := tableWidth - (colWidth * 5) - iconWidth - (pathWidth * 2)
 
 	columns := make([]table.Column, len(dm.driveColumns))
 
@@ -137,7 +144,9 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 	}
 
 	columns[0].Width = iconWidth
-	columns[1].Width = pathWidth
+	columns[1].Width = 0
+	columns[2].Width = pathWidth
+	columns[3].Width = pathWidth
 	columns[len(columns)-1].Width = progressWidth
 
 	dm.drivesTable.SetColumns(columns)
@@ -145,13 +154,16 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 
 	diskFillProgress := dm.usagePG.New(progressWidth)
 
-	allDrives := dm.nav.DrivesList().Sort(key, sortDesc)
-	rows := make([]table.Row, 0, len(allDrives))
+	drivesList := dm.nav.DrivesList()
+	sortedDrives := drivesList.Sort(key, sortDesc)
 
-	for _, d := range allDrives {
+	rows := make([]table.Row, 0, len(sortedDrives))
+
+	for _, d := range sortedDrives {
 		pgBar := diskFillProgress.ViewAs(d.UsedPercent / 100)
-		rows = append(rows, table.Row{
+		r := table.Row{
 			"⛃",
+			d.Path,
 			d.Path,
 			d.Volume,
 			d.FSName,
@@ -164,7 +176,31 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 				strings.Repeat(" ", max(0, progressWidth-lipgloss.Width(pgBar))),
 				pgBar,
 			),
-		})
+		}
+
+		if !drivesList.MountsLayout {
+			rows = append(rows, r)
+
+			continue
+		}
+
+		// update the row layout for the Linux based systems. Each device and
+		// all the corresponding mounts will be rendered according to the
+		// specified sorting rule.
+		if d.IsDev != 0 {
+			r[1], r[2], r[3], r[4] = "", d.Device, "", "-"
+		} else {
+			r = table.Row{
+				"⤷",
+				d.Path,
+				"",
+				FmtName(d.Path, pathWidth),
+				d.FSName,
+				"-", "-", "-", "-", "",
+			}
+		}
+
+		rows = append(rows, r)
 	}
 
 	dm.drivesTable.SetRows(rows)
