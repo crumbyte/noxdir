@@ -132,7 +132,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 	tableWidth := dm.width
 
 	colWidth := int(float64(tableWidth) * 0.085)
-	progressWidth := tableWidth - (colWidth * 6) - iconWidth - pathWidth
+	progressWidth := tableWidth - (colWidth * 5) - iconWidth - (pathWidth * 2)
 
 	columns := make([]table.Column, len(dm.driveColumns))
 
@@ -146,6 +146,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 	columns[0].Width = iconWidth
 	columns[1].Width = 0
 	columns[2].Width = pathWidth
+	columns[3].Width = pathWidth
 	columns[len(columns)-1].Width = progressWidth
 
 	dm.drivesTable.SetColumns(columns)
@@ -160,7 +161,6 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 
 	for _, d := range sortedDrives {
 		pgBar := diskFillProgress.ViewAs(d.UsedPercent / 100)
-
 		r := table.Row{
 			"⛃",
 			d.Path,
@@ -191,7 +191,12 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 			r[1], r[2], r[3], r[4] = "", d.Device, "", "-"
 		} else {
 			r = table.Row{
-				"\U000F17AA", d.Path, "", d.Path, d.FSName, "-", "-", "-", "-", "",
+				"⤷",
+				d.Path,
+				"",
+				FmtName(d.Path, pathWidth),
+				d.FSName,
+				"-", "-", "-", "-", "",
 			}
 		}
 
