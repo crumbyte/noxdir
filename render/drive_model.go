@@ -208,14 +208,24 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 }
 
 func (dm *DriveModel) drivesSummary() string {
+	var driveTitle string
+
 	dl := dm.nav.DrivesList()
+
+	if len(dm.drivesTable.Rows()) != 0 {
+		driveTitle = dm.drivesTable.SelectedRow()[1]
+	}
+
+	if len(driveTitle) == 0 {
+		driveTitle = "No Drives Selected"
+	}
 
 	items := make([]*BarItem, 0, 10)
 	items = append(
 		items,
 		NewBarItem(Version, style.CS().StatusBar.VersionBG, 0),
-		NewBarItem("MODE", style.CS().StatusBar.Drives.ModeBG, 0),
-		NewBarItem("Drives List", style.CS().StatusBar.BG, -1),
+		NewBarItem("DRIVES", style.CS().StatusBar.Drives.ModeBG, 0),
+		NewBarItem(driveTitle, style.CS().StatusBar.BG, -1),
 	)
 
 	if dm.nav.cacheEnabled {
