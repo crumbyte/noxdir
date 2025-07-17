@@ -3,6 +3,7 @@ package render
 import (
 	"fmt"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 
@@ -78,17 +79,21 @@ func unitFmt(val uint64) string {
 	return strconv.FormatUint(val, 10)
 }
 
-func FmtName(name string, maxWidth int) string {
-	nameWrap := lipgloss.NewStyle().MaxWidth(maxWidth - 5).Render(name)
+// WrapString wraps the string up to the provided limit value. If the string
+// reached the limit it will be appended with the "..." suffix.
+func WrapString(data string, limit int) string {
+	// wrap original name and reserve some characters
+	wrappedData := lipgloss.NewStyle().MaxWidth(limit - 5).Render(data)
 
-	if lipgloss.Width(nameWrap) == maxWidth-5 {
-		nameWrap += "..."
+	if lipgloss.Width(wrappedData) == limit-5 {
+		wrappedData += "..."
 	}
 
-	return nameWrap
+	return wrappedData
 }
 
 func FmtUsage(usage, threshold float64, fullWidth int) string {
+	// minWidth defines a width of longest possible usage string value 100.00 %.
 	minWidth := 8
 	usagePercent := usage * 100
 
@@ -107,4 +112,26 @@ func FmtUsage(usage, threshold float64, fullWidth int) string {
 		strings.Repeat(" ", max(0, minWidth-lipgloss.Width(usageFmt))),
 		usageFmt,
 	)
+}
+
+func WrapPath(path string, limit int) string {
+	if len(path) <= limit {
+		return path
+	}
+
+	prefix := "..."
+
+	truncateLength := len(path) - limit
+
+	pathSeparatorIdx := strings.IndexByte(
+		path[truncateLength:], os.PathSeparator,
+	)
+
+	if pathSeparatorIdx == -1 {
+		return prefix + path[truncateLength:]
+	}
+
+	path = path[truncateLength:]
+
+	return prefix + path[pathSeparatorIdx:]
 }
