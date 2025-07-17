@@ -210,7 +210,7 @@ func (dm *DiffModel) updateTableData() {
 				addedIcon,
 				EntryIcon(child),
 				child.Path,
-				FmtName(child.Path, nameWidth),
+				WrapString(child.Path, nameWidth),
 				FmtSize(child.Size, entrySizeWidth),
 			},
 		)
@@ -223,7 +223,7 @@ func (dm *DiffModel) updateTableData() {
 				removedIcon,
 				EntryIcon(child),
 				child.Path,
-				FmtName(child.Path, nameWidth),
+				WrapString(child.Path, nameWidth),
 				FmtSize(child.Size, entrySizeWidth),
 			},
 		)

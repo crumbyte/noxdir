@@ -20,6 +20,7 @@ type DriveModel struct {
 	drivesTable  *table.Model
 	nav          *Navigation
 	usagePG      *PG
+	statusBar    *StatusBar
 	sortState    SortState
 	height       int
 	width        int
@@ -50,6 +51,7 @@ func NewDriveModel(n *Navigation) *DriveModel {
 		driveColumns: dc,
 		sortState:    SortState{Key: drive.TotalUsedP, Desc: true},
 		drivesTable:  buildTable(),
+		statusBar:    NewStatusBar(),
 		usagePG:      &style.CS().UsageProgressBar,
 	}
 }
@@ -194,7 +196,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 				"⤷",
 				d.Path,
 				"",
-				FmtName(d.Path, pathWidth),
+				WrapString(d.Path, pathWidth),
 				d.FSName,
 				"-", "-", "-", "-", "",
 			}
@@ -208,45 +210,53 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 }
 
 func (dm *DriveModel) drivesSummary() string {
-	var driveTitle string
+	if dm.statusBar == nil {
+		return ""
+	}
 
-	dl := dm.nav.DrivesList()
+	dm.statusBar.Clear()
+
+	driveTitle := "No Drives Selected"
+	sbStyle := style.CS().StatusBar
 
 	if len(dm.drivesTable.Rows()) != 0 {
 		driveTitle = dm.drivesTable.SelectedRow()[1]
 	}
 
-	if len(driveTitle) == 0 {
-		driveTitle = "No Drives Selected"
+	barItems := []*BarItem{
+		{Content: Version, BGColor: sbStyle.VersionBG},
+		{Content: "DRIVES", BGColor: sbStyle.Drives.ModeBG},
+		{Content: driveTitle, BGColor: sbStyle.BG, Width: -1},
 	}
 
-	items := make([]*BarItem, 0, 10)
-	items = append(
-		items,
-		NewBarItem(Version, style.CS().StatusBar.VersionBG, 0),
-		NewBarItem("DRIVES", style.CS().StatusBar.Drives.ModeBG, 0),
-		NewBarItem(driveTitle, style.CS().StatusBar.BG, -1),
-	)
-
 	if dm.nav.cacheEnabled {
-		items = append(
-			items,
-			NewBarItem("CACHED", style.CS().StatusBar.VersionBG, 0),
+		barItems = append(
+			barItems,
+			&BarItem{
+				Content: "CACHED",
+				BGColor: sbStyle.VersionBG,
+			},
 		)
 	}
 
-	items = append(
-		items,
-		NewBarItem("CAPACITY", style.CS().StatusBar.Drives.CapacityBG, 0),
-		NewBarItem(FmtSize(dl.TotalCapacity, 0), style.CS().StatusBar.BG, 0),
-		NewBarItem("FREE", style.CS().StatusBar.Drives.FreeBG, 0),
-		NewBarItem(FmtSize(dl.TotalFree, 0), style.CS().StatusBar.BG, 0),
-		NewBarItem("USED", style.CS().StatusBar.Drives.UsedBG, 0),
-		NewBarItem(FmtSize(dl.TotalUsed, 0), style.CS().StatusBar.BG, 0),
+	dl := dm.nav.DrivesList()
+
+	barItems = append(
+		barItems,
+		[]*BarItem{
+			{Content: "CAPACITY", BGColor: sbStyle.Drives.CapacityBG},
+			{Content: FmtSize(dl.TotalCapacity, 0), BGColor: sbStyle.BG},
+			{Content: "FREE", BGColor: sbStyle.Drives.FreeBG},
+			{Content: FmtSize(dl.TotalFree, 0), BGColor: sbStyle.BG},
+			{Content: "USED", BGColor: sbStyle.Drives.UsedBG},
+			{Content: FmtSize(dl.TotalUsed, 0), BGColor: sbStyle.BG},
+		}...,
 	)
 
+	dm.statusBar.Add(barItems)
+
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(
-		NewStatusBar(items, dm.width),
+		dm.statusBar.Render(dm.width),
 	)
 }
 

@@ -46,6 +46,7 @@ type DirModel struct {
 	nav           *Navigation
 	scanPG        *PG
 	filters       filter.FiltersList
+	statusBar     *StatusBar
 	height        int
 	width         int
 	showTopFiles  bool
@@ -84,6 +85,7 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		topFilesTable: buildTable(),
 		topDirsTable:  buildTable(),
 		diff:          NewDiffModel(nav),
+		statusBar:     NewStatusBar(),
 		mode:          PENDING,
 		nav:           nav,
 		scanPG:        &style.CS().ScanProgressBar,
@@ -461,7 +463,7 @@ func (dm *DirModel) updateTableData() {
 			table.Row{
 				EntryIcon(child),
 				child.Name(),
-				FmtName(child.Name(), nameWidth),
+				WrapString(child.Name(), nameWidth),
 				FmtSizeColor(child.Size, entrySizeWidth, colWidth),
 				totalDirs,
 				totalFiles,
@@ -477,44 +479,56 @@ func (dm *DirModel) updateTableData() {
 }
 
 func (dm *DirModel) dirsSummary() string {
-	items := make([]*BarItem, 0, 13)
+	if dm.statusBar == nil {
+		return ""
+	}
 
-	items = append(
-		items,
-		NewBarItem(Version, style.cs.StatusBar.VersionBG, 0),
-		NewBarItem("PATH", style.cs.StatusBar.Dirs.PathBG, 0),
-		NewBarItem(dm.nav.Entry().Path, style.cs.StatusBar.BG, -1),
-	)
+	dm.statusBar.Clear()
+
+	sbStyle := style.CS().StatusBar
+
+	barItems := []*BarItem{
+		{Content: Version, BGColor: sbStyle.VersionBG},
+		{Content: "PATH", BGColor: sbStyle.Dirs.PathBG},
+		{
+			Content: dm.nav.Entry().Path,
+			BGColor: sbStyle.BG,
+			Wrapper: WrapPath,
+			Width:   -1,
+		},
+	}
 
 	if dm.nav.cacheEnabled {
-		items = append(
-			items,
-			NewBarItem("CACHED", style.CS().StatusBar.VersionBG, 0),
+		barItems = append(
+			barItems, &BarItem{
+				Content: "CACHED",
+				BGColor: style.CS().StatusBar.VersionBG,
+			},
 		)
 	}
 
-	items = append(
-		items,
-		NewBarItem(string(dm.mode), style.cs.StatusBar.Dirs.ModeBG, 0),
-		NewBarItem("SIZE", style.cs.StatusBar.Dirs.SizeBG, 0),
-		NewBarItem(FmtSize(dm.nav.Entry().Size, 0), style.cs.StatusBar.BG, 0),
-		NewBarItem("DIRS", style.cs.StatusBar.Dirs.DirsBG, 0),
-		NewBarItem(unitFmt(dm.nav.Entry().LocalDirs), style.cs.StatusBar.BG, 0),
-		NewBarItem("FILES", style.cs.StatusBar.Dirs.FilesBG, 0),
-		NewBarItem(unitFmt(dm.nav.Entry().LocalFiles), style.cs.StatusBar.BG, 0),
-		NewBarItem(
-			fmt.Sprintf(
+	barItems = append(
+		barItems,
+		[]*BarItem{
+			{Content: string(dm.mode), BGColor: sbStyle.Dirs.ModeBG},
+			{Content: "SIZE", BGColor: sbStyle.Dirs.SizeBG},
+			{Content: FmtSize(dm.nav.Entry().Size, 0), BGColor: sbStyle.BG},
+			{Content: "DIRS", BGColor: sbStyle.Dirs.DirsBG},
+			{Content: unitFmt(dm.nav.Entry().LocalDirs), BGColor: sbStyle.BG},
+			{Content: "FILES", BGColor: sbStyle.Dirs.FilesBG},
+			{Content: unitFmt(dm.nav.Entry().LocalFiles), BGColor: sbStyle.BG},
+			{Content: fmt.Sprintf(
 				"%d:%d",
 				dm.dirsTable.Cursor()+1,
 				len(dm.dirsTable.Rows()),
-			),
-			style.cs.StatusBar.Dirs.RowsCounter,
-			0,
-		),
+			), BGColor: style.cs.StatusBar.Dirs.RowsCounter},
+		}...,
 	)
 
+	dm.statusBar.Add(barItems)
+
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(
-		NewStatusBar(items, dm.width),
+		dm.statusBar.Render(dm.width),
 	)
 }
 

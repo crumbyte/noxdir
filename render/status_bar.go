@@ -12,6 +12,8 @@ const (
 	DynamicWidth      = -1
 )
 
+type BarItemWrapper func(data string, limit int) string
+
 // BarItem represents a single status bar item, including its string content,
 // background color, and width. The width parameter is optional, and the default
 // width equals the content width.
@@ -20,78 +22,108 @@ const (
 // minus the sum of all other elements' widths. If multiple items have a width
 // value of -1, the resulting width will be spread equally between them.
 type BarItem struct {
-	content string
-	bgColor string
-	width   int
-	border  rune
+	Content string
+	BGColor string
+	Width   int
+	Border  rune
+	Wrapper BarItemWrapper
 }
 
 // DefaultBarItem returns a new *BarItem instance with default values for
 // background color and width.
 func DefaultBarItem(content string) *BarItem {
 	return &BarItem{
-		content: content,
-		bgColor: DefaultBarBGColor,
-		border:  DefaultBorder,
+		Content: content,
+		BGColor: DefaultBarBGColor,
+		Border:  DefaultBorder,
 	}
 }
 
 // NewBarItem returns a new *BarItem instance based on the provided parameters.
 // If the background color is an empty string, a default color will be assigned.
-func NewBarItem(content, bgColor string, width int) *BarItem {
+func NewBarItem(content, bgColor string, width int, biw BarItemWrapper) *BarItem {
 	if bgColor == "" {
 		bgColor = DefaultBarBGColor
 	}
 
 	return &BarItem{
-		content: content,
-		bgColor: bgColor,
-		width:   width,
-		border:  DefaultBorder,
+		Content: content,
+		BGColor: bgColor,
+		Width:   width,
+		Border:  DefaultBorder,
+		Wrapper: biw,
 	}
 }
 
-// NewStatusBar builds a new status bar based on the provided list of *BarItem
+type StatusBar struct {
+	items []*BarItem
+}
+
+func NewStatusBar() *StatusBar {
+	return &StatusBar{
+		items: make([]*BarItem, 0),
+	}
+}
+
+func (sb *StatusBar) Add(items []*BarItem) {
+	for _, item := range items {
+		if item.BGColor == "" {
+			item.BGColor = DefaultBarBGColor
+		}
+
+		if item.Border == 0 {
+			item.Border = DefaultBorder
+		}
+	}
+
+	sb.items = append(sb.items, items...)
+}
+
+func (sb *StatusBar) Clear() {
+	sb.items = make([]*BarItem, 0)
+}
+
+// Render builds a new status bar based on the provided list of *BarItem
 // instances. The total bar width is defined by the totalWidth parameter and all
 // bar items will be fit in that width according to their parameters or evenly
 // spread for the available width.
 //
 // NOTE: This implementation does not guarantee that the manually defined element
 // sizes will not exceed the totalWidth value.
-func NewStatusBar(items []*BarItem, totalWidth int) string {
-	styles := make([]lipgloss.Style, 0, len(items))
-	renderItems := make([]string, 0, len(items))
-	toMaxWidth := make(map[int]struct{}, len(items))
+func (sb *StatusBar) Render(totalWidth int) string {
+	styles := make([]lipgloss.Style, len(sb.items))
+	renderItems := make([]string, 0, len(sb.items))
+	toMaxWidth := make(map[int]struct{}, len(sb.items))
 
-	for i := range items {
-		item := items[i]
+	for i := range sb.items {
+		item := sb.items[i]
 
-		if i == len(items)-1 || !borderEnabled() {
-			item.border = 0
+		if i == len(sb.items)-1 || !borderEnabled() {
+			item.Border = 0
 		}
 
 		itemStyle := newBarBlockStyle(item)
 
-		if item.width > 0 {
-			itemStyle = itemStyle.Width(item.width)
+		if item.Width > 0 {
+			itemStyle = itemStyle.Width(item.Width)
 		}
 
 		// set the current item border bg color same as next bar item bg color.
-		if i+1 < len(items) {
+		if i+1 < len(sb.items) {
 			itemStyle = itemStyle.BorderBackground(
-				lipgloss.Color(items[i+1].bgColor),
+				lipgloss.Color(sb.items[i+1].BGColor),
 			)
 		}
 
-		widthDiff := lipgloss.Width(itemStyle.Render(item.content))
+		widthDiff := lipgloss.Width(itemStyle.Render(item.Content))
 
-		if item.width == DynamicWidth {
+		if item.Width == DynamicWidth {
 			toMaxWidth[i] = struct{}{}
 			widthDiff = 1
 		}
 
 		totalWidth -= widthDiff
-		styles = append(styles, itemStyle)
+		styles[i] = itemStyle
 	}
 
 	var maxItemWidth int
@@ -102,7 +134,7 @@ func NewStatusBar(items []*BarItem, totalWidth int) string {
 		)
 	}
 
-	for i := range items {
+	for i := range sb.items {
 		s := styles[i]
 
 		if _, ok := toMaxWidth[i]; ok {
@@ -111,23 +143,29 @@ func NewStatusBar(items []*BarItem, totalWidth int) string {
 			totalWidth -= s.GetWidth()
 		}
 
-		renderItems = append(renderItems, s.Render(items[i].content))
+		if sb.items[i].Wrapper != nil {
+			sb.items[i].Content = sb.items[i].Wrapper(
+				sb.items[i].Content, s.GetWidth()-10,
+			)
+		}
+
+		renderItems = append(renderItems, s.Render(sb.items[i].Content))
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, renderItems...)
 }
 
 func newBarBlockStyle(bi *BarItem) lipgloss.Style {
-	s := style.BarBlock(lipgloss.Color(bi.bgColor))
+	s := style.BarBlock(lipgloss.Color(bi.BGColor))
 
-	if bi.border != 0 {
+	if bi.Border != 0 {
 		s = s.Border(
-			lipgloss.Border{Right: string(bi.border)},
+			lipgloss.Border{Right: string(bi.Border)},
 			false,
 			true,
 			false,
 			false,
-		).BorderForeground(lipgloss.Color(bi.bgColor))
+		).BorderForeground(lipgloss.Color(bi.BGColor))
 	}
 
 	return s

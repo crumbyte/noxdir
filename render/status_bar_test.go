@@ -11,31 +11,37 @@ import (
 func TestNewStatusBar(t *testing.T) {
 	render.InitStyle(render.DefaultColorSchema())
 
-	t.Run("default", func(t *testing.T) {
-		items := []*render.BarItem{
-			render.NewBarItem("1", "#000", 0),
-			render.NewBarItem("2", "#000", 0),
-			render.NewBarItem("3", "#000", 0),
-		}
+	sb := render.NewStatusBar()
 
-		sb := render.NewStatusBar(items, 100)
+	t.Run("default", func(t *testing.T) {
+		sb.Clear()
+
+		sb.Add([]*render.BarItem{
+			{Content: "1", BGColor: "#000"},
+			{Content: "2", BGColor: "#000"},
+			{Content: "3", BGColor: "#000"},
+		})
+
+		result := sb.Render(100)
 
 		expected := []byte{
 			32, 49, 32, 27, 91, 59, 109, 238, 130, 176, 27, 91, 48, 109, 32, 50,
 			32, 27, 91, 59, 109, 238, 130, 176, 27, 91, 48, 109, 32, 51, 32,
 		}
 
-		require.Equal(t, expected, []byte(sb))
+		require.Equal(t, expected, []byte(result))
 	})
 
 	t.Run("one item full width", func(t *testing.T) {
-		items := []*render.BarItem{
-			render.NewBarItem("1", "#000", 0),
-			render.NewBarItem("2", "#000", -1),
-			render.NewBarItem("3", "#000", 0),
-		}
+		sb.Clear()
 
-		sb := render.NewStatusBar(items, 100)
+		sb.Add([]*render.BarItem{
+			{Content: "1", BGColor: "#000"},
+			{Content: "2", BGColor: "#000", Width: -1},
+			{Content: "3", BGColor: "#000"},
+		})
+
+		result := sb.Render(100)
 
 		expected := []byte{
 			32, 49, 32, 27, 91, 59, 109, 238, 130, 176, 27, 91, 48, 109, 32, 50,
@@ -48,17 +54,19 @@ func TestNewStatusBar(t *testing.T) {
 			32, 51, 32,
 		}
 
-		require.Equal(t, expected, []byte(sb))
+		require.Equal(t, expected, []byte(result))
 	})
 
 	t.Run("all items full width", func(t *testing.T) {
-		items := []*render.BarItem{
-			render.NewBarItem("1", "#000", -1),
-			render.NewBarItem("2", "#000", -1),
-			render.NewBarItem("3", "#000", -1),
-		}
+		sb.Clear()
 
-		sb := render.NewStatusBar(items, 100)
+		sb.Add([]*render.BarItem{
+			{Content: "1", BGColor: "#000", Width: -1},
+			{Content: "2", BGColor: "#000", Width: -1},
+			{Content: "3", BGColor: "#000", Width: -1},
+		})
+
+		result := sb.Render(100)
 
 		expected := []byte{
 			32, 49, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
@@ -71,6 +79,6 @@ func TestNewStatusBar(t *testing.T) {
 			32, 32, 32,
 		}
 
-		require.Equal(t, expected, []byte(sb))
+		require.Equal(t, expected, []byte(result))
 	})
 }
