@@ -34,6 +34,7 @@ brew install --cask noxdir
 ```
 
 ### Linux
+
 ```bash
 curl -s https://crumbyte.github.io/noxdir/scripts/install.sh | bash
 ```
@@ -108,6 +109,43 @@ directory with its cached version and display the difference:
 
 The diff is calculated by scanning only the current directory and comparing it against the previously cached state. If
 no cache exists from the previous session, no differences will be shown.
+
+## 🔧 Configuration File
+
+On first launch, the application automatically generates a simple configuration file. This file allows you to define
+default behaviors without needing to pass flags every time.
+
+The configuration file is created at:
+
+* Windows: `%LOCALAPPDATA%\.noxdir\settings.json` (e.g., `C:\Users\{user}\AppData\Local\.noxdir\settings.json`)
+* Linux/macOS: `~/.noxdir/settings.json`
+
+The created configurations file already contains all available settings and has the following structure:
+
+```json
+{
+  "exclude": null,
+  "colorSchema": "",
+  "noEmptyDirs": false,
+  "noHidden": false,
+  "simpleColor": false,
+  "useCache": false
+}
+```
+
+Values follow the same format and behavior as CLI flags. For example:
+
+```json
+{
+  "exclude": "node_modules,Steam\\appcache",
+  "colorSchema": "custom_schema.json",
+  "noEmptyDirs": true,
+  "noHidden": false,
+  "simpleColor": true,
+  "useCache": false
+}
+```
+👉 If you cannot find the configuration file you can open it right from the application using `%` key binding.
 
 ## 🗂️ Caching for Faster Scanning
 
@@ -208,6 +246,10 @@ Flags:
                               path.
 
                               Example: --root="C:\Program Files (x86)"
+      --simple-color          Use a simplified color schema without emojis and glyphs.
+
+                              Example: --simple-color (provide a flag)
+
   -l, --size-limit string     Define size limits/boundaries for files that should be shown in the
                               scanner output. Files that do not fit in the provided limits will be
                               skipped.

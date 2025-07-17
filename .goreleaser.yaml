@@ -101,7 +101,8 @@ archives:
 homebrew_casks:
   - name: noxdir
     binary: noxdir
-    manpage: man/noxdir.1
+    manpages:
+      - man/noxdir.1
     completions:
       bash: completion/noxdir.bash
       zsh: completion/noxdir.zsh
