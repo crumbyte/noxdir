@@ -1,3 +1,5 @@
+// Package table is an altered version of the original bubbles package for the
+// table rendering https://github.com/charmbracelet/bubbles/tree/master/table.
 package table
 
 import (

@@ -1,6 +1,7 @@
 package render_test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/crumbyte/noxdir/render"
@@ -32,5 +33,49 @@ func TestFmtSize(t *testing.T) {
 
 	for _, data := range tableData {
 		require.Equal(t, data.expected, render.FmtSize(data.bytes, data.width))
+	}
+}
+
+func TestFmtUsage(t *testing.T) {
+	tableData := []struct {
+		usage    float64
+		expected string
+	}{
+		{1, "100.00 %"},
+		{0.2, "20.00  %"},
+		{0.155, "15.50  %"},
+		{0.01, "1.00   %"},
+		{0, "0.00   %"},
+		{-0.2, "0.00   %"},
+	}
+
+	for _, data := range tableData {
+		require.Equal(t, data.expected, render.FmtUsage(data.usage, 80, 8))
+	}
+}
+
+func TestWrapPath(t *testing.T) {
+	tableData := []struct {
+		path     string
+		limit    int
+		expected string
+	}{
+		{filepath.Join("a", "b", "c", "d"), 0, "..."},
+		{filepath.Join("a", "b", "c", "d"), 1, "...d"},
+		{filepath.Join("a", "b", "c", "d"), 2, filepath.Join("...", "d")},
+		{filepath.Join("a", "b", "c", "d"), 3, filepath.Join("...", "d")},
+		{filepath.Join("a", "b", "c", "d"), 4, filepath.Join("...", "c", "d")},
+		{filepath.Join("a", "b", "c", "d"), 5, filepath.Join("...", "c", "d")},
+		{filepath.Join("a", "b", "c", "d"), 6, filepath.Join("...", "b", "c", "d")},
+		{filepath.Join("a", "b", "c", "d"), 7, filepath.Join("a", "b", "c", "d")},
+		{filepath.Join("a", "b", "c", "d"), 8, filepath.Join("a", "b", "c", "d")},
+		{filepath.Join("a", "b", "c", "d"), 10, filepath.Join("a", "b", "c", "d")},
+		{filepath.Join("a", "b", "c", "d"), -1, filepath.Join("a", "b", "c", "d")},
+		{"longPathName", 4, "...Name"},
+		{"longPathName/subPath", 4, "...Path"},
+	}
+
+	for _, data := range tableData {
+		require.Equal(t, data.expected, render.WrapPath(data.path, data.limit))
 	}
 }

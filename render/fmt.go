@@ -95,7 +95,7 @@ func WrapString(data string, limit int) string {
 func FmtUsage(usage, threshold float64, fullWidth int) string {
 	// minWidth defines a width of longest possible usage string value 100.00 %.
 	minWidth := 8
-	usagePercent := usage * 100
+	usagePercent := max(usage, 0) * 100
 
 	s := lipgloss.NewStyle()
 
@@ -103,19 +103,17 @@ func FmtUsage(usage, threshold float64, fullWidth int) string {
 		s = s.Foreground(lipgloss.Color("#dc2f02"))
 	}
 
-	usageFmt := s.Render(
-		strconv.FormatFloat(usage*100, 'f', 2, 64) + " %" + strings.Repeat(" ", fullWidth),
-	)
+	usageStr := strconv.FormatFloat(usagePercent, 'f', 2, 64)
 
-	return fmt.Sprintf(
-		"%s%s",
-		strings.Repeat(" ", max(0, minWidth-lipgloss.Width(usageFmt))),
-		usageFmt,
+	return s.Render(
+		usageStr +
+			strings.Repeat(" ", minWidth-len(usageStr)-2) +
+			" %" + strings.Repeat(" ", fullWidth-minWidth),
 	)
 }
 
 func WrapPath(path string, limit int) string {
-	if len(path) <= limit {
+	if len(path) <= limit || limit < 0 {
 		return path
 	}
 
@@ -131,7 +129,5 @@ func WrapPath(path string, limit int) string {
 		return prefix + path[truncateLength:]
 	}
 
-	path = path[truncateLength:]
-
-	return prefix + path[pathSeparatorIdx:]
+	return prefix + path[truncateLength:][pathSeparatorIdx:]
 }
