@@ -7,6 +7,7 @@ import (
 	"github.com/crumbyte/noxdir/drive"
 	"github.com/crumbyte/noxdir/render/table"
 
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -72,18 +73,21 @@ func (dm *DriveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return dm, nil
 	case tea.KeyMsg:
-		bk := bindingKey(strings.ToLower(msg.String()))
-
-		switch bk {
-		case toggleHelp:
+		switch {
+		case key.Matches(msg, Bindings.Help):
 			dm.fullHelp = !dm.fullHelp
-		case sortTotalCap, sortTotalUsed, sortTotalFree, sortTotalUsedP:
+		case key.Matches(msg, Bindings.Drive.SortKeys):
+			sortKeys := strings.Split(msg.String(), "+")
+			if len(sortKeys) < 2 {
+				return dm, nil
+			}
+
 			dm.sortDrives(
-				drive.SortKey(strings.TrimPrefix(msg.String(), "alt+")),
+				drive.SortKey(strings.TrimPrefix(msg.String(), sortKeys[1])),
 			)
 
 			return dm, nil
-		case explore:
+		case key.Matches(msg, Bindings.Explore):
 			sr := dm.drivesTable.SelectedRow()
 			if len(sr) < 2 {
 				return dm, nil
@@ -110,11 +114,13 @@ func (dm *DriveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (dm *DriveModel) View() string {
 	h := lipgloss.Height
 	summary := dm.drivesSummary()
-	keyBindings := dm.drivesTable.Help.ShortHelpView(ShortHelp())
+	keyBindings := dm.drivesTable.Help.ShortHelpView(
+		Bindings.ShortBindings(),
+	)
 
 	if dm.fullHelp {
 		keyBindings = dm.drivesTable.Help.FullHelpView(
-			append(NavigateKeyMap(), DrivesKeyMap()...),
+			Bindings.DriveBindings(),
 		)
 	}
 

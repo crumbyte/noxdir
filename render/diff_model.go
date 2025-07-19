@@ -3,13 +3,13 @@ package render
 import (
 	"runtime"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/crumbyte/noxdir/drive"
 	"github.com/crumbyte/noxdir/render/table"
 	"github.com/crumbyte/noxdir/structure"
 
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -74,9 +74,7 @@ func (dm *DiffModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		runtime.GC()
 		dm.updateTableData()
 	case tea.KeyMsg:
-		bk := bindingKey(strings.ToLower(msg.String()))
-
-		if bk == explore {
+		if key.Matches(msg, Bindings.Explore) {
 			dm.handleExploreKey()
 		}
 	}
