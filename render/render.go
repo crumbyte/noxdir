@@ -1,7 +1,6 @@
 package render
 
 import (
-	"strings"
 	"time"
 
 	"github.com/crumbyte/noxdir/drive"
@@ -9,6 +8,7 @@ import (
 	"github.com/crumbyte/noxdir/structure"
 
 	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -54,26 +54,24 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case EnqueueRefresh:
 		vm.refresh()
 	case tea.KeyMsg:
-		bk := bindingKey(strings.ToLower(msg.String()))
-
 		if vm.dirModel.mode == INPUT {
 			break
 		}
 
-		switch bk {
-		case openConfig:
+		switch {
+		case key.Matches(msg, Bindings.Config):
 			if err := drive.Explore(vm.nav.Settings().ConfigPath()); err != nil {
 				return vm, nil
 			}
-		case refresh:
+		case key.Matches(msg, Bindings.Refresh):
 			vm.refresh()
-		case quit, cancel:
+		case key.Matches(msg, Bindings.Quit):
 			return vm, tea.Quit
-		case enter, right:
+		case key.Matches(msg, Bindings.Drive.LevelDown):
 			if vm.dirModel.mode == READY || vm.nav.OnDrives() {
 				vm.levelDown()
 			}
-		case backspace, left:
+		case key.Matches(msg, Bindings.Dirs.LevelUp):
 			if vm.dirModel.mode == READY || vm.nav.OnDrives() {
 				vm.levelUp()
 			}

@@ -14,6 +14,35 @@ const (
 	FileName = "settings.json"
 )
 
+type DriveBindings struct {
+	LevelDown [][]string `json:"levelDown"`
+	SortKeys  [][]string `json:"sortTotalCap"`
+}
+
+type DirBindings struct {
+	LevelUp    [][]string `json:"levelUp"`
+	LevelDown  [][]string `json:"levelDown"`
+	Delete     [][]string `json:"delete"`
+	TopFiles   [][]string `json:"topFiles"`
+	TopDirs    [][]string `json:"topDirs"`
+	FilesOnly  [][]string `json:"filesOnly"`
+	DirsOnly   [][]string `json:"dirsOnly"`
+	NameFilter [][]string `json:"nameFilter"`
+	Chart      [][]string `json:"chart"`
+	Diff       [][]string `json:"diff"`
+}
+
+type Bindings struct {
+	DriveBindings DriveBindings `json:"driveBindings"`
+	DirBindings   DirBindings   `json:"dirBindings"`
+	Explore       [][]string    `json:"explore"`
+	Quit          [][]string    `json:"quit"`
+	Refresh       [][]string    `json:"refresh"`
+	Help          [][]string    `json:"help"`
+	Diff          [][]string    `json:"diff"`
+	Config        [][]string    `json:"config"`
+}
+
 type Settings struct {
 	Path        string   `json:"-"`
 	ColorSchema string   `json:"colorSchema"`
@@ -22,6 +51,7 @@ type Settings struct {
 	NoHidden    bool     `json:"noHidden"`
 	SimpleColor bool     `json:"simpleColor"`
 	UseCache    bool     `json:"useCache"`
+	Bindings    Bindings `json:"bindings"`
 }
 
 func LoadSettings() (*Settings, error) {
@@ -94,7 +124,10 @@ func openSettings(settingsPath string) (*os.File, error) {
 		return nil, fmt.Errorf("create default settings: %w", err)
 	}
 
-	if err = json.NewEncoder(settingsFile).Encode(&s); err != nil {
+	encoder := json.NewEncoder(settingsFile)
+	encoder.SetIndent("", "  ")
+
+	if err = encoder.Encode(&s); err != nil {
 		return nil, err
 	}
 

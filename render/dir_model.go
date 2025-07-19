@@ -14,6 +14,7 @@ import (
 	"github.com/crumbyte/noxdir/render/table"
 	"github.com/crumbyte/noxdir/structure"
 
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -173,11 +174,13 @@ func (dm *DirModel) View() string {
 	h := lipgloss.Height
 
 	summary := dm.dirsSummary()
-	keyBindings := dm.dirsTable.Help.ShortHelpView(ShortHelp())
+	keyBindings := dm.dirsTable.Help.ShortHelpView(
+		Bindings.ShortBindings(),
+	)
 
 	if dm.fullHelp {
 		keyBindings = dm.dirsTable.Help.FullHelpView(
-			append(NavigateKeyMap(), DirsKeyMap()...),
+			Bindings.DirBindings(),
 		)
 	}
 
@@ -269,40 +272,38 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 		return false
 	}
 
-	bk := bindingKey(strings.ToLower(msg.String()))
-
-	if dm.handleFilter(bk, msg) {
+	if dm.handleFilter(msg) {
 		return true
 	}
 
-	if dm.handleDiff(bk, msg) {
+	if dm.handleDiff(msg) {
 		return true
 	}
 
-	if dm.handleDeletion(bk, msg) {
+	if dm.handleDeletion(msg) {
 		return true
 	}
 
-	switch bk {
-	case toggleChart:
+	switch {
+	case key.Matches(msg, Bindings.Dirs.Chart):
 		dm.showCart = !dm.showCart
 		dm.updateTableData()
-	case toggleHelp:
+	case key.Matches(msg, Bindings.Help):
 		dm.fullHelp = !dm.fullHelp
-	case explore:
+	case key.Matches(msg, Bindings.Explore):
 		if dm.handleExploreKey() {
 			return true
 		}
-	case toggleTopFiles:
+	case key.Matches(msg, Bindings.Dirs.TopFiles):
 		dm.showTopFiles = !dm.showTopFiles && !dm.showTopDirs
 		dm.updateSize(dm.width, dm.height)
-	case toggleTopDirs:
+	case key.Matches(msg, Bindings.Dirs.TopDirs):
 		dm.showTopDirs = !dm.showTopDirs && !dm.showTopFiles
 		dm.updateSize(dm.width, dm.height)
-	case toggleDirsFilter:
+	case key.Matches(msg, Bindings.Dirs.DirsOnly):
 		dm.filters.ToggleFilter(filter.DirsOnlyFilterID)
 		dm.updateTableData()
-	case toggleFilesFilter:
+	case key.Matches(msg, Bindings.Dirs.FilesOnly):
 		dm.filters.ToggleFilter(filter.FilesOnlyFilterID)
 		dm.updateTableData()
 	}
@@ -337,8 +338,8 @@ func (dm *DirModel) handleExploreKey() bool {
 	return dm.nav.Explore(sr[1]) != nil
 }
 
-func (dm *DirModel) handleFilter(bk bindingKey, msg tea.Msg) bool {
-	if bk == toggleNameFilter {
+func (dm *DirModel) handleFilter(msg tea.KeyMsg) bool {
+	if key.Matches(msg, Bindings.Dirs.NameFilter) {
 		if dm.mode == READY {
 			dm.mode = INPUT
 		} else {
@@ -358,8 +359,8 @@ func (dm *DirModel) handleFilter(bk bindingKey, msg tea.Msg) bool {
 	return false
 }
 
-func (dm *DirModel) handleDeletion(bk bindingKey, msg tea.Msg) bool {
-	if bk == remove && dm.mode == READY {
+func (dm *DirModel) handleDeletion(msg tea.KeyMsg) bool {
+	if key.Matches(msg, Bindings.Dirs.Delete) && dm.mode == READY {
 		dm.mode = DELETE
 
 		var target []string
@@ -389,28 +390,23 @@ func (dm *DirModel) handleDeletion(bk bindingKey, msg tea.Msg) bool {
 	return false
 }
 
-func (dm *DirModel) handleDiff(bk bindingKey, msg tea.Msg) bool {
-	if bk == diff && dm.mode == READY {
+func (dm *DirModel) handleDiff(msg tea.KeyMsg) bool {
+	isDiffKey := key.Matches(msg, Bindings.Dirs.Diff)
+
+	switch {
+	case isDiffKey && dm.mode == READY:
 		dm.mode = DIFF
 		dm.diff.Run(dm.width, dm.height)
-
-		return true
-	}
-
-	if bk == diff && dm.mode == DIFF {
+	case isDiffKey && dm.mode == DIFF:
 		dm.mode = READY
 		dm.updateTableData()
-
-		return true
-	}
-
-	if dm.mode == DIFF {
+	case dm.mode == DIFF:
 		dm.diff.Update(msg)
-
-		return true
+	default:
+		return false
 	}
 
-	return false
+	return true
 }
 
 func (dm *DirModel) updateTableData() {

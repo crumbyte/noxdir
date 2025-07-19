@@ -254,16 +254,21 @@ func initConfig() (*config.Settings, error) {
 }
 
 func runApp(_ *cobra.Command, _ []string) error {
-	var err error
+	var (
+		err   error
+		style *render.Style
+	)
 
 	settings, err = initConfig()
 	if err != nil {
 		return err
 	}
 
-	if err = initColorSchema(settings); err != nil {
+	if style, err = initStyle(settings); err != nil {
 		return err
 	}
+
+	render.InitKeyMap(&settings.Bindings, style)
 
 	vm, err := initViewModel(settings)
 	if err != nil {
@@ -399,7 +404,7 @@ func printError(errMsg string) {
 	}
 }
 
-func initColorSchema(s *config.Settings) error {
+func initStyle(s *config.Settings) (*render.Style, error) {
 	cs := render.DefaultColorSchema()
 
 	if s.SimpleColor {
@@ -408,11 +413,9 @@ func initColorSchema(s *config.Settings) error {
 
 	if len(s.ColorSchema) != 0 {
 		if err := render.DecodeColorSchema(s.ColorSchema, &cs); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	render.InitStyle(cs)
-
-	return nil
+	return render.InitStyle(cs), nil
 }

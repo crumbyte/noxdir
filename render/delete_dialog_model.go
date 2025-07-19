@@ -1,8 +1,6 @@
 package render
 
 import (
-	"strings"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -45,9 +43,8 @@ func (ddm *DeleteDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return ddm, nil
 	}
 
-	bk := bindingKey(strings.ToLower(keyMsg.String()))
-	switch bk {
-	case enter:
+	switch {
+	case keyMsg.String() == "enter":
 		var (
 			err     error
 			deleted bool
@@ -64,9 +61,9 @@ func (ddm *DeleteDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		go func() {
 			teaProg.Send(EntryDeleted{Err: err, Deleted: deleted})
 		}()
-	case left:
+	case keyMsg.String() == "left":
 		ddm.choice = CancelChoice
-	case right:
+	case keyMsg.String() == "right":
 		ddm.choice = ConfirmChoice
 	}
 
