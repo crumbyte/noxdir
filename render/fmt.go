@@ -108,7 +108,7 @@ func FmtUsage(usage, threshold float64, fullWidth int) string {
 	return s.Render(
 		usageStr +
 			strings.Repeat(" ", minWidth-len(usageStr)-2) +
-			" %" + strings.Repeat(" ", fullWidth-minWidth),
+			" %" + strings.Repeat(" ", max(fullWidth-minWidth, 0)),
 	)
 }
 
