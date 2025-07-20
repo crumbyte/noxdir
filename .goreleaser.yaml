@@ -11,7 +11,7 @@ signs:
     args:
       - "--batch"
       - "-u"
-      - "{{ .Env.GPG_FINGERPRINT }}"
+      - "78FA2A55E423FDC363E9884A6562D5E2142CF1C5"
       - "--output"
       - "${signature}"
       - "--detach-sign"
@@ -83,7 +83,8 @@ builds:
 archives:
   - formats: [ tar.gz ]
     name_template: >-
-      {{ .ProjectName }}_
+      {{ .ProjectName }}-
+      {{ .Tag}}-
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
@@ -108,6 +109,7 @@ homebrew_casks:
       zsh: completion/noxdir.zsh
       fish: completion/noxdir.fish
     directory: Casks
+    skip_upload: '{{ eq .Tag "nightly" }}'
     homepage: "https://github.com/crumbyte/noxdir"
     description: "Terminal utility for visualizing file system usage."
     hooks:
@@ -131,7 +133,8 @@ changelog:
       - "^test:"
 
 release:
+  prerelease: '{{ eq .Tag "nightly" }}'
   github:
     owner: crumbyte
     name: noxdir
-  name_template: "{{.ProjectName}}-v{{.Version}}"
+  name_template: '{{.ProjectName}}-{{ if eq .Tag "nightly" }}nightly{{ else }}v{{.Version}}{{ end }}'
