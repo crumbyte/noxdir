@@ -71,6 +71,7 @@ func TestWrapPath(t *testing.T) {
 		{filepath.Join("a", "b", "c", "d"), 8, filepath.Join("a", "b", "c", "d")},
 		{filepath.Join("a", "b", "c", "d"), 10, filepath.Join("a", "b", "c", "d")},
 		{filepath.Join("a", "b", "c", "d"), -1, filepath.Join("a", "b", "c", "d")},
+		{filepath.Join("a", "b", "c", "d"), -10, filepath.Join("a", "b", "c", "d")},
 		{"longPathName", 4, "...Name"},
 		{"longPathName/subPath", 4, "...Path"},
 	}

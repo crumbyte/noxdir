@@ -225,7 +225,7 @@ func (dm *DriveModel) drivesSummary() string {
 	driveTitle := "No Drives Selected"
 	sbStyle := style.CS().StatusBar
 
-	if len(dm.drivesTable.Rows()) != 0 {
+	if len(dm.drivesTable.Rows()) != 0 && dm.drivesTable.SelectedRow()[1] != "" {
 		driveTitle = dm.drivesTable.SelectedRow()[1]
 	}
 

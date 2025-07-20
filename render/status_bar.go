@@ -145,7 +145,7 @@ func (sb *StatusBar) Render(totalWidth int) string {
 
 		if sb.items[i].Wrapper != nil {
 			sb.items[i].Content = sb.items[i].Wrapper(
-				sb.items[i].Content, s.GetWidth()-10,
+				sb.items[i].Content, max(s.GetWidth()-10, 0),
 			)
 		}
 
