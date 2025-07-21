@@ -133,7 +133,7 @@ changelog:
       - "^test:"
 
 release:
-  prerelease: '{{ eq .Tag "nightly" }}'
+  prerelease: auto
   github:
     owner: crumbyte
     name: noxdir

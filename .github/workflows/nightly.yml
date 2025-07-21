@@ -31,9 +31,11 @@ jobs:
         run: |
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          TAG="nightly"
-          git tag -d $TAG || true
-          git push --delete origin $TAG || true
+          DESCRIBE=`git tag -l --sort=-v:refname | grep -v nightly | head -n 1`
+          MAJOR_VERSION=`echo $DESCRIBE | awk '{split($0,a,"."); print a[1]}'`
+          MINOR_VERSION=`echo $DESCRIBE | awk '{split($0,a,"."); print a[2]}'`
+          MINOR_VERSION="$((${MINOR_VERSION} + 1))"
+          TAG="${MAJOR_VERSION}.${MINOR_VERSION}.0-nightly"
           git tag -a $TAG -m "$TAG: nightly build"
           git push origin $TAG
       - name: Import GPG key
