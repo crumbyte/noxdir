@@ -35,6 +35,28 @@ const (
 	DIFF    Mode = "DIFF"
 )
 
+type summaryInfo struct {
+	size  int64
+	dirs  uint64
+	files uint64
+}
+
+func (si *summaryInfo) add(e *structure.Entry) {
+	si.size += e.Size
+
+	if e.IsDir {
+		si.dirs++
+
+		return
+	}
+
+	si.files++
+}
+
+func (si *summaryInfo) clear() {
+	si.size, si.dirs, si.files = 0, 0, 0
+}
+
 type DirModel struct {
 	columns       []Column
 	mode          Mode
@@ -48,6 +70,7 @@ type DirModel struct {
 	scanPG        *PG
 	filters       filter.FiltersList
 	statusBar     *StatusBar
+	summaryInfo   *summaryInfo
 	height        int
 	width         int
 	showTopFiles  bool
@@ -87,6 +110,7 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		topDirsTable:  buildTable(),
 		diff:          NewDiffModel(nav),
 		statusBar:     NewStatusBar(),
+		summaryInfo:   &summaryInfo{},
 		mode:          PENDING,
 		nav:           nav,
 		scanPG:        &style.CS().ScanProgressBar,
@@ -435,6 +459,7 @@ func (dm *DirModel) updateTableData() {
 	dm.dirsTable.SetColumns(columns)
 
 	fillProgress := dm.usagePG.New(progressWidth)
+	dm.summaryInfo.clear()
 
 	rows := make([]table.Row, 0, len(dm.nav.Entry().Child))
 	dm.nav.Entry().SortChild()
@@ -445,6 +470,8 @@ func (dm *DirModel) updateTableData() {
 		}
 
 		totalDirs, totalFiles := "", ""
+
+		dm.summaryInfo.add(child)
 
 		if child.IsDir {
 			totalDirs = strconv.FormatUint(child.TotalDirs, 10)
@@ -508,11 +535,11 @@ func (dm *DirModel) dirsSummary() string {
 		[]*BarItem{
 			{Content: string(dm.mode), BGColor: sbStyle.Dirs.ModeBG},
 			{Content: "SIZE", BGColor: sbStyle.Dirs.SizeBG},
-			{Content: FmtSize(dm.nav.Entry().Size, 0), BGColor: sbStyle.BG},
+			{Content: FmtSize(dm.summaryInfo.size, 0), BGColor: sbStyle.BG},
 			{Content: "DIRS", BGColor: sbStyle.Dirs.DirsBG},
-			{Content: unitFmt(dm.nav.Entry().LocalDirs), BGColor: sbStyle.BG},
+			{Content: unitFmt(dm.summaryInfo.dirs), BGColor: sbStyle.BG},
 			{Content: "FILES", BGColor: sbStyle.Dirs.FilesBG},
-			{Content: unitFmt(dm.nav.Entry().LocalFiles), BGColor: sbStyle.BG},
+			{Content: unitFmt(dm.summaryInfo.files), BGColor: sbStyle.BG},
 			{Content: fmt.Sprintf(
 				"%d:%d",
 				dm.dirsTable.Cursor()+1,
