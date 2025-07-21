@@ -5,6 +5,10 @@ on:
     - cron: 0 0 * * *
   workflow_dispatch:
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   trigger-nightly:
     name: Push tag for nightly build
@@ -28,8 +32,8 @@ jobs:
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           TAG="nightly"
-          git tag -d nightly || true
-          git push --delete origin nightly || true
+          git tag -d $TAG || true
+          git push --delete origin $TAG || true
           git tag -a $TAG -m "$TAG: nightly build"
           git push origin $TAG
       - name: Import GPG key
