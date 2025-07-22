@@ -36,6 +36,8 @@ jobs:
           MINOR_VERSION=`echo $DESCRIBE | awk '{split($0,a,"."); print a[2]}'`
           MINOR_VERSION="$((${MINOR_VERSION} + 1))"
           TAG="${MAJOR_VERSION}.${MINOR_VERSION}.0-nightly"
+          git tag -d $TAG || true
+          git push --delete origin $TAG || true
           git tag -a $TAG -m "$TAG: nightly build"
           git push origin $TAG
       - name: Import GPG key
