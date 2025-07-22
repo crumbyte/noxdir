@@ -1,13 +1,10 @@
 package render
 
 import (
-	"container/heap"
 	"fmt"
-	"os"
 	"runtime"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/crumbyte/noxdir/filter"
@@ -25,14 +22,31 @@ const (
 	colWidthRatio       = 0.13
 )
 
+// Mode defines a custom type that represents the current view mode. Depending
+// on the current Mode value, the UI behavior can vary.
 type Mode string
 
 const (
+	// PENDING mode represents the locked model state. This state is enabled
+	// while waiting for task completion to prevent UI state changes.
 	PENDING Mode = "PENDING"
-	READY   Mode = "READY"
-	INPUT   Mode = "INPUT"
-	DELETE  Mode = "DELETE"
-	DIFF    Mode = "DIFF"
+
+	// READY mode represents the normal model state when there are no pending
+	// tasks or user inputs.
+	READY Mode = "READY"
+
+	// INPUT mode represents the model state when the application awaits the
+	// user's input. In that state, any key binding will be processed as plain
+	// text.
+	INPUT Mode = "INPUT"
+
+	// DELETE mode represents the model state when the application awaits the
+	// deletion confirmation. The UI behavior is limited in this mode.
+	DELETE Mode = "DELETE"
+
+	// DIFF mode represents the model state while showing the file system state
+	// changes from the previous session. The UI behavior is limited in this mode.
+	DIFF Mode = "DIFF"
 )
 
 type summaryInfo struct {
@@ -58,25 +72,22 @@ func (si *summaryInfo) clear() {
 }
 
 type DirModel struct {
-	columns       []Column
-	mode          Mode
-	dirsTable     *table.Model
-	topFilesTable *table.Model
-	topDirsTable  *table.Model
-	deleteDialog  *DeleteDialogModel
-	diff          *DiffModel
-	usagePG       *PG
-	nav           *Navigation
-	scanPG        *PG
-	filters       filter.FiltersList
-	statusBar     *StatusBar
-	summaryInfo   *summaryInfo
-	height        int
-	width         int
-	showTopFiles  bool
-	showTopDirs   bool
-	fullHelp      bool
-	showCart      bool
+	columns      []Column
+	mode         Mode
+	dirsTable    *table.Model
+	topEntries   *TopEntries
+	deleteDialog *DeleteDialogModel
+	diff         *DiffModel
+	usagePG      *PG
+	nav          *Navigation
+	scanPG       *PG
+	filters      filter.FiltersList
+	statusBar    *StatusBar
+	summaryInfo  *summaryInfo
+	height       int
+	width        int
+	fullHelp     bool
+	showCart     bool
 }
 
 func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
@@ -104,29 +115,17 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 			{Title: "Parent usage"},
 			{Title: ""},
 		},
-		filters:       filter.NewFiltersList(defaultFilters...),
-		dirsTable:     buildTable(),
-		topFilesTable: buildTable(),
-		topDirsTable:  buildTable(),
-		diff:          NewDiffModel(nav),
-		statusBar:     NewStatusBar(),
-		summaryInfo:   &summaryInfo{},
-		mode:          PENDING,
-		nav:           nav,
-		scanPG:        &style.CS().ScanProgressBar,
-		usagePG:       &usagePG,
+		filters:     filter.NewFiltersList(defaultFilters...),
+		dirsTable:   buildTable(),
+		topEntries:  NewTopEntries(),
+		diff:        NewDiffModel(nav),
+		statusBar:   NewStatusBar(),
+		summaryInfo: &summaryInfo{},
+		mode:        PENDING,
+		nav:         nav,
+		scanPG:      &style.CS().ScanProgressBar,
+		usagePG:     &usagePG,
 	}
-
-	s := table.DefaultStyles()
-	s.Header = *style.TopTableHeader()
-	s.Cell = lipgloss.NewStyle()
-	s.Selected = lipgloss.NewStyle()
-
-	dm.topFilesTable.SetStyles(s)
-	dm.topFilesTable.SetHeight(topFilesTableHeight)
-
-	dm.topDirsTable.SetStyles(s)
-	dm.topDirsTable.SetHeight(topFilesTableHeight)
 
 	return dm
 }
@@ -163,17 +162,18 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		dm.updateTableData()
 
 		dm.dirsTable.ResetMarked()
-		dm.topFilesTable.SetRows(nil)
-		dm.topDirsTable.SetRows(nil)
+		dm.topEntries.Clear()
 
 		structure.TopEntriesInstance.ScanFiles(dm.nav.Entry())
 		structure.TopEntriesInstance.ScanDirs(dm.nav.Entry())
 
-		dm.updateTopEntries()
+		dm.topEntries.UpdateTopEntries()
 	case tea.WindowSizeMsg:
 		dm.updateSize(msg.Width, msg.Height)
+
 		dm.diff.Update(msg)
 		dm.filters.Update(msg)
+		dm.topEntries.Update(msg)
 	case tea.KeyMsg:
 		if dm.nav.OnDrives() || dm.handleKeyBindings(msg) {
 			return dm, nil
@@ -233,7 +233,7 @@ func (dm *DirModel) View() string {
 		}
 	}
 
-	if topContent, render := dm.viewTop(); render {
+	if topContent := dm.topEntries.View(); len(topContent) != 0 {
 		dirsTableHeight -= h(topContent)
 		rows = append(rows, topContent)
 	}
@@ -258,37 +258,14 @@ func (dm *DirModel) View() string {
 	}
 
 	if dm.mode == DIFF {
-		return OverlayCenter(
-			dm.width,
-			dm.height,
-			bg,
-			dm.diff.View(),
-		)
+		return OverlayCenter(dm.width, dm.height, bg, dm.diff.View())
 	}
 
 	if dm.mode == DELETE {
-		return OverlayCenter(
-			dm.width,
-			dm.height,
-			bg,
-			dm.deleteDialog.View(),
-		)
+		return OverlayCenter(dm.width, dm.height, bg, dm.deleteDialog.View())
 	}
 
 	return bg
-}
-
-func (dm *DirModel) viewTop() (string, bool) {
-	if !dm.showTopDirs && !dm.showTopFiles {
-		return "", false
-	}
-
-	topTable := dm.topFilesTable
-	if dm.showTopDirs {
-		topTable = dm.topDirsTable
-	}
-
-	return topTable.View(), true
 }
 
 func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
@@ -318,12 +295,6 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 		if dm.handleExploreKey() {
 			return true
 		}
-	case key.Matches(msg, Bindings.Dirs.TopFiles):
-		dm.showTopFiles = !dm.showTopFiles && !dm.showTopDirs
-		dm.updateSize(dm.width, dm.height)
-	case key.Matches(msg, Bindings.Dirs.TopDirs):
-		dm.showTopDirs = !dm.showTopDirs && !dm.showTopFiles
-		dm.updateSize(dm.width, dm.height)
 	case key.Matches(msg, Bindings.Dirs.DirsOnly):
 		dm.filters.ToggleFilter(filter.DirsOnlyFilterID)
 		dm.updateTableData()
@@ -331,6 +302,8 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 		dm.filters.ToggleFilter(filter.FilesOnlyFilterID)
 		dm.updateTableData()
 	}
+
+	dm.topEntries.Update(msg)
 
 	return false
 }
@@ -555,68 +528,12 @@ func (dm *DirModel) dirsSummary() string {
 	)
 }
 
-func (dm *DirModel) fillTopEntries(entries heap.Interface, tm *table.Model, title string) {
-	iconWidth := 5
-	colSize := int(float64(dm.width-iconWidth) * colWidthRatio)
-	nameWidth := dm.width - (colSize * 2) - iconWidth
-
-	columns := []table.Column{
-		{Title: "", Width: iconWidth},
-		{Title: "", Width: 0},
-		{Title: title, Width: nameWidth},
-		{Title: "Size", Width: colSize},
-		{Title: "Last Change", Width: colSize},
-	}
-
-	tm.SetColumns(columns)
-	tm.SetCursor(0)
-
-	if entries.Len() == 0 || tm.Rows() != nil {
-		return
-	}
-
-	rows := make([]table.Row, 15)
-	heap.Pop(entries)
-
-	for i := len(rows) - 1; i >= 0; i-- {
-		file, ok := heap.Pop(entries).(*structure.Entry)
-		if !ok {
-			continue
-		}
-
-		rootPath := dm.nav.Entry().Path + string(os.PathSeparator)
-
-		if dm.nav.currentDrive != nil {
-			rootPath = dm.nav.currentDrive.Path
-		}
-
-		path := strings.TrimSuffix(
-			strings.TrimPrefix(file.Path, rootPath),
-			file.Name(),
-		)
-
-		rows[i] = table.Row{
-			EntryIcon(file),
-			file.Path,
-			path + style.TopFiles().Render(file.Name()),
-			FmtSizeColor(file.Size, entrySizeWidth, colSize),
-			time.Unix(file.ModTime, 0).Format("Jan 02 15:04"),
-		}
-	}
-
-	tm.SetRows(rows)
-	tm.SetCursor(0)
-}
-
 func (dm *DirModel) updateSize(width, height int) {
 	dm.width, dm.height = width, height
 
 	dm.dirsTable.SetWidth(width)
-	dm.topFilesTable.SetWidth(width)
-	dm.topDirsTable.SetWidth(width)
 
 	dm.updateTableData()
-	dm.updateTopEntries()
 }
 
 func (dm *DirModel) viewProgress() string {
@@ -624,15 +541,5 @@ func (dm *DirModel) viewProgress() string {
 
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(
 		dm.scanPG.New(dm.width).ViewAs(completed),
-	)
-}
-
-func (dm *DirModel) updateTopEntries() {
-	dm.fillTopEntries(
-		structure.TopEntriesInstance.Files(), dm.topFilesTable, "Top Files",
-	)
-
-	dm.fillTopEntries(
-		structure.TopEntriesInstance.Dirs(), dm.topDirsTable, "Top Directories",
 	)
 }
