@@ -62,10 +62,7 @@ func Pack(files []string, compress bool, outputPath string) error {
 }
 
 func Unpack(archivePath string, outputPath string) error {
-	var (
-		reader io.Reader
-		header *tar.Header
-	)
+	var reader io.Reader
 
 	archiveFile, err := os.Open(archivePath)
 	if err != nil {
@@ -81,8 +78,9 @@ func Unpack(archivePath string, outputPath string) error {
 	compressed := strings.HasSuffix(archivePath, gzSuffix)
 
 	if compressed {
-		gzipReader, err := gzip.NewReader(archiveFile)
-		if err != nil {
+		var gzipReader *gzip.Reader
+
+		if gzipReader, err = gzip.NewReader(archiveFile); err != nil {
 			return fmt.Errorf("archive: create gzip reader: %w", err)
 		}
 
@@ -99,34 +97,13 @@ func Unpack(archivePath string, outputPath string) error {
 	}
 
 	if os.IsNotExist(err) {
-		if err = os.MkdirAll(outputPath, 0755); err != nil {
+		if err = os.MkdirAll(outputPath, 0750); err != nil {
 			return fmt.Errorf("archive: create output dir: %w", err)
 		}
 	}
 
-	tarReader := tar.NewReader(reader)
-
-	for {
-		if header, err = tarReader.Next(); err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-
-			return fmt.Errorf("archive: read header: %w", err)
-		}
-
-		filePath := filepath.Join(outputPath, filepath.Base(header.Name))
-
-		file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
-		if err != nil {
-			return fmt.Errorf("archive: create target file: %w", err)
-		}
-
-		if _, err = io.Copy(file, tarReader); err != nil {
-			return fmt.Errorf("archive: write target file: %w", err)
-		}
-
-		_ = file.Close()
+	if err = readFromArchive(tar.NewReader(reader), outputPath); err != nil {
+		return fmt.Errorf("archive: read archive: %w", err)
 	}
 
 	return nil
@@ -161,4 +138,37 @@ func addToArchive(tw *tar.Writer, path string) error {
 	_, err = io.Copy(tw, file)
 
 	return err
+}
+
+func readFromArchive(tr *tar.Reader, outputPath string) error {
+	var (
+		err    error
+		file   *os.File
+		header *tar.Header
+	)
+
+	for {
+		if header, err = tr.Next(); err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+
+			return err
+		}
+
+		filePath := filepath.Join(outputPath, filepath.Base(header.Name))
+
+		file, err = os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
+		if err != nil {
+			return err
+		}
+
+		if _, err = io.Copy(file, tr); err != nil {
+			return err
+		}
+
+		_ = file.Close()
+	}
+
+	return nil
 }

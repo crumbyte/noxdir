@@ -49,7 +49,7 @@ func TestArchive(t *testing.T) {
 	})
 
 	t.Run("unpack", func(t *testing.T) {
-		outputPath := filepath.Join(os.TempDir(), "noxdir_tar_test")
+		outputPath := filepath.Join(t.TempDir(), "noxdir_tar_test")
 
 		err := archive.Unpack(archiveFileName, outputPath)
 		require.NoError(t, err)
