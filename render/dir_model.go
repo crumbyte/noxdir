@@ -537,7 +537,11 @@ func (dm *DirModel) updateSize(width, height int) {
 }
 
 func (dm *DirModel) viewProgress() string {
-	completed := (float64(dm.nav.Entry().Size) / float64(dm.nav.currentDrive.UsedBytes)) - 0.01
+	completed := 0.99
+
+	if dm.nav.currentDrive != nil {
+		completed = float64(dm.nav.Entry().Size)/float64(dm.nav.currentDrive.UsedBytes) - 0.01
+	}
 
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(
 		dm.scanPG.New(dm.width).ViewAs(completed),

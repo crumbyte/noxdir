@@ -172,7 +172,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 		r := table.Row{
 			"⛃",
 			d.Path,
-			d.Path,
+			WrapPath(d.Path, pathWidth),
 			d.Volume,
 			d.FSName,
 			FmtSize(d.TotalBytes, driveSizeWidth),
@@ -192,7 +192,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 			continue
 		}
 
-		// update the row layout for the Linux based systems. Each device and
+		// update the row layout for the Linux-based systems. Each device and
 		// all the corresponding mounts will be rendered according to the
 		// specified sorting rule.
 		if d.IsDev != 0 {

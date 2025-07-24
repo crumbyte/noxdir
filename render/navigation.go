@@ -210,7 +210,7 @@ func (n *Navigation) Down(path string, cursor int, ocl OnChangeLevel) (chan stru
 		return nil, nil
 	}
 
-	// handle scenario when the drive was selected
+	// handle the scenario when the drive was selected
 	if n.OnDrives() {
 		n.state = Dirs
 
@@ -260,7 +260,7 @@ func (n *Navigation) RefreshDrives() {
 // updating the navigation state. The function will check the case when the
 // current root has been deleted and tries to fall back to the previous *Entry
 // in the stack. If all entries in the stack do not exist anymore, the navigation
-// will fall back to the drives list.
+// will fall back to the drive list.
 //
 // The navigation will be locked until the scanning is complete and the "done"
 // channel is closed.
