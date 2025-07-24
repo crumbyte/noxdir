@@ -11,34 +11,11 @@ signs:
     args:
       - "--batch"
       - "-u"
-      - "78FA2A55E423FDC363E9884A6562D5E2142CF1C5"
+      - "{{ .Env.GPG_FINGERPRINT }}"
       - "--output"
       - "${signature}"
       - "--detach-sign"
       - "${artifact}"
-
-#chocolateys:
-#  - name: noxdir
-#    package_source_url: https://github.com/crumbyte/noxdir
-#    owners: crumbyte
-#    title: "Terminal utility for visualizing file system usage."
-#    authors: crumbyte
-#    project_url: https://github.com/crumbyte/noxdir
-#    url_template: "https://github.com/crumbyte/noxdir/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-#    copyright: 2025–2025 Crumbyte
-#    license_url: https://github.com/crumbyte/noxdir/blob/main/LICENSE
-#    require_license_acceptance: false
-#    project_source_url: https://github.com/crumbyte/noxdir
-#    docs_url: https://github.com/crumbyte/noxdir/blob/main/README.md
-#    tags: "cli tui disk-usage analyzer filesystem cross-platform terminal"
-#    summary: "Terminal utility for visualizing file system usage."
-#    description: |
-#      {{ .ProjectName }} is a high-performance, cross-platform command-line tool
-#      for visualizing and exploring your file system usage.
-#    release_notes: "https://github.com/crumbyte/noxdir/releases/tag/v{{ .Version }}"
-#    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
-#    source_repo: "https://push.chocolatey.org/"
-#    skip_publish: true
 
 nfpms:
   - package_name: noxdir
@@ -109,9 +86,32 @@ homebrew_casks:
       zsh: completion/noxdir.zsh
       fish: completion/noxdir.fish
     directory: Casks
-    skip_upload: '{{ eq .Tag "nightly" }}'
     homepage: "https://github.com/crumbyte/noxdir"
     description: "Terminal utility for visualizing file system usage."
+    skip_upload: auto
+    hooks:
+      post:
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/noxdir"]
+          end
+    repository:
+      owner: crumbyte
+      name: homebrew-noxdir
+      branch: main
+      token: "{{ .Env.GH_PAT }}"
+  - name: noxdir-nightly
+    binary: noxdir
+    manpages:
+      - man/noxdir.1
+    completions:
+      bash: completion/noxdir.bash
+      zsh: completion/noxdir.zsh
+      fish: completion/noxdir.fish
+    directory: Casks
+    homepage: "https://github.com/crumbyte/noxdir"
+    description: "Nightly build of the terminal utility for visualizing file system usage."
+    skip_upload: '{{ not (contains .Tag "nightly") }}'
     hooks:
       post:
         install: |
