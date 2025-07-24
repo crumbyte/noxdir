@@ -27,10 +27,17 @@ cleanup workflow.
 ## 📦 Installation
 
 ### 🍺 Homebrew
-
+Stable release:
 ```bash
 brew tap crumbyte/noxdir
 brew install --cask noxdir
+```
+
+Nightly release:
+```bash
+brew tap crumbyte/noxdir
+brew uninstall --cask noxdir # If the stable version was installed previously
+brew install --cask noxdir-nightly
 ```
 
 ### Linux
