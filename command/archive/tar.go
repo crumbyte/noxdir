@@ -2,6 +2,7 @@ package archive
 
 import (
 	"archive/tar"
+	"bufio"
 	"compress/gzip"
 	"errors"
 	"fmt"
@@ -16,9 +17,26 @@ const (
 	gzSuffix  = ".gz"
 )
 
-func Pack(files []string, compress bool, outputPath string) error {
-	var archiveWriter io.WriteCloser
+type CompressionType int
 
+const (
+	Gzip CompressionType = iota
+	Zstd
+)
+
+type Tar struct {
+	bufferSize      int
+	compressionType CompressionType
+}
+
+func NewTar(bufferSize int, ct CompressionType) *Tar {
+	return &Tar{
+		bufferSize:      bufferSize,
+		compressionType: ct,
+	}
+}
+
+func (t *Tar) PackToFile(files []string, compress bool, outputPath string) error {
 	outputPath += tarSuffix
 
 	if compress {
@@ -34,10 +52,14 @@ func Pack(files []string, compress bool, outputPath string) error {
 		_ = outputFile.Close()
 	}()
 
-	archiveWriter = outputFile
+	return t.Pack(files, compress, outputFile)
+}
+
+func (t *Tar) Pack(files []string, compress bool, w io.Writer) error {
+	archiveWriter := w
 
 	if compress {
-		gzWriter := gzip.NewWriter(outputFile)
+		gzWriter := gzip.NewWriter(w)
 
 		defer func() {
 			_ = gzWriter.Close()
@@ -46,14 +68,16 @@ func Pack(files []string, compress bool, outputPath string) error {
 		archiveWriter = gzWriter
 	}
 
+	buffer := bufio.NewWriterSize(archiveWriter, t.bufferSize)
 	tarWriter := tar.NewWriter(archiveWriter)
 
 	defer func() {
+		_ = buffer.Flush()
 		_ = tarWriter.Close()
 	}()
 
 	for _, path := range files {
-		if err = addToArchive(tarWriter, path); err != nil {
+		if err := addToArchive(tarWriter, path); err != nil {
 			return fmt.Errorf("archive: add file to archive: %w", err)
 		}
 	}
@@ -61,9 +85,7 @@ func Pack(files []string, compress bool, outputPath string) error {
 	return nil
 }
 
-func Unpack(archivePath string, outputPath string) error {
-	var reader io.Reader
-
+func (t *Tar) UnpackFromFile(archivePath string, outputPath string) error {
 	archiveFile, err := os.Open(archivePath)
 	if err != nil {
 		return fmt.Errorf("archive: open archive file: %w", err)
@@ -73,14 +95,15 @@ func Unpack(archivePath string, outputPath string) error {
 		_ = archiveFile.Close()
 	}()
 
-	reader = archiveFile
+	return t.Unpack(
+		archiveFile, strings.HasSuffix(archivePath, gzSuffix), outputPath,
+	)
+}
 
-	compressed := strings.HasSuffix(archivePath, gzSuffix)
-
-	if compressed {
-		var gzipReader *gzip.Reader
-
-		if gzipReader, err = gzip.NewReader(archiveFile); err != nil {
+func (t *Tar) Unpack(r io.Reader, decompress bool, outputPath string) error {
+	if decompress {
+		gzipReader, err := gzip.NewReader(r)
+		if err != nil {
 			return fmt.Errorf("archive: create gzip reader: %w", err)
 		}
 
@@ -88,7 +111,7 @@ func Unpack(archivePath string, outputPath string) error {
 			_ = gzipReader.Close()
 		}()
 
-		reader = gzipReader
+		r = gzipReader
 	}
 
 	outputStat, err := os.Stat(outputPath)
@@ -102,7 +125,9 @@ func Unpack(archivePath string, outputPath string) error {
 		}
 	}
 
-	if err = readFromArchive(tar.NewReader(reader), outputPath); err != nil {
+	buffer := bufio.NewReaderSize(r, t.bufferSize)
+
+	if err = readFromArchive(tar.NewReader(buffer), outputPath); err != nil {
 		return fmt.Errorf("archive: read archive: %w", err)
 	}
 
@@ -110,41 +135,60 @@ func Unpack(archivePath string, outputPath string) error {
 }
 
 func addToArchive(tw *tar.Writer, path string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
+	return filepath.Walk(path, func(entry string, fi os.FileInfo, err error) error {
+		var header *tar.Header
 
-	defer func() {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(filepath.Dir(path), entry)
+		if err != nil {
+			return err
+		}
+
+		if fi.IsDir() {
+			header, err = tar.FileInfoHeader(fi, "")
+			if err != nil {
+				return err
+			}
+
+			// Must end with slash to be recognized as a directory
+			header.Name = filepath.ToSlash(relPath) + "/"
+			header.Typeflag = tar.TypeDir
+
+			return tw.WriteHeader(header)
+		}
+
+		header, err = tar.FileInfoHeader(fi, fi.Name())
+		if err != nil {
+			return err
+		}
+
+		header.Name = filepath.ToSlash(relPath)
+
+		if err = tw.WriteHeader(header); err != nil {
+			return err
+		}
+
+		file, err := os.Open(entry)
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(tw, file)
 		_ = file.Close()
-	}()
 
-	stat, err := file.Stat()
-	if err != nil {
 		return err
-	}
-
-	header, err := tar.FileInfoHeader(stat, stat.Name())
-	if err != nil {
-		return err
-	}
-
-	header.Name = path
-
-	if err = tw.WriteHeader(header); err != nil {
-		return err
-	}
-
-	_, err = io.Copy(tw, file)
-
-	return err
+	})
 }
 
 func readFromArchive(tr *tar.Reader, outputPath string) error {
 	var (
-		err    error
-		file   *os.File
-		header *tar.Header
+		err       error
+		entryPath string
+		file      *os.File
+		header    *tar.Header
 	)
 
 	for {
@@ -156,9 +200,24 @@ func readFromArchive(tr *tar.Reader, outputPath string) error {
 			return err
 		}
 
-		filePath := filepath.Join(outputPath, filepath.Base(header.Name))
+		entryPath, err = safeJoin(outputPath, header.Name)
+		if err != nil {
+			return err
+		}
 
-		file, err = os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
+		if header.Typeflag == tar.TypeDir {
+			if err = os.MkdirAll(entryPath, 0750); err != nil {
+				return err
+			}
+
+			continue
+		}
+
+		file, err = os.OpenFile(
+			entryPath,
+			os.O_RDWR|os.O_CREATE|os.O_EXCL,
+			os.FileMode(header.Mode), //nolint:gosec // are you kidding me?
+		)
 		if err != nil {
 			return err
 		}
@@ -171,4 +230,16 @@ func readFromArchive(tr *tar.Reader, outputPath string) error {
 	}
 
 	return nil
+}
+
+func safeJoin(base, target string) (string, error) {
+	base = filepath.Clean(base)
+	fullPath := filepath.Clean(filepath.Join(base, target))
+
+	// Ensure the final path is within the intended output directory
+	if !strings.HasPrefix(fullPath, base+string(os.PathSeparator)) {
+		return "", fmt.Errorf("archive: illegal file path: %s", fullPath)
+	}
+
+	return fullPath, nil
 }
