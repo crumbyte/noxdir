@@ -43,7 +43,7 @@ func TestArchive(t *testing.T) {
 			filesPath = append(filesPath, filepath.Join(inputPath, path))
 		}
 
-		require.NoError(t, tarArchiver.Pack(filesPath, true, archiveBuffer))
+		require.NoError(t, tarArchiver.Pack(filesPath, archiveBuffer))
 		require.NoError(t, os.RemoveAll(inputPath))
 	})
 
@@ -52,7 +52,7 @@ func TestArchive(t *testing.T) {
 
 		require.NoError(t, os.MkdirAll(outputPath, 0750))
 
-		require.NoError(t, tarArchiver.Unpack(archiveBuffer, true, outputPath))
+		require.NoError(t, tarArchiver.Unpack(archiveBuffer, outputPath))
 
 		for path, content := range filesPathContentMap {
 			file, err := os.Open(filepath.Join(outputPath, path))
