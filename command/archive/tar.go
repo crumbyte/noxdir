@@ -10,19 +10,88 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/klauspost/compress/zstd"
 )
 
-const (
-	tarSuffix = ".tar"
-	gzSuffix  = ".gz"
-)
+var ErrUnknownCompressionType = errors.New("unknown compression type")
 
+const tarSuffix = ".tar"
+
+// CompressionType defines a custom type the represents a compression type value.
 type CompressionType int
 
+// FromString resolves and returns the CompressionType value from the provided
+// string. If string value is unknows or invalid the NoCompression will be used.
+func (ct CompressionType) FromString(s string) CompressionType {
+	switch s {
+	case "gzip", "gz":
+		return Gzip
+	case "zst", "zstd":
+		return Zstd
+	default:
+		return NoCompression
+	}
+}
+
+// Extension returns the archive name extension representing the compression type.
+func (ct CompressionType) Extension() string {
+	switch ct {
+	case Gzip:
+		return ".gz"
+	case Zstd:
+		return ".zst"
+	default:
+		return ""
+	}
+}
+
+func (ct CompressionType) Writer(w io.Writer) (io.WriteCloser, error) {
+	switch ct {
+	case Gzip:
+		return gzip.NewWriter(w), nil
+	case Zstd:
+		zstdWriter, err := zstd.NewWriter(w)
+		if err != nil {
+			return nil, fmt.Errorf("archive: create zstd writer: %w", err)
+		}
+
+		return zstdWriter, nil
+	default:
+		return nil, ErrUnknownCompressionType
+	}
+}
+
+func (ct CompressionType) Reader(r io.Reader) (io.Reader, error) {
+	switch ct {
+	case Gzip:
+		gzReader, err := gzip.NewReader(r)
+		if err != nil {
+			return nil, fmt.Errorf("archive: create gzip reader: %w", err)
+		}
+
+		return gzReader, nil
+	case Zstd:
+		ztsReader, err := zstd.NewReader(r)
+		if err != nil {
+			return nil, fmt.Errorf("archive: create zstd reader: %w", err)
+		}
+
+		return ztsReader, nil
+	default:
+		return nil, ErrUnknownCompressionType
+	}
+}
+
 const (
-	Gzip CompressionType = iota
+	NoCompression CompressionType = iota
+	Gzip
 	Zstd
 )
+
+// DefaultBufferSize defines a default buffer size for reading and writing the
+// archives.
+const DefaultBufferSize = 5 << 20
 
 type Tar struct {
 	bufferSize      int
@@ -30,18 +99,19 @@ type Tar struct {
 }
 
 func NewTar(bufferSize int, ct CompressionType) *Tar {
+	if bufferSize <= 0 {
+		bufferSize = DefaultBufferSize
+	}
+
 	return &Tar{
 		bufferSize:      bufferSize,
 		compressionType: ct,
 	}
 }
 
-func (t *Tar) PackToFile(files []string, compress bool, outputPath string) error {
+func (t *Tar) PackToFile(files []string, outputPath string) error {
 	outputPath += tarSuffix
-
-	if compress {
-		outputPath += gzSuffix
-	}
+	outputPath += t.compressionType.Extension()
 
 	outputFile, err := os.Create(outputPath)
 	if err != nil {
@@ -52,20 +122,23 @@ func (t *Tar) PackToFile(files []string, compress bool, outputPath string) error
 		_ = outputFile.Close()
 	}()
 
-	return t.Pack(files, compress, outputFile)
+	return t.Pack(files, outputFile)
 }
 
-func (t *Tar) Pack(files []string, compress bool, w io.Writer) error {
+func (t *Tar) Pack(files []string, w io.Writer) error {
 	archiveWriter := w
 
-	if compress {
-		gzWriter := gzip.NewWriter(w)
+	compressionWriter, err := t.compressionType.Writer(archiveWriter)
+	if err != nil {
+		return err
+	}
+
+	if compressionWriter != nil {
+		archiveWriter = compressionWriter
 
 		defer func() {
-			_ = gzWriter.Close()
+			_ = compressionWriter.Close()
 		}()
-
-		archiveWriter = gzWriter
 	}
 
 	buffer := bufio.NewWriterSize(archiveWriter, t.bufferSize)
@@ -77,7 +150,7 @@ func (t *Tar) Pack(files []string, compress bool, w io.Writer) error {
 	}()
 
 	for _, path := range files {
-		if err := addToArchive(tarWriter, path); err != nil {
+		if err = addToArchive(tarWriter, path); err != nil {
 			return fmt.Errorf("archive: add file to archive: %w", err)
 		}
 	}
@@ -95,34 +168,32 @@ func (t *Tar) UnpackFromFile(archivePath string, outputPath string) error {
 		_ = archiveFile.Close()
 	}()
 
-	return t.Unpack(
-		archiveFile, strings.HasSuffix(archivePath, gzSuffix), outputPath,
-	)
-}
-
-func (t *Tar) Unpack(r io.Reader, decompress bool, outputPath string) error {
-	if decompress {
-		gzipReader, err := gzip.NewReader(r)
-		if err != nil {
-			return fmt.Errorf("archive: create gzip reader: %w", err)
-		}
-
-		defer func() {
-			_ = gzipReader.Close()
-		}()
-
-		r = gzipReader
+	outputStat, err := os.Stat(outputPath)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("archive: stat output file: %w", err)
 	}
 
-	outputStat, err := os.Stat(outputPath)
-	if (err != nil && !os.IsNotExist(err)) || (outputStat != nil && !outputStat.IsDir()) {
-		return fmt.Errorf("archive: open output dir: %w", err)
+	if outputStat != nil && !outputStat.IsDir() {
+		return fmt.Errorf("archive: output path not a directory: %s", outputPath)
 	}
 
 	if os.IsNotExist(err) {
 		if err = os.MkdirAll(outputPath, 0750); err != nil {
 			return fmt.Errorf("archive: create output dir: %w", err)
 		}
+	}
+
+	return t.Unpack(archiveFile, outputPath)
+}
+
+func (t *Tar) Unpack(r io.Reader, outputPath string) error {
+	compressionReader, err := t.compressionType.Reader(r)
+	if err != nil {
+		return err
+	}
+
+	if compressionReader != nil {
+		r = compressionReader
 	}
 
 	buffer := bufio.NewReaderSize(r, t.bufferSize)
