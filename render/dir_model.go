@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/crumbyte/noxdir/command"
 	"github.com/crumbyte/noxdir/filter"
 	"github.com/crumbyte/noxdir/render/table"
 	"github.com/crumbyte/noxdir/structure"
@@ -47,6 +48,8 @@ const (
 	// DIFF mode represents the model state while showing the file system state
 	// changes from the previous session. The UI behavior is limited in this mode.
 	DIFF Mode = "DIFF"
+
+	CMD Mode = "CMD"
 )
 
 type summaryInfo struct {
@@ -82,6 +85,7 @@ type DirModel struct {
 	nav          *Navigation
 	scanPG       *PG
 	filters      filter.FiltersList
+	cmd          *command.Model
 	statusBar    *StatusBar
 	summaryInfo  *summaryInfo
 	height       int
@@ -120,6 +124,7 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		topEntries:  NewTopEntries(),
 		diff:        NewDiffModel(nav),
 		statusBar:   NewStatusBar(),
+		cmd:         command.NewModel(func() { go teaProg.Send(EnqueueRefresh{}) }),
 		summaryInfo: &summaryInfo{},
 		mode:        PENDING,
 		nav:         nav,
@@ -174,6 +179,7 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		dm.diff.Update(msg)
 		dm.filters.Update(msg)
 		dm.topEntries.Update(msg)
+		dm.cmd.Update(msg)
 	case tea.KeyMsg:
 		if dm.nav.OnDrives() || dm.handleKeyBindings(msg) {
 			return dm, nil
@@ -233,6 +239,12 @@ func (dm *DirModel) View() string {
 		}
 	}
 
+	if cmdInput := dm.cmd.View(); cmdInput != "" {
+		rows = append(rows, cmdInput)
+
+		dirsTableHeight -= h(cmdInput)
+	}
+
 	if topContent := dm.topEntries.View(); len(topContent) != 0 {
 		dirsTableHeight -= h(topContent)
 		rows = append(rows, topContent)
@@ -273,16 +285,14 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 		return false
 	}
 
-	if dm.handleFilter(msg) {
-		return true
+	handlers := []func(tea.KeyMsg) bool{
+		dm.handleFilter, dm.handleDiff, dm.handleDeletion, dm.handleCmd,
 	}
 
-	if dm.handleDiff(msg) {
-		return true
-	}
-
-	if dm.handleDeletion(msg) {
-		return true
+	for _, handler := range handlers {
+		if handler(msg) {
+			return true
+		}
 	}
 
 	switch {
@@ -348,6 +358,42 @@ func (dm *DirModel) handleFilter(msg tea.KeyMsg) bool {
 
 	if dm.mode == INPUT {
 		dm.filters.Update(msg)
+		dm.updateTableData()
+
+		return true
+	}
+
+	return false
+}
+
+func (dm *DirModel) handleCmd(msg tea.KeyMsg) bool {
+	if key.Matches(msg, Bindings.Dirs.Command) && dm.mode == READY {
+		var entries []string
+
+		for _, r := range dm.dirsTable.MarkedRows() {
+			entries = append(entries, r[1])
+		}
+
+		if len(entries) == 0 {
+			entries = append(entries, dm.dirsTable.SelectedRow()[1])
+		}
+
+		dm.cmd.SetPathContext(dm.nav.entry.Path, entries)
+		dm.cmd.Enable()
+		dm.mode = CMD
+
+		dm.updateTableData()
+
+		return true
+	}
+
+	if dm.mode == CMD {
+		dm.cmd.Update(msg)
+
+		if !dm.cmd.Enabled() {
+			dm.mode = READY
+		}
+
 		dm.updateTableData()
 
 		return true
