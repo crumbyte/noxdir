@@ -31,6 +31,7 @@ type DirsKeyMap struct {
 	NameFilter key.Binding
 	Chart      key.Binding
 	Diff       key.Binding
+	Command    key.Binding
 }
 
 type KeyMap struct {
@@ -78,6 +79,7 @@ func (km *KeyMap) DirBindings() [][]key.Binding {
 			{km.Dirs.TopFiles, km.Dirs.TopDirs, km.Dirs.NameFilter, km.Dirs.Chart},
 			{km.Dirs.DirsOnly, km.Dirs.FilesOnly, km.Refresh, km.Dirs.Delete},
 			{km.Dirs.Diff, km.Config, km.Refresh, km.Dirs.Delete},
+			{km.Dirs.Command},
 		}...,
 	)
 }
@@ -201,6 +203,13 @@ func DefaultKeyMap(s *Style) KeyMap {
 				key.WithHelp(
 					s.BindKey().Render("+"),
 					s.Help().Render(" - toggle diff"),
+				),
+			),
+			Command: key.NewBinding(
+				key.WithKeys(":"),
+				key.WithHelp(
+					s.BindKey().Render(":"),
+					s.Help().Render(" - command"),
 				),
 			),
 		},

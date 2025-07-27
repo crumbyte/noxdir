@@ -25,6 +25,7 @@ func init() {
 // "out" represents io.Writer instance for writing the command execution result.
 func Execute(args []string, out io.Writer) error {
 	RootCmd.SetOut(out)
+	RootCmd.SetErr(out)
 	RootCmd.SetArgs(args)
 
 	return RootCmd.Execute()

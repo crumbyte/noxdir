@@ -14,8 +14,6 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-var ErrUnknownCompressionType = errors.New("unknown compression type")
-
 const tarSuffix = ".tar"
 
 // CompressionType defines a custom type the represents a compression type value.
@@ -58,7 +56,7 @@ func (ct CompressionType) Writer(w io.Writer) (io.WriteCloser, error) {
 
 		return zstdWriter, nil
 	default:
-		return nil, ErrUnknownCompressionType
+		return nil, nil
 	}
 }
 
@@ -79,7 +77,7 @@ func (ct CompressionType) Reader(r io.Reader) (io.Reader, error) {
 
 		return ztsReader, nil
 	default:
-		return nil, ErrUnknownCompressionType
+		return nil, nil
 	}
 }
 
@@ -118,11 +116,13 @@ func (t *Tar) PackToFile(files []string, outputPath string) error {
 		return fmt.Errorf("archive: create output file: %w", err)
 	}
 
-	defer func() {
+	if err = t.Pack(files, outputFile); err != nil {
 		_ = outputFile.Close()
-	}()
 
-	return t.Pack(files, outputFile)
+		return errors.Join(err, os.Remove(outputPath))
+	}
+
+	return outputFile.Close()
 }
 
 func (t *Tar) Pack(files []string, w io.Writer) error {

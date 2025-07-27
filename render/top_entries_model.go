@@ -162,6 +162,10 @@ func (te *TopEntries) rerenderExistingRows(tm *table.Model, nameWidth int) bool 
 	rows := make([]table.Row, topRowsNumber)
 
 	for i, r := range tm.Rows() {
+		if len(r) < 2 {
+			continue
+		}
+
 		filePath := WrapPath(r[1], nameWidth)
 
 		filePath = filepath.Join(
