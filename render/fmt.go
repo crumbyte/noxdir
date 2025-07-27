@@ -80,9 +80,9 @@ func unitFmt(val uint64) string {
 }
 
 // WrapString wraps the string up to the provided limit value. If the string
-// reached the limit it will be appended with the "..." suffix.
+// reached the limit, it will be appended with the "..." suffix.
 func WrapString(data string, limit int) string {
-	// wrap original name and reserve some characters
+	// wrap the original name and reserve some characters
 	wrappedData := lipgloss.NewStyle().MaxWidth(limit - 5).Render(data)
 
 	if lipgloss.Width(wrappedData) == limit-5 {
@@ -104,12 +104,10 @@ func FmtUsage(usage, threshold float64, fullWidth int) string {
 	}
 
 	usageStr := strconv.FormatFloat(usagePercent, 'f', 2, 64)
+	spacing := strings.Repeat(" ", minWidth-len(usageStr)-2)
+	suffix := " %" + strings.Repeat(" ", max(fullWidth-minWidth, 0))
 
-	return s.Render(
-		usageStr +
-			strings.Repeat(" ", minWidth-len(usageStr)-2) +
-			" %" + strings.Repeat(" ", max(fullWidth-minWidth, 0)),
-	)
+	return s.Render(usageStr + spacing + suffix)
 }
 
 func WrapPath(path string, limit int) string {

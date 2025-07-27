@@ -172,7 +172,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 		r := table.Row{
 			"⛃",
 			d.Path,
-			WrapPath(d.Path, pathWidth),
+			WrapString(d.Path, pathWidth),
 			d.Volume,
 			d.FSName,
 			FmtSize(d.TotalBytes, driveSizeWidth),
