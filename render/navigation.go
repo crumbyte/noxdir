@@ -301,7 +301,8 @@ func (n *Navigation) RefreshEntry() (chan struct{}, chan error, error) {
 
 	n.entry.Child = nil
 
-	t := structure.NewTree(n.entry, structure.WithPartialRoot())
+	t := n.tree.Clone(n.entry, structure.WithPartialRoot())
+
 	doneChan, errChan := t.TraverseAsync(true)
 
 	go func() {
