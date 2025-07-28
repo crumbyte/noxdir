@@ -86,6 +86,26 @@ func NewTree(root *Entry, opts ...TreeOpt) *Tree {
 	return t
 }
 
+// Clone clones the existing *Tree instance. It creates a new Tree instance and
+// copies all the predefined settings, except for the root Entry. The root still
+// must be specified explicitly, and the copied settings can be overwritten with
+// the optional set of TreeOpt options.
+func (t *Tree) Clone(root *Entry, opts ...TreeOpt) *Tree {
+	clonedTree := &Tree{
+		root:        root,
+		cache:       t.cache,
+		exclude:     t.exclude,
+		fiFilters:   t.fiFilters,
+		partialRoot: t.partialRoot,
+	}
+
+	for _, opt := range opts {
+		opt(clonedTree)
+	}
+
+	return clonedTree
+}
+
 // Root returns a root *Entry node for the current tree.
 func (t *Tree) Root() *Entry {
 	return t.root
