@@ -323,7 +323,7 @@ func initViewModel(s *config.Settings) (*render.ViewModel, error) {
 	)
 
 	if root != "" {
-		vm.Update(render.ScanFinished{})
+		vm.Update(render.ScanFinished{Mode: render.READY})
 	}
 
 	return vm, nil

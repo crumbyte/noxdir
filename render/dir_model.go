@@ -119,12 +119,14 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 			{Title: "Parent usage"},
 			{Title: ""},
 		},
-		filters:     filter.NewFiltersList(defaultFilters...),
-		dirsTable:   buildTable(),
-		topEntries:  NewTopEntries(),
-		diff:        NewDiffModel(nav),
-		statusBar:   NewStatusBar(),
-		cmd:         command.NewModel(func() { go teaProg.Send(EnqueueRefresh{}) }),
+		filters:    filter.NewFiltersList(defaultFilters...),
+		dirsTable:  buildTable(),
+		topEntries: NewTopEntries(),
+		diff:       NewDiffModel(nav),
+		statusBar:  NewStatusBar(),
+		cmd: command.NewModel(
+			func() { go teaProg.Send(EnqueueRefresh{Mode: CMD}) },
+		),
 		summaryInfo: &summaryInfo{},
 		mode:        PENDING,
 		nav:         nav,
@@ -150,7 +152,7 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if msg.Deleted {
 			go func() {
-				teaProg.Send(EnqueueRefresh{})
+				teaProg.Send(EnqueueRefresh{Mode: READY})
 			}()
 		}
 	case UpdateDirState:
@@ -160,7 +162,7 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		dm.updateTableData()
 	case ScanFinished:
-		dm.mode = READY
+		dm.mode = msg.Mode
 
 		runtime.GC()
 		dm.nav.tree.CalculateSize()
