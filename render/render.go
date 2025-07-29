@@ -21,8 +21,8 @@ const (
 
 type (
 	UpdateDirState struct{}
-	ScanFinished   struct{}
-	EnqueueRefresh struct{}
+	ScanFinished   struct{ Mode Mode }
+	EnqueueRefresh struct{ Mode Mode }
 )
 
 var teaProg *tea.Program
@@ -52,7 +52,7 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case EnqueueRefresh:
-		vm.refresh()
+		vm.refresh(msg.Mode)
 	case tea.KeyMsg:
 		if vm.dirModel.mode == INPUT || vm.dirModel.mode == CMD {
 			break
@@ -64,7 +64,7 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return vm, nil
 			}
 		case key.Matches(msg, Bindings.Refresh):
-			vm.refresh()
+			vm.refresh(READY)
 		case key.Matches(msg, Bindings.Quit):
 			return vm, tea.Quit
 		case key.Matches(msg, Bindings.Drive.LevelDown):
@@ -138,7 +138,7 @@ func (vm *ViewModel) levelDown() {
 			case <-ticker.C:
 				teaProg.Send(UpdateDirState{})
 			case <-done:
-				teaProg.Send(ScanFinished{})
+				teaProg.Send(ScanFinished{Mode: READY})
 
 				return
 			}
@@ -162,7 +162,7 @@ func (vm *ViewModel) levelUp() {
 	})
 }
 
-func (vm *ViewModel) refresh() {
+func (vm *ViewModel) refresh(mode Mode) {
 	if vm.nav.OnDrives() {
 		vm.nav.RefreshDrives()
 
@@ -201,7 +201,7 @@ func (vm *ViewModel) refresh() {
 			case <-ticker.C:
 				teaProg.Send(UpdateDirState{})
 			case <-done:
-				teaProg.Send(ScanFinished{})
+				teaProg.Send(ScanFinished{Mode: mode})
 
 				return
 			}

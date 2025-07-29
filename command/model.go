@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"strings"
 	"sync/atomic"
-	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -21,7 +20,7 @@ type Model struct {
 }
 
 func NewModel(onStateChange func()) *Model {
-	textStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#ebbd34"))
+	textStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#80ed99"))
 
 	ti := textinput.New()
 	ti.Focus()
@@ -68,6 +67,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.executeCmd()
 		case "esc":
 			m.enabled = false
+			m.input.Reset()
 
 			return m, nil
 		}
@@ -112,15 +112,12 @@ func (m *Model) executeCmd() {
 
 	m.input.Reset()
 
-	start := time.Now()
-
 	if err := Execute(args, outBuffer); err != nil {
 		m.input.Placeholder = err.Error()
 
 		return
 	}
 
-	m.input.Placeholder = "completed in " + time.Since(start).String()
-	m.enabled = false
+	m.input.Placeholder = outBuffer.String()
 	m.onStateChange()
 }
