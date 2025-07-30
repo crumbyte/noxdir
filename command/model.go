@@ -112,7 +112,7 @@ func (m *Model) executeCmd() {
 
 	m.input.Reset()
 
-	if err := Execute(args, outBuffer); err != nil {
+	if err := Execute(NewRootCmd(), args, outBuffer); err != nil {
 		m.input.Placeholder = err.Error()
 
 		return
