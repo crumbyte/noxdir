@@ -14,6 +14,7 @@ type Model struct {
 	input         textinput.Model
 	entries       []string
 	onStateChange func()
+	history       *History
 	path          string
 	locked        uint32
 	enabled       bool
@@ -30,6 +31,7 @@ func NewModel(onStateChange func()) *Model {
 	return &Model{
 		input:         ti,
 		onStateChange: onStateChange,
+		history:       NewHistory(50),
 		enabled:       false,
 	}
 }
@@ -65,9 +67,25 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "enter":
 			m.executeCmd()
+		case "ctrl+c":
+			m.input.Reset()
+			m.history.ResetCursor()
+		case "up":
+			prevCmd, ok := m.history.Prev()
+			if ok {
+				m.input.SetValue(prevCmd)
+				m.input.SetCursor(len(prevCmd))
+			}
+		case "down":
+			nextCmd, ok := m.history.Next()
+			if ok {
+				m.input.SetValue(nextCmd)
+				m.input.SetCursor(len(nextCmd))
+			}
 		case "esc":
 			m.enabled = false
 			m.input.Reset()
+			m.history.ResetCursor()
 
 			return m, nil
 		}
@@ -105,8 +123,11 @@ func (m *Model) executeCmd() {
 	}
 
 	outBuffer := bytes.NewBuffer(nil)
+	input := m.input.Value()
 
-	args := strings.Fields(m.input.Value())
+	defer m.history.Push(input)
+
+	args := strings.Fields(input)
 	args = append(args, "--entries", strings.Join(m.entries, ","))
 	args = append(args, "--ctx-path", m.path)
 

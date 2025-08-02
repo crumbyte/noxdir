@@ -1,14 +1,17 @@
 package command
 
-import "sync"
+import (
+	"sync"
+)
 
 type History struct {
-	mx       sync.RWMutex
-	entries  []string
-	head     int
-	cursor   int
-	capacity int
-	size     int
+	mx         sync.RWMutex
+	entries    []string
+	head       int
+	prevCursor int
+	nextCursor int
+	capacity   int
+	size       int
 }
 
 func NewHistory(capacity int) *History {
@@ -22,15 +25,17 @@ func (h *History) Push(entry string) {
 	h.mx.Lock()
 	defer h.mx.Unlock()
 
-	h.cursor, h.entries[h.head] = h.head, entry
+	h.prevCursor, h.nextCursor, h.entries[h.head] = h.head, h.head, entry
 	h.head = (h.head + 1) % h.capacity
 
 	if h.size < h.capacity {
 		h.size++
 	}
+
+	h.nextCursor = h.head % h.size
 }
 
-func (h *History) Pop() (string, bool) {
+func (h *History) Prev() (string, bool) {
 	h.mx.Lock()
 	defer h.mx.Unlock()
 
@@ -38,18 +43,17 @@ func (h *History) Pop() (string, bool) {
 		return "", false
 	}
 
-	item := h.entries[h.cursor]
+	h.nextCursor = (h.prevCursor + 1) % h.size
+	item := h.entries[h.prevCursor]
 
-	h.cursor--
-
-	if h.cursor < 0 {
-		h.cursor = h.size - 1
+	if h.prevCursor--; h.prevCursor < 0 {
+		h.prevCursor = h.size - 1
 	}
 
 	return item, true
 }
 
-func (h *History) Peek() (string, bool) {
+func (h *History) Next() (string, bool) {
 	h.mx.Lock()
 	defer h.mx.Unlock()
 
@@ -57,7 +61,16 @@ func (h *History) Peek() (string, bool) {
 		return "", false
 	}
 
-	return h.entries[h.cursor], true
+	h.prevCursor = h.nextCursor - 1
+	if h.prevCursor < 0 {
+		h.prevCursor = h.size - 1
+	}
+
+	item := h.entries[h.nextCursor]
+
+	h.nextCursor = (h.nextCursor + 1) % h.size
+
+	return item, true
 }
 
 func (h *History) Size() int {
@@ -65,4 +78,27 @@ func (h *History) Size() int {
 	defer h.mx.RUnlock()
 
 	return h.size
+}
+
+func (h *History) SetCursor(cursor int) {
+	h.prevCursor, h.nextCursor = cursor%h.size, cursor%h.size
+}
+
+func (h *History) ResetCursor() {
+	newCursor := h.head - 1
+
+	if newCursor < 0 {
+		newCursor = h.size - 1
+	}
+
+	h.prevCursor, h.nextCursor = newCursor, newCursor
+}
+
+func (h *History) Clear() {
+	h.mx.Lock()
+	defer h.mx.Unlock()
+	h.size = 0
+	h.head = 0
+	h.prevCursor = 0
+	h.nextCursor = 0
 }

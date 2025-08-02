@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHistory_Push(t *testing.T) {
+func TestHistory_Prev(t *testing.T) {
 	capacity := 5
 	h := command.NewHistory(capacity)
 
@@ -22,21 +22,32 @@ func TestHistory_Push(t *testing.T) {
 		require.Equal(t, min(i+1, capacity), h.Size())
 	}
 
-	for i := len(entries) - 1; i >= 5; i-- {
-		val, exists := h.Pop()
-		require.True(t, exists)
+	for i := 15 - 1; i >= 0; i-- {
+		val, exists := h.Prev()
 
-		require.Equal(t, entries[i], val)
+		require.True(t, exists)
+		require.Equal(t, entries[(i%5)+5], val)
+	}
+}
+
+func TestHistory_Next(t *testing.T) {
+	capacity := 5
+	h := command.NewHistory(capacity)
+
+	entries := []string{
+		"1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
 	}
 
-	for i := range entries[:5] {
+	for i := range entries {
+		require.Equal(t, min(i, capacity), h.Size())
 		h.Push(entries[i])
+		require.Equal(t, min(i+1, capacity), h.Size())
 	}
 
-	for i := 4; i >= 0; i-- {
-		val, exists := h.Pop()
-		require.True(t, exists)
+	for i := range 15 {
+		val, exists := h.Next()
 
-		require.Equal(t, entries[i], val)
+		require.True(t, exists)
+		require.Equal(t, entries[(i%5)+5], val)
 	}
 }
