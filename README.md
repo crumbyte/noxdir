@@ -27,13 +27,16 @@ cleanup workflow.
 ## 📦 Installation
 
 ### 🍺 Homebrew
+
 Stable release:
+
 ```bash
 brew tap crumbyte/noxdir
 brew install --cask noxdir
 ```
 
 Nightly release:
+
 ```bash
 brew tap crumbyte/noxdir
 brew uninstall --cask noxdir # If the stable version was installed previously
@@ -131,12 +134,36 @@ The created configurations file already contains all available settings and has 
 
 ```json
 {
-  "exclude": null,
   "colorSchema": "",
+  "exclude": null,
   "noEmptyDirs": false,
   "noHidden": false,
   "simpleColor": false,
-  "useCache": false
+  "useCache": false,
+  "bindings": {
+    "driveBindings": {
+      "levelDown": [],
+      "sortTotalCap": null
+    },
+    "dirBindings": {
+      "levelUp": null,
+      "levelDown": null,
+      "delete": null,
+      "topFiles": null,
+      "topDirs": null,
+      "filesOnly": null,
+      "dirsOnly": null,
+      "nameFilter": null,
+      "chart": null,
+      "diff": null
+    },
+    "explore": null,
+    "quit": null,
+    "refresh": null,
+    "help": null,
+    "diff": null,
+    "config": null
+  }
 }
 ```
 
@@ -152,6 +179,7 @@ Values follow the same format and behavior as CLI flags. For example:
   "useCache": false
 }
 ```
+
 👉 If you cannot find the configuration file you can open it right from the application using `%` key binding.
 
 ## 🗂️ Caching for Faster Scanning
@@ -171,6 +199,55 @@ Cache file locations:
 * Linux/macOS: `~/.noxdir/cache`
 
 To clear all cached data, use the `--clear-cache` flag.
+
+## ⌨️ Key Bindings (nightly build only)
+
+NoxDir provides full support for custom key bindings, allowing users to override nearly all interactive controls.
+Bindings are defined in the [configuration file](#-configuration-file).  By default, all key binding fields are set to `null`. When a field is `null` or omitted, the default binding is used.
+
+Default bindings are defined as follows:
+
+```json
+"driveBindings": {
+  "levelDown":    ["enter", "right"],
+  "sortTotalCap": ["alt+t,alt+u,alt+f,alt+g"] // yes, just a string
+},
+"dirBindings": {
+  "levelUp":    ["backspace", "left"],
+  "levelDown":  ["enter", "right"],
+  "delete":     ["!"],
+  "topFiles":   ["ctrl+q"],
+  "topDirs":    ["ctrl+e"],
+  "filesOnly":  [","],
+  "dirsOnly":   ["."],
+  "nameFilter": ["ctrl+f"],
+  "chart":      ["ctrl+w"],
+  "diff":       ["+"]
+},
+"explore": ["e"],
+"quit":    ["q", "ctrl+c"],
+"refresh": ["r"],
+"help":    ["?"],
+"config":  ["%"]
+```
+
+Each entry maps an action name to one or more key sequences. Bindings support modifiers such as `ctrl`, `alt`, and
+`shift`, and are case-sensitive.
+
+**Notes**
+
+- Multiple bindings per action are supported.
+- If a binding is explicitly set to `null`, the default will be used.
+- Removing a binding entry is equivalent to setting it to `null`.
+- Bindings must be declared as arrays of strings, even for single-key bindings.
+
+Custom config example:
+```json
+"dirBindings": {
+  "topFiles": ["t"],
+  "topDirs": ["T"]
+}
+```
 
 ## 🎨 Colors Customization
 
