@@ -305,23 +305,15 @@ func InitKeyMap(b *config.Bindings, s *Style) {
 	})
 }
 
-func (km *KeyMap) override(origin key.Binding, newSettings [][]string) key.Binding {
-	if len(newSettings) == 0 || len(newSettings[0]) == 0 && len(newSettings[1]) == 0 {
+func (km *KeyMap) override(origin key.Binding, newSettings []string) key.Binding {
+	if len(newSettings) == 0 {
 		return origin
 	}
 
-	if len(newSettings[0]) > 0 {
-		origin.SetKeys(newSettings[0]...)
-	}
-
-	helpKeys := newSettings[0]
-
-	if len(newSettings[1]) > 0 {
-		helpKeys = newSettings[1]
-	}
+	origin.SetKeys(newSettings...)
 
 	origin.SetHelp(
-		km.style.BindKey().Render(strings.Join(helpKeys, "/")),
+		km.style.BindKey().Render(strings.Join(newSettings, "/")),
 		origin.Help().Desc,
 	)
 

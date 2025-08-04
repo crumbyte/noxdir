@@ -15,32 +15,31 @@ const (
 )
 
 type DriveBindings struct {
-	LevelDown [][]string `json:"levelDown"`
-	SortKeys  [][]string `json:"sortTotalCap"`
+	LevelDown []string `json:"levelDown"`
+	SortKeys  []string `json:"sortTotalCap"`
 }
 
 type DirBindings struct {
-	LevelUp    [][]string `json:"levelUp"`
-	LevelDown  [][]string `json:"levelDown"`
-	Delete     [][]string `json:"delete"`
-	TopFiles   [][]string `json:"topFiles"`
-	TopDirs    [][]string `json:"topDirs"`
-	FilesOnly  [][]string `json:"filesOnly"`
-	DirsOnly   [][]string `json:"dirsOnly"`
-	NameFilter [][]string `json:"nameFilter"`
-	Chart      [][]string `json:"chart"`
-	Diff       [][]string `json:"diff"`
+	LevelUp    []string `json:"levelUp"`
+	LevelDown  []string `json:"levelDown"`
+	Delete     []string `json:"delete"`
+	TopFiles   []string `json:"topFiles"`
+	TopDirs    []string `json:"topDirs"`
+	FilesOnly  []string `json:"filesOnly"`
+	DirsOnly   []string `json:"dirsOnly"`
+	NameFilter []string `json:"nameFilter"`
+	Chart      []string `json:"chart"`
+	Diff       []string `json:"diff"`
 }
 
 type Bindings struct {
 	DriveBindings DriveBindings `json:"driveBindings"`
 	DirBindings   DirBindings   `json:"dirBindings"`
-	Explore       [][]string    `json:"explore"`
-	Quit          [][]string    `json:"quit"`
-	Refresh       [][]string    `json:"refresh"`
-	Help          [][]string    `json:"help"`
-	Diff          [][]string    `json:"diff"`
-	Config        [][]string    `json:"config"`
+	Explore       []string      `json:"explore"`
+	Quit          []string      `json:"quit"`
+	Refresh       []string      `json:"refresh"`
+	Help          []string      `json:"help"`
+	Config        []string      `json:"config"`
 }
 
 type Settings struct {
