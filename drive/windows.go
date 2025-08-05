@@ -50,9 +50,9 @@ type win32finddata1 struct {
 	AlternateFileName [14]uint16
 }
 
-func NewFileInfo(data *win32finddata1) FileInfo {
+func NewFileInfo(alloc Allocator, data *win32finddata1) FileInfo {
 	return FileInfo{
-		name:    syscall.UTF16ToString(data.FileName[:]),
+		name:    UTF16ToString(alloc, data.FileName[:]),
 		isDir:   data.FileAttributes&16 != 0,
 		size:    int64(data.FileSizeHigh)<<32 + int64(data.FileSizeLow),
 		modTime: time.Unix(0, data.LastWriteTime.Nanoseconds()).Unix(),
@@ -272,7 +272,7 @@ func Explore(path string) error {
 
 // ReadDir reads the provided directory and returns its entries as a slice of
 // instances [FileInfoAccess] instances.
-func ReadDir(path string) ([]FileInfo, error) {
+func ReadDir(alloc Allocator, path string) ([]FileInfo, error) {
 	var data win32finddata1
 
 	fis := make([]FileInfo, 0, 32)
@@ -299,7 +299,7 @@ func ReadDir(path string) ([]FileInfo, error) {
 
 		//nolint:staticcheck // the alternative is even worse
 		if !(name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0))) {
-			fis = append(fis, NewFileInfo(&data))
+			fis = append(fis, NewFileInfo(alloc, &data))
 		}
 
 		result, _, _ := syscall.SyscallN(

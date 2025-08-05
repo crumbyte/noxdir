@@ -144,7 +144,7 @@ var direntBufPool = sync.Pool{
 	},
 }
 
-func ReadDir(path string) ([]FileInfo, error) {
+func ReadDir(_ Allocator, path string) ([]FileInfo, error) {
 	var rootStat unix.Stat_t
 
 	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_DIRECTORY, 0)

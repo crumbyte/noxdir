@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/crumbyte/noxdir/drive"
+	"github.com/crumbyte/noxdir/pkg/arena"
 	"github.com/crumbyte/noxdir/pkg/cache"
 )
 
@@ -189,10 +190,13 @@ func (t *Tree) Traverse(skipCache bool) error {
 
 	queue := []*Entry{t.root}
 
+	ba := arena.NewBytes(1024*1024, true)
+
 	for len(queue) > 0 {
 		currentNode, queue = queue[0], queue[1:]
 
 		t.handleEntry(
+			ba,
 			currentNode,
 			func(newDir *Entry) { queue = append(queue, newDir) },
 			func(err error) { errList = append(errList, err) },
@@ -236,10 +240,12 @@ func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 
 	worker := func() {
 		timeoutTimer := time.NewTimer(workerTimeout)
+		ba := arena.NewBytes(1024*1024, true)
 
 		defer func() {
 			wg.Done()
 			timeoutTimer.Stop()
+			ba.Reset()
 		}()
 
 		for {
@@ -250,6 +256,7 @@ func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 				}
 
 				t.handleEntry(
+					ba,
 					entry,
 					func(newDir *Entry) { go func() { queue <- newDir }() },
 					func(err error) { errChan <- err },
@@ -286,12 +293,12 @@ var childPathBufPool = sync.Pool{
 	},
 }
 
-func (t *Tree) handleEntry(e *Entry, onNewDir func(*Entry), onErr func(error)) {
+func (t *Tree) handleEntry(ba *arena.Bytes, e *Entry, onNewDir func(*Entry), onErr func(error)) {
 	if !e.IsDir || t.excludeEntry(e) {
 		return
 	}
 
-	nodeEntries, err := drive.ReadDir(e.Path)
+	nodeEntries, err := drive.ReadDir(ba, e.Path)
 	if err != nil {
 		onErr(err)
 
