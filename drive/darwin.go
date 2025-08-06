@@ -78,8 +78,8 @@ func statFSToInfo(stat *unix.Statfs_t) *Info {
 	blockSize := uint64(stat.Bsize)
 
 	return &Info{
-		Path:        bytePtrToString(stat.Mntonname[:]),
-		FSName:      bytePtrToString(stat.Fstypename[:]),
+		Path:        byteToString(stat.Mntonname[:]),
+		FSName:      byteToString(stat.Fstypename[:]),
 		TotalBytes:  stat.Blocks * blockSize,
 		FreeBytes:   stat.Bfree * blockSize,
 		UsedBytes:   usedBlocks * blockSize,
@@ -144,7 +144,7 @@ var direntBufPool = sync.Pool{
 	},
 }
 
-func ReadDir(path string) ([]FileInfo, error) {
+func ReadDir(a Allocator, path string) ([]FileInfo, error) {
 	var rootStat unix.Stat_t
 
 	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_DIRECTORY, 0)
@@ -187,7 +187,7 @@ func ReadDir(path string) ([]FileInfo, error) {
 			dirent := (*unix.Dirent)(unsafe.Pointer(&(*buf)[offset]))
 
 			nameBytes := (*[256]byte)(unsafe.Pointer(&dirent.Name[0]))
-			name := bytePtrToString(nameBytes[:])
+			name := bytePtrToString(a, nameBytes[:])
 
 			if pathExcluded(path, name) {
 				offset += int(dirent.Reclen)
@@ -242,7 +242,25 @@ func Explore(path string) error {
 	return nil
 }
 
-func bytePtrToString(b []byte) string {
+func bytePtrToString(alloc Allocator, bytes []byte) string {
+	var nameLen uint32
+
+	for i := range bytes {
+		if bytes[i] == 0 {
+			//nolint:gosec
+			nameLen = uint32(i)
+
+			break
+		}
+	}
+
+	nameBuf, _ := alloc.Alloc(nameLen)
+	copy(nameBuf, bytes[:nameLen])
+
+	return unsafe.String(unsafe.SliceData(nameBuf), nameLen)
+}
+
+func byteToString(b []byte) string {
 	for n := range b {
 		if b[n] == 0 {
 			return string(b[:n])
