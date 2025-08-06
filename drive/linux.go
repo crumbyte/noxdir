@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 	"unsafe"
 
@@ -175,7 +176,7 @@ var direntBufPool = sync.Pool{
 	},
 }
 
-func ReadDir(_ Allocator, path string) ([]FileInfo, error) {
+func ReadDir(alloc Allocator, path string) ([]FileInfo, error) {
 	var rootStat unix.Stat_t
 
 	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_DIRECTORY, 0)
@@ -216,9 +217,9 @@ func ReadDir(_ Allocator, path string) ([]FileInfo, error) {
 
 		for offset < n {
 			dirent := (*unix.Dirent)(unsafe.Pointer(&(*buf)[offset]))
-
 			nameBytes := (*[256]byte)(unsafe.Pointer(&dirent.Name[0]))
-			name := bytePtrToString(nameBytes[:])
+
+			name := bytePtrToString(alloc, nameBytes[:])
 
 			if pathExcluded(path, name) {
 				offset += int(dirent.Reclen)
@@ -228,7 +229,7 @@ func ReadDir(_ Allocator, path string) ([]FileInfo, error) {
 
 			var stat unix.Stat_t
 
-			err = unix.Fstatat(fd, name, &stat, unix.AT_SYMLINK_NOFOLLOW)
+			err = fstatat(alloc, fd, name, &stat, unix.AT_SYMLINK_NOFOLLOW)
 			if err == nil && InoFilterInstance.Add(stat.Ino) && stat.Dev == rootStat.Dev {
 				fis = append(fis, NewFileInfo(name, &stat))
 			}
@@ -258,6 +259,64 @@ func Explore(path string) error {
 	return nil
 }
 
+func fstatat(alloc Allocator, dirFD int, path string, stat *unix.Stat_t, flags int) (err error) {
+	var _p0 *byte
+
+	_p0, err = bytePtrFromString(alloc, path)
+	if err != nil {
+		return
+	}
+
+	_, _, e1 := syscall.Syscall6(
+		syscall.SYS_NEWFSTATAT,
+		uintptr(dirFD),
+		uintptr(unsafe.Pointer(_p0)),
+		uintptr(unsafe.Pointer(stat)),
+		uintptr(flags),
+		0,
+		0,
+	)
+	if e1 != 0 {
+		return e1
+	}
+
+	return
+}
+
+func bytePtrFromString(alloc Allocator, s string) (*byte, error) {
+	if strings.IndexByte(s, 0) != -1 {
+		return nil, syscall.EINVAL
+	}
+
+	//nolint:gosec
+	buf, err := alloc.Alloc(uint32(len(s) + 1))
+	if err != nil {
+		return nil, err
+	}
+
+	copy(buf, s)
+
+	return &buf[0], nil
+}
+
+func bytePtrToString(alloc Allocator, bytes []byte) string {
+	var nameLen uint32
+
+	for i := range bytes {
+		if bytes[i] == 0 {
+			//nolint:gosec
+			nameLen = uint32(i)
+
+			break
+		}
+	}
+
+	nameBuf, _ := alloc.Alloc(nameLen)
+	copy(nameBuf, bytes[:nameLen])
+
+	return unsafe.String(unsafe.SliceData(nameBuf), nameLen)
+}
+
 func pathExcluded(path, name string) bool {
 	if name == "." || name == ".." {
 		return true
@@ -270,14 +329,4 @@ func pathExcluded(path, name string) bool {
 	}
 
 	return false
-}
-
-func bytePtrToString(b []byte) string {
-	for n := range b {
-		if b[n] == 0 {
-			return string(b[:n])
-		}
-	}
-
-	return ""
 }
