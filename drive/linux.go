@@ -17,7 +17,10 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const NTFSSbMagic = 0x5346544e
+const (
+	NTFSSbMagic   = 0x5346544e
+	SysNewFstatat = 262
+)
 
 const mountInfoPath = "/proc/self/mounts"
 
@@ -268,7 +271,7 @@ func fstatat(alloc Allocator, dirFD int, path string, stat *unix.Stat_t, flags i
 	}
 
 	_, _, e1 := syscall.Syscall6(
-		syscall.SYS_NEWFSTATAT,
+		SysNewFstatat,
 		uintptr(dirFD),
 		uintptr(unsafe.Pointer(_p0)),
 		uintptr(unsafe.Pointer(stat)),
