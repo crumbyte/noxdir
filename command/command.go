@@ -11,7 +11,13 @@ import (
 )
 
 func NewRootCmd() *cobra.Command {
-	rootCmd := &cobra.Command{}
+	rootCmd := &cobra.Command{
+		DisableFlagParsing: true,
+		CompletionOptions:  cobra.CompletionOptions{DisableDefaultCmd: true},
+	}
+
+	rootCmd.SetHelpCommand(NewHelpCmd())
+	rootCmd.SetHelpFunc(func(_ *cobra.Command, _ []string) {})
 
 	rootCmd.AddCommand(archive.NewPackCmd(), archive.NewUnpackCmd())
 

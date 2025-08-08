@@ -14,7 +14,8 @@ func NewPackCmd() *cobra.Command {
 		ctxPath     string
 
 		packCmd = &cobra.Command{
-			Use: "pack",
+			Short: "archive dirs/files",
+			Use:   "pack",
 			RunE: func(_ *cobra.Command, _ []string) error {
 				return packRun(entries, compression, output, ctxPath)
 			},
@@ -43,7 +44,8 @@ func NewUnpackCmd() *cobra.Command {
 		ctxPath string
 
 		unpackCmd = &cobra.Command{
-			Use: "unpack",
+			Short: "unarchive dirs/files",
+			Use:   "unpack",
 			RunE: func(_ *cobra.Command, _ []string) error {
 				return unpackRun(entries, output, ctxPath)
 			},
