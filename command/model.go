@@ -123,7 +123,11 @@ func (m *Model) executeCmd() {
 	}
 
 	outBuffer := bytes.NewBuffer(nil)
-	input := m.input.Value()
+	input := strings.TrimSpace(m.input.Value())
+
+	if len(input) == 0 {
+		return
+	}
 
 	defer m.history.Push(input)
 
