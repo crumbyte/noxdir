@@ -33,6 +33,7 @@ var (
 	useCache        bool
 	clearCache      bool
 	simpleCS        bool
+	versionFlag     bool
 	settings        *config.Settings
 
 	tree *structure.Tree
@@ -202,6 +203,17 @@ Example: --clear-cache (provide a flag)
 Example: --simple-color (provide a flag)
 `,
 	)
+
+	appCmd.PersistentFlags().BoolVarP(
+		&versionFlag,
+		"version",
+		"v",
+		false,
+		`Print the application version and exit.
+	
+Example: -v|--version (provide a flag)
+`,
+	)
 }
 
 func Execute() {
@@ -254,6 +266,14 @@ func initConfig() (*config.Settings, error) {
 }
 
 func runApp(_ *cobra.Command, _ []string) error {
+	if versionFlag {
+		if _, err := os.Stdout.WriteString(render.Version + "\n"); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	var (
 		err   error
 		style *render.Style

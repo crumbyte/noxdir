@@ -366,6 +366,8 @@ Flags:
                               Default value is "false".
 
                               Example: -c|--use-cache (provide a flag)
+
+  -v, --version              Print the application version and exit.
 ```
 
 ## ⚠️ Known Issues
