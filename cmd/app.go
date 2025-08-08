@@ -270,6 +270,7 @@ func runApp(_ *cobra.Command, _ []string) error {
 		if _, err := os.Stdout.WriteString(render.Version + "\n"); err != nil {
 			return err
 		}
+
 		return nil
 	}
 
