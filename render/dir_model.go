@@ -408,14 +408,22 @@ func (dm *DirModel) handleDeletion(msg tea.KeyMsg) bool {
 	if key.Matches(msg, Bindings.Dirs.Delete) && dm.mode == READY {
 		dm.mode = DELETE
 
-		var target []string
+		target := make(map[string]int64)
 
 		for _, r := range dm.dirsTable.MarkedRows() {
-			target = append(target, r[1])
+			childEntry := dm.nav.Entry().GetChild(r[1])
+
+			if childEntry != nil {
+				target[r[1]] = childEntry.Size
+			}
 		}
 
 		if len(target) == 0 {
-			target = append(target, dm.dirsTable.SelectedRow()[1])
+			childEntry := dm.nav.Entry().GetChild(dm.dirsTable.SelectedRow()[1])
+
+			if childEntry != nil {
+				target[dm.dirsTable.SelectedRow()[1]] = childEntry.Size
+			}
 		}
 
 		dm.deleteDialog = NewDeleteDialogModel(dm.nav, target)

@@ -32,7 +32,13 @@ func helpCmd(cmd *cobra.Command, _ []string) error {
 	commandsHelp := make([]string, 0, len(rootCmd.Commands()))
 
 	for _, subCommands := range rootCmd.Commands() {
-		commandsHelp = append(commandsHelp, subCommands.Name()+" - "+subCommands.Short)
+		description := subCommands.Name()
+
+		if len(subCommands.Short) > 0 {
+			description += " - " + subCommands.Short
+		}
+
+		commandsHelp = append(commandsHelp, description)
 	}
 
 	_, err := io.WriteString(
