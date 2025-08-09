@@ -121,7 +121,7 @@ func (e *Entry) GetChild(name string) *Entry {
 	e.mx.RLock()
 	defer e.mx.RUnlock()
 
-	path := filepath.Join(e.Path, name)
+	path := filepath.Join(e.Path, strings.TrimPrefix(name, e.Path))
 
 	for _, child := range e.Child {
 		if child.Path == path {

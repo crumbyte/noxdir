@@ -1,6 +1,8 @@
 package render
 
 import (
+	"slices"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -20,16 +22,16 @@ type EntryDeleted struct {
 }
 
 type DeleteDialogModel struct {
-	nav        *Navigation
-	targetPath []string
-	choice     DeleteChoice
+	nav     *Navigation
+	pathMap map[string]int64
+	choice  DeleteChoice
 }
 
-func NewDeleteDialogModel(nav *Navigation, targetPath []string) *DeleteDialogModel {
+func NewDeleteDialogModel(nav *Navigation, pathMap map[string]int64) *DeleteDialogModel {
 	return &DeleteDialogModel{
-		choice:     CancelChoice,
-		targetPath: targetPath,
-		nav:        nav,
+		choice:  CancelChoice,
+		pathMap: pathMap,
+		nav:     nav,
 	}
 }
 
@@ -51,7 +53,7 @@ func (ddm *DeleteDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 		if ddm.choice == ConfirmChoice {
-			for _, path := range ddm.targetPath {
+			for path := range ddm.pathMap {
 				err = ddm.nav.Delete(path)
 			}
 
@@ -86,8 +88,19 @@ func (ddm *DeleteDialogModel) View() string {
 		Foreground(lipgloss.Color("#FF303E")).
 		Render("Confirm Deletion\n")
 
+	totalReclaimed := int64(0)
+	pathList := make([]string, 0, len(ddm.pathMap))
+
+	for path, size := range ddm.pathMap {
+		pathList = append(pathList, path)
+
+		totalReclaimed += size
+	}
+
+	slices.Sort(pathList)
+
 	target := textStyle.Render(
-		lipgloss.JoinVertical(lipgloss.Center, ddm.targetPath...),
+		lipgloss.JoinVertical(lipgloss.Center, pathList...),
 	)
 
 	buttons := lipgloss.JoinHorizontal(
@@ -96,12 +109,17 @@ func (ddm *DeleteDialogModel) View() string {
 		confirmBtn.Render("Yes"),
 	)
 
+	reclaimed := textStyle.
+		Foreground(lipgloss.Color("#80ed99")).
+		MarginTop(1).
+		Render(FmtSize(totalReclaimed, 0), "to be reclaimed")
+
 	return style.DialogBox().BorderForeground(
 		lipgloss.Color("#FF303E"),
 	).Render(
 		lipgloss.JoinVertical(
 			lipgloss.Center,
-			lipgloss.JoinVertical(lipgloss.Top, confirm, target),
+			lipgloss.JoinVertical(lipgloss.Top, confirm, target, reclaimed),
 			buttons,
 		),
 	)
