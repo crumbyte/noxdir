@@ -49,6 +49,8 @@ const (
 	// changes from the previous session. The UI behavior is limited in this mode.
 	DIFF Mode = "DIFF"
 
+	// CMD mode represents the model state when the application awaits for the
+	// internal command.Model to be executed.
 	CMD Mode = "CMD"
 )
 
@@ -86,6 +88,7 @@ type DirModel struct {
 	scanPG       *PG
 	filters      filter.FiltersList
 	cmd          *command.Model
+	errPopup     *PopupModel
 	statusBar    *StatusBar
 	summaryInfo  *summaryInfo
 	height       int
@@ -127,6 +130,7 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		cmd: command.NewModel(
 			func() { go teaProg.Send(EnqueueRefresh{Mode: CMD}) },
 		),
+		errPopup:    NewErrorPopupModel(time.Second * 10),
 		summaryInfo: &summaryInfo{},
 		mode:        PENDING,
 		nav:         nav,
@@ -149,6 +153,12 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case EntryDeleted:
 		dm.mode, dm.deleteDialog = READY, nil
+
+		if msg.Err != nil {
+			dm.errPopup.Show(msg.Err.Error())
+
+			break
+		}
 
 		if msg.Deleted {
 			go func() {
@@ -195,6 +205,8 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if dm.nav.OnDrives() {
 		return dm, nil
 	}
+
+	_, _ = dm.errPopup.Update(msg)
 
 	t, _ := dm.dirsTable.Update(msg)
 	dm.dirsTable = &t
@@ -268,6 +280,16 @@ func (dm *DirModel) View() string {
 			chart,
 			h(bg)-h(keyBindings)-h(summary)-h(chart),
 			dm.width-lipgloss.Width(chart),
+		)
+	}
+
+	if popupMessage := dm.errPopup.View(); len(popupMessage) != 0 {
+		bg = Overlay(
+			dm.width,
+			bg,
+			popupMessage,
+			0,
+			dm.width-lipgloss.Width(popupMessage),
 		)
 	}
 
