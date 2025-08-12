@@ -45,7 +45,7 @@ func NewViewModel(n *Navigation, driveModel *DriveModel, dirMode *DirModel) *Vie
 }
 
 func tickCmd() tea.Cmd {
-	return tea.Tick(time.Second*1, func(t time.Time) tea.Msg {
+	return tea.Tick(time.Second*1, func(_ time.Time) tea.Msg {
 		return Tick{}
 	})
 }
