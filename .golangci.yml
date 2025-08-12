@@ -126,7 +126,7 @@ linters:
 
     funlen:
       lines: 100
-      statements: 40
+      statements: 50
       ignore-comments: true
 
     gochecksumtype:

@@ -20,6 +20,7 @@ const (
 )
 
 type (
+	Tick           struct{}
 	UpdateDirState struct{}
 	ScanFinished   struct{ Mode Mode }
 	EnqueueRefresh struct{ Mode Mode }
@@ -43,14 +44,25 @@ func NewViewModel(n *Navigation, driveModel *DriveModel, dirMode *DirModel) *Vie
 	}
 }
 
+func tickCmd() tea.Cmd {
+	return tea.Tick(time.Second*1, func(_ time.Time) tea.Msg {
+		return Tick{}
+	})
+}
+
 func (vm *ViewModel) Init() tea.Cmd {
-	return tea.Batch(tea.DisableMouse)
+	return tea.Batch(tea.DisableMouse, tickCmd())
 }
 
 func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case Tick:
+		vm.driveModel.Update(msg)
+		vm.dirModel.Update(msg)
+
+		return vm, tea.Batch(tickCmd(), cmd)
 	case EnqueueRefresh:
 		vm.refresh(msg.Mode)
 	case tea.KeyMsg:
