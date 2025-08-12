@@ -47,6 +47,15 @@
   "activeButtonText": "#FFFDF5",
   "activeButtonBackground": "#FF8531",
   "filterText": "#EBBD34",
+  "diffAddedMarker": "#06923E",
+  "diffRemovedMarker": "#FF303E",
+  "usageThresholdText": "#dc2f02",
+  "sizeUnit": {
+    "GB": "#f48c06",
+    "TB": "#dc2f02",
+    "PB": "#9d0208",
+    "EB": "#6a040f"
+  },
   "statusBarBorder": true,
   "scanProgressBar": {
     "colorProfile": 0,

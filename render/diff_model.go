@@ -175,11 +175,11 @@ func (dm *DiffModel) updateTableData() {
 	}
 
 	removedIcon := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FF303E")).
+		Foreground(lipgloss.Color(style.CS().DiffAddedMarker)).
 		Render("---  ")
 
 	addedIcon := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#06923E")).
+		Foreground(lipgloss.Color(style.CS().DiffRemovedMarker)).
 		Render("+++  ")
 
 	iconWidth := 5

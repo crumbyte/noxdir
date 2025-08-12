@@ -45,6 +45,13 @@ type StatusBarColors struct {
 	Dirs      DirsStatusBarColors   `json:"dirs"`
 }
 
+type SizeUnitColors struct {
+	GB string `json:"gB"`
+	TB string `json:"tB"`
+	PB string `json:"pB"`
+	EB string `json:"eB"`
+}
+
 // The ColorSchema schema contains color values for most UI elements, such as
 // text and border colors, element backgrounds, etc. The Style component uses
 // the ColorSchema instance during rendering elements. Each color value must be
@@ -53,26 +60,30 @@ type StatusBarColors struct {
 // DefaultColorSchema always used as a base schema and all customizations are
 // applied over it.
 type ColorSchema struct {
-	StatusBar         StatusBarColors `json:"statusBar"`
-	ChartColors       ChartColors     `json:"chart"`
-	CellText          string          `json:"cellText"`
-	TableHeaderBorder string          `json:"tableHeaderBorder"`
-	SelectedRowText   string          `json:"selectedRowText"`
-	SelectedRowBG     string          `json:"selectedRowBackground"`
-	MarkedRowText     string          `json:"markedRowText"`
-	MarkedRowBG       string          `json:"markedRowBackground"`
-	TopFilesText      string          `json:"topFilesText"`
-	HelpText          string          `json:"helpText"`
-	BindingText       string          `json:"bindingText"`
-	DialogBoxBorder   string          `json:"dialogBoxBorder"`
-	ConfirmButtonText string          `json:"confirmButtonText"`
-	ConfirmButtonBG   string          `json:"confirmButtonBackground"`
-	ActiveButtonText  string          `json:"activeButtonText"`
-	ActiveButtonBG    string          `json:"activeButtonBackground"`
-	FilterText        string          `json:"filterText"`
-	ScanProgressBar   PG              `json:"scanProgressBar"`
-	UsageProgressBar  PG              `json:"usageProgressBar"`
-	StatusBarBorder   bool            `json:"statusBarBorder"`
+	StatusBar          StatusBarColors `json:"statusBar"`
+	ChartColors        ChartColors     `json:"chart"`
+	CellText           string          `json:"cellText"`
+	TableHeaderBorder  string          `json:"tableHeaderBorder"`
+	SelectedRowText    string          `json:"selectedRowText"`
+	SelectedRowBG      string          `json:"selectedRowBackground"`
+	MarkedRowText      string          `json:"markedRowText"`
+	MarkedRowBG        string          `json:"markedRowBackground"`
+	TopFilesText       string          `json:"topFilesText"`
+	HelpText           string          `json:"helpText"`
+	BindingText        string          `json:"bindingText"`
+	DialogBoxBorder    string          `json:"dialogBoxBorder"`
+	ConfirmButtonText  string          `json:"confirmButtonText"`
+	ConfirmButtonBG    string          `json:"confirmButtonBackground"`
+	ActiveButtonText   string          `json:"activeButtonText"`
+	ActiveButtonBG     string          `json:"activeButtonBackground"`
+	FilterText         string          `json:"filterText"`
+	DiffAddedMarker    string          `json:"diffAddedText"`
+	DiffRemovedMarker  string          `json:"diffRemovedText"`
+	UsageThresholdText string          `json:"usageThresholdText"`
+	SizeUnit           SizeUnitColors  `json:"sizeUnit"`
+	ScanProgressBar    PG              `json:"scanProgressBar"`
+	UsageProgressBar   PG              `json:"usageProgressBar"`
+	StatusBarBorder    bool            `json:"statusBarBorder"`
 }
 
 // DecodeColorSchema reads the color schema from the file by the provided
@@ -141,22 +152,31 @@ func DefaultColorSchema() ColorSchema {
 			Sector8:        "#ff85a1",
 			Sector9:        "#b5838d",
 		},
-		CellText:          "",
-		TableHeaderBorder: "240",
-		SelectedRowText:   "#262626",
-		SelectedRowBG:     "#EBBD34",
-		MarkedRowText:     "#262626",
-		MarkedRowBG:       "#eae2b7",
-		TopFilesText:      "#EBBD34",
-		HelpText:          "#696868",
-		BindingText:       "#FFBF69",
-		DialogBoxBorder:   "240",
-		ConfirmButtonText: "#FFFDF5",
-		ConfirmButtonBG:   "#353533",
-		ActiveButtonText:  "#FFFDF5",
-		ActiveButtonBG:    "#FF8531",
-		FilterText:        "#EBBD34",
-		StatusBarBorder:   true,
+		CellText:           "",
+		TableHeaderBorder:  "240",
+		SelectedRowText:    "#262626",
+		SelectedRowBG:      "#EBBD34",
+		MarkedRowText:      "#262626",
+		MarkedRowBG:        "#eae2b7",
+		TopFilesText:       "#EBBD34",
+		HelpText:           "#696868",
+		BindingText:        "#FFBF69",
+		DialogBoxBorder:    "240",
+		ConfirmButtonText:  "#FFFDF5",
+		ConfirmButtonBG:    "#353533",
+		ActiveButtonText:   "#FFFDF5",
+		ActiveButtonBG:     "#FF8531",
+		FilterText:         "#EBBD34",
+		DiffAddedMarker:    "#06923E",
+		DiffRemovedMarker:  "#FF303E",
+		UsageThresholdText: "#dc2f02",
+		SizeUnit: SizeUnitColors{
+			GB: "#f48c06",
+			TB: "#dc2f02",
+			PB: "#9d0208",
+			EB: "#6a040f",
+		},
+		StatusBarBorder: true,
 	}
 }
 
