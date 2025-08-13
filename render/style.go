@@ -1,6 +1,7 @@
 package render
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/charmbracelet/lipgloss"
@@ -235,4 +236,24 @@ func (s *Style) ChartColors() []lipgloss.Color {
 		lipgloss.Color(s.cs.ChartColors.Sector8),
 		lipgloss.Color(s.cs.ChartColors.Sector9),
 	}
+}
+
+func (s *Style) SizeUnit(unit string) *lipgloss.Style {
+	ck := fmt.Sprintf("sizeUnit-%s", unit)
+	cv, ok := s.cache[ck]
+	if !ok {
+		sizeUnitColorsMap := map[string]string{
+			"GB": s.cs.SizeUnit.GB,
+			"TB": s.cs.SizeUnit.TB,
+			"PB": s.cs.SizeUnit.PB,
+			"EB": s.cs.SizeUnit.EB,
+		}
+		color := sizeUnitColorsMap[unit]
+		cs := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+		s.cache[ck] = &cs
+
+		return &cs
+	}
+
+	return cv
 }

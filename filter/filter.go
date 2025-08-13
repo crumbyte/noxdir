@@ -86,8 +86,8 @@ type NameFilter struct {
 	enabled bool
 }
 
-func NewNameFilter(placeholder string) *NameFilter {
-	textStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#ebbd34"))
+func NewNameFilter(placeholder string, textColor string) *NameFilter {
+	textStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(textColor))
 	ti := textinput.New()
 
 	ti.Placeholder = placeholder

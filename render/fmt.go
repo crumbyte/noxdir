@@ -14,13 +14,6 @@ var sizeUnits = []string{
 	"B", "KB", "MB", "GB", "TB", "PB", "EB",
 }
 
-var sizeUnitsSeverity = map[string]string{
-	"GB": "#f48c06",
-	"TB": "#dc2f02",
-	"PB": "#9d0208",
-	"EB": "#6a040f",
-}
-
 type numeric interface {
 	int | uint | uint64 | int64 | int32 | float64 | float32
 }
@@ -38,20 +31,17 @@ func FmtSize[T numeric](bytesSize T, width int) string {
 
 func FmtSizeColor[T numeric](bytesSize T, width, fullWidth int) string {
 	size, suffix := fmtSize(bytesSize)
-	padding, severity := 1, sizeUnitsSeverity[suffix]
+	padding, sizeUnitStyle := 1, style.SizeUnit(suffix)
 
 	if width > 0 {
 		padding = max(width-len(size)-len(suffix), padding)
 	}
 
-	if len(severity) > 0 {
-		suffix = lipgloss.NewStyle().Foreground(
-			lipgloss.Color(severity),
-		).Render(suffix + strings.Repeat(" ", fullWidth))
-	}
-
 	return lipgloss.JoinHorizontal(
-		lipgloss.Left, size, strings.Repeat(" ", padding), suffix,
+		lipgloss.Left,
+		size,
+		strings.Repeat(" ", padding),
+		sizeUnitStyle.Render(suffix+strings.Repeat(" ", fullWidth)),
 	)
 }
 
@@ -100,7 +90,7 @@ func FmtUsage(usage, threshold float64, fullWidth int) string {
 	s := lipgloss.NewStyle()
 
 	if usagePercent > threshold {
-		s = s.Foreground(lipgloss.Color("#dc2f02"))
+		s = s.Foreground(lipgloss.Color(style.CS().UsageThresholdText))
 	}
 
 	usageStr := strconv.FormatFloat(usagePercent, 'f', 2, 64)
