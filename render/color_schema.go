@@ -46,10 +46,10 @@ type StatusBarColors struct {
 }
 
 type SizeUnitColors struct {
-	GB string `json:"gB"`
-	TB string `json:"tB"`
-	PB string `json:"pB"`
-	EB string `json:"eB"`
+	GB string `json:"gb"`
+	TB string `json:"tb"`
+	PB string `json:"pb"`
+	EB string `json:"eb"`
 }
 
 // The ColorSchema schema contains color values for most UI elements, such as

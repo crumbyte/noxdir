@@ -51,10 +51,10 @@
   "diffRemovedMarker": "#FF303E",
   "usageThresholdText": "#dc2f02",
   "sizeUnit": {
-    "GB": "#f48c06",
-    "TB": "#dc2f02",
-    "PB": "#9d0208",
-    "EB": "#6a040f"
+    "gb": "#f48c06",
+    "tb": "#dc2f02",
+    "pb": "#9d0208",
+    "eb": "#6a040f"
   },
   "statusBarBorder": true,
   "scanProgressBar": {

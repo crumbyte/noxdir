@@ -37,6 +37,7 @@ func TestFmtSize(t *testing.T) {
 }
 
 func TestFmtUsage(t *testing.T) {
+	render.InitStyle(render.DefaultColorSchema())
 	tableData := []struct {
 		usage    float64
 		expected string
