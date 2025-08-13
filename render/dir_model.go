@@ -130,7 +130,9 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		cmd: command.NewModel(
 			func() { go teaProg.Send(EnqueueRefresh{Mode: CMD}) },
 		),
-		errPopup:    NewErrorPopupModel(time.Second * 10),
+		errPopup: NewPopupModel(
+			ErrorTitle, time.Second*10, PopupDefaultErrorStyle(),
+		),
 		summaryInfo: &summaryInfo{},
 		mode:        PENDING,
 		nav:         nav,

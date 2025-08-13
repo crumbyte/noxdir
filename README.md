@@ -200,7 +200,7 @@ Cache file locations:
 
 To clear all cached data, use the `--clear-cache` flag.
 
-## ⌨️ Key Bindings (nightly build only)
+## ⌨️ Key Bindings
 
 NoxDir provides full support for custom key bindings, allowing users to override nearly all interactive controls.
 Bindings are defined in the [configuration file](#-configuration-file).  By default, all key binding fields are set to `null`. When a field is `null` or omitted, the default binding is used.
