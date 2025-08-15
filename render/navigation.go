@@ -185,8 +185,9 @@ func (n *Navigation) Up(ocl OnChangeLevel) {
 		ocl(n.entry, n.state)
 	}()
 
-	lastItem := n.entryStack.pop()
-	n.entry, n.cursor = lastItem.entry, lastItem.cursor
+	if lastItem := n.entryStack.pop(); lastItem != nil {
+		n.entry, n.cursor = lastItem.entry, lastItem.cursor
+	}
 }
 
 // SetCursor preserves the current position of the table's cursor. The cursor
