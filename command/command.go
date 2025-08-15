@@ -53,10 +53,16 @@ func ViewHelp(cmd *cobra.Command) string {
 		name := "--" + f.Name
 
 		if f.Shorthand != "" {
-			name = "-" + f.Shorthand + " | " + name
+			name = "-" + f.Shorthand + "|" + name
 		}
 
-		parts = append(parts, name, "<"+f.Value.Type()+">")
+		usage := f.Value.Type()
+
+		if len(f.Usage) != 0 {
+			usage = f.Usage
+		}
+
+		parts = append(parts, "["+name+"]", "<"+usage+">")
 	})
 
 	return strings.Join(parts, " ")

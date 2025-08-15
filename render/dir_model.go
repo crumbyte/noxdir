@@ -543,7 +543,7 @@ func (dm *DirModel) updateTableData() {
 				FmtSizeColor(child.Size, entrySizeWidth, colWidth),
 				totalDirs,
 				totalFiles,
-				time.Unix(child.ModTime, 0).Format("Jan 02 15:04"),
+				time.Unix(child.ModTime, 0).Format("02 Jan 2006"),
 				FmtUsage(parentUsage, 20, colWidth),
 				pgBar,
 			},
