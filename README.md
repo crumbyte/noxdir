@@ -318,27 +318,29 @@ Bindings are defined in the [configuration file](#-configuration-file). By defau
 Default bindings are defined as follows:
 
 ```json
-"driveBindings": {
-"levelDown":    ["enter", "right"],
-"sortTotalCap": ["alt+t,alt+u,alt+f,alt+g"] // yes, just a string
-},
-"dirBindings": {
-"levelUp":    ["backspace", "left"],
-"levelDown":  ["enter", "right"],
-"delete":     ["!"],
-"topFiles":   ["ctrl+q"],
-"topDirs":    ["ctrl+e"],
-"filesOnly":  [","],
-"dirsOnly":   ["."],
-"nameFilter": ["ctrl+f"],
-"chart":      ["ctrl+w"],
-"diff":       ["+"]
-},
-"explore": ["e"],
-"quit":    ["q", "ctrl+c"],
-"refresh": ["r"],
-"help":    ["?"],
-"config":  ["%"]
+{
+  "driveBindings": {
+    "levelDown":    ["enter", "right"],
+    "sortTotalCap": ["alt+t,alt+u,alt+f,alt+g"] // yes, just a string
+  },
+  "dirBindings": {
+    "levelUp":    ["backspace", "left"],
+    "levelDown":  ["enter", "right"],
+    "delete":     ["!"],
+    "topFiles":   ["ctrl+q"],
+    "topDirs":    ["ctrl+e"],
+    "filesOnly":  [","],
+    "dirsOnly":   ["."],
+    "nameFilter": ["ctrl+f"],
+    "chart":      ["ctrl+w"],
+    "diff":       ["+"]
+  },
+  "explore": ["e"],
+  "quit":    ["q", "ctrl+c"],
+  "refresh": ["r"],
+  "help":    ["?"],
+  "config":  ["%"]
+}
 ```
 
 Each entry maps an action name to one or more key sequences. Bindings support modifiers such as `ctrl`, `alt`, and
@@ -354,9 +356,11 @@ Each entry maps an action name to one or more key sequences. Bindings support mo
 Custom config example:
 
 ```json
-"dirBindings": {
-"topFiles": ["t"],
-"topDirs": ["T"]
+{
+  "dirBindings": {
+    "topFiles": ["t"],
+    "topDirs": ["T"]
+  }
 }
 ```
 
