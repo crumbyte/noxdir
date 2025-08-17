@@ -3,6 +3,7 @@
 package drive
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"runtime"
@@ -258,7 +259,8 @@ func ExploreFallback(path string) error {
 // in a new window. Otherwise, an error will be returned.
 func Explore(path string) error {
 	//nolint:gosec // because of the one text editor that shouldn't exist
-	cmd := exec.Command(
+	cmd := exec.CommandContext(
+		context.Background(),
 		"powershell",
 		"-Command",
 		fmt.Sprintf("Start-Process -FilePath %q", strings.TrimSpace(path)),
