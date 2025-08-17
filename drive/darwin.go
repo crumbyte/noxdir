@@ -2,11 +2,21 @@
 
 package drive
 
+/*
+#include "readdir.h"
+#include <dirent.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+*/
+import "C"
+
 import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"sync"
 	"time"
@@ -87,46 +97,6 @@ func statFSToInfo(stat *unix.Statfs_t) *Info {
 	}
 }
 
-func ReadDirLegacy(path string) ([]FileInfo, error) {
-	fis := make([]FileInfo, 0, 32)
-
-	entry, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		_ = entry.Close()
-	}()
-
-	nodeEntries, err := entry.Readdir(-1)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, child := range nodeEntries {
-		excludedChild, excluded := excludedPaths[path]
-
-		if child.IsDir() && excluded {
-			if _, childExcluded := excludedChild[child.Name()]; childExcluded {
-				continue
-			}
-		}
-
-		fis = append(
-			fis,
-			FileInfo{
-				name:    child.Name(),
-				isDir:   child.IsDir(),
-				size:    child.Size(),
-				modTime: child.ModTime().Unix(),
-			},
-		)
-	}
-
-	return fis, nil
-}
-
 func NewFileInfo(name string, data *unix.Stat_t) FileInfo {
 	return FileInfo{
 		name:    name,
@@ -142,6 +112,40 @@ var direntBufPool = sync.Pool{
 
 		return &b
 	},
+}
+
+func ReadDirC(_ Allocator, path string) ([]FileInfo, error) {
+	cPath := C.CString(path)
+	defer C.free(unsafe.Pointer(cPath)) //nolint:nlreturn
+
+	var (
+		arr   *C.FileInfoC
+		count C.int
+	)
+
+	//nolint:gocritic,nlreturn
+	if errno := C.ReadDirC(cPath, &arr, &count); errno != 0 {
+		return nil, fmt.Errorf("readdir failed: %d", int(errno))
+	}
+
+	defer C.FreeFileInfoC(arr)
+
+	fis := make([]FileInfo, 0, int(count))
+	slice := unsafe.Slice(arr, int(count))
+
+	for _, fi := range slice {
+		fis = append(
+			fis,
+			FileInfo{
+				name:    C.GoString(&fi.name[0]),
+				isDir:   fi.isDir != 0,
+				size:    int64(fi.size),
+				modTime: time.Unix(int64(fi.modSec), int64(fi.modNSec)).Unix(),
+			},
+		)
+	}
+
+	return fis, nil
 }
 
 func ReadDir(a Allocator, path string) ([]FileInfo, error) {
