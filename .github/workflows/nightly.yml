@@ -12,7 +12,7 @@ permissions:
 jobs:
   trigger-nightly:
     name: Push tag for nightly build
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
