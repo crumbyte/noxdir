@@ -56,6 +56,15 @@ builds:
       - linux
       - windows
       - darwin
+    overrides:
+      - goos: darwin
+        goarch: amd64
+        env:
+          - CGO_ENABLED=1
+      - goos: darwin
+        goarch: arm64
+        env:
+          - CGO_ENABLED=1
 
 archives:
   - formats: [ tar.gz ]
