@@ -13,7 +13,8 @@ const (
 	CancelChoice DeleteChoice = iota
 	ConfirmChoice
 
-	deleteDialogWidth = 50
+	deleteDialogWidth    = 50
+	maxDeleteEntryLength = 40
 )
 
 type EntryDeleted struct {
@@ -92,8 +93,11 @@ func (ddm *DeleteDialogModel) View() string {
 	pathList := make([]string, 0, len(ddm.pathMap))
 
 	for path, size := range ddm.pathMap {
-		pathList = append(pathList, path)
+		if len(path) > maxDeleteEntryLength {
+			path = path[:maxDeleteEntryLength] + "..."
+		}
 
+		pathList = append(pathList, path)
 		totalReclaimed += size
 	}
 
