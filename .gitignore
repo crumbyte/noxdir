@@ -26,3 +26,6 @@ go.work.sum
 .idea
 # Added by goreleaser init:
 dist/
+
+# Nix build output
+result
