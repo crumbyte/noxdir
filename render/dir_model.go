@@ -77,24 +77,25 @@ func (si *summaryInfo) clear() {
 }
 
 type DirModel struct {
-	columns      []Column
-	mode         Mode
-	dirsTable    *table.Model
-	topEntries   *TopEntries
-	deleteDialog *DeleteDialogModel
-	diff         *DiffModel
-	usagePG      *PG
-	nav          *Navigation
-	scanPG       *PG
-	filters      filter.FiltersList
-	cmd          *command.Model
-	errPopup     *PopupModel
-	statusBar    *StatusBar
-	summaryInfo  *summaryInfo
-	height       int
-	width        int
-	fullHelp     bool
-	showCart     bool
+	columns         []Column
+	mode            Mode
+	dirsTable       *table.Model
+	topEntries      *TopEntries
+	deleteDialog    *DeleteDialogModel
+	diff            *DiffModel
+	usagePG         *PG
+	nav             *Navigation
+	scanPG          *PG
+	filters         filter.FiltersList
+	cmd             *command.Model
+	errPopup        *PopupModel
+	topStatusBar    *StatusBar
+	bottomStatusBar *StatusBar
+	summaryInfo     *summaryInfo
+	height          int
+	width           int
+	fullHelp        bool
+	showCart        bool
 }
 
 func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
@@ -122,11 +123,12 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 			{Title: "Parent usage"},
 			{Title: ""},
 		},
-		filters:    filter.NewFiltersList(defaultFilters...),
-		dirsTable:  buildTable(),
-		topEntries: NewTopEntries(),
-		diff:       NewDiffModel(nav),
-		statusBar:  NewStatusBar(),
+		filters:         filter.NewFiltersList(defaultFilters...),
+		dirsTable:       buildTable(),
+		topEntries:      NewTopEntries(),
+		diff:            NewDiffModel(nav),
+		topStatusBar:    NewStatusBar(),
+		bottomStatusBar: NewStatusBar(),
 		cmd: command.NewModel(
 			func() { go teaProg.Send(EnqueueRefresh{Mode: CMD}) },
 		),
@@ -219,7 +221,8 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (dm *DirModel) View() string {
 	h := lipgloss.Height
 
-	summary := dm.dirsSummary()
+	tsb := dm.viewTopStatusBar()
+	bsb := dm.viewBottomStatusBar()
 	keyBindings := dm.dirsTable.Help.ShortHelpView(
 		Bindings.ShortBindings(),
 	)
@@ -230,15 +233,15 @@ func (dm *DirModel) View() string {
 		)
 	}
 
-	pgBar := summary
+	pgBar := tsb
 
 	if dm.mode == PENDING {
 		pgBar = dm.viewProgress()
 	}
 
-	dirsTableHeight := dm.height - h(keyBindings) - h(summary) - h(pgBar)
+	dirsTableHeight := dm.height - h(keyBindings) - h(bsb) - h(pgBar)
 
-	rows := []string{keyBindings, summary}
+	rows := []string{keyBindings, bsb}
 
 	for _, f := range dm.filters {
 		v, ok := f.(filter.Viewer)
@@ -280,7 +283,7 @@ func (dm *DirModel) View() string {
 			dm.width,
 			bg,
 			chart,
-			h(bg)-h(keyBindings)-h(summary)-h(chart),
+			h(bg)-h(keyBindings)-h(bsb)-h(chart),
 			dm.width-lipgloss.Width(chart),
 		)
 	}
@@ -554,12 +557,80 @@ func (dm *DirModel) updateTableData() {
 	dm.dirsTable.SetCursor(dm.nav.cursor)
 }
 
-func (dm *DirModel) dirsSummary() string {
-	if dm.statusBar == nil {
+func (dm *DirModel) viewTopStatusBar() string {
+	if dm.topStatusBar == nil {
 		return ""
 	}
 
-	dm.statusBar.Clear()
+	dm.topStatusBar.Clear()
+
+	sbStyle := style.CS().StatusBar
+
+	var (
+		fullEntryName string
+		selectedSize  int64
+		isDir         bool
+	)
+
+	for _, selected := range dm.dirsTable.MarkedRows() {
+		if entry := dm.nav.entry.GetChild(selected[1]); entry != nil {
+			selectedSize += entry.Size
+		}
+	}
+
+	if len(dm.dirsTable.SelectedRow()) != 0 {
+		fullEntryName = dm.dirsTable.SelectedRow()[1]
+
+		entry := dm.nav.entry.GetChild(fullEntryName)
+		if entry != nil && selectedSize == 0 {
+			selectedSize = entry.Size
+			isDir = entry.IsDir
+		}
+	}
+
+	barItems := []*BarItem{
+		{Content: "ENTRY", BGColor: sbStyle.VersionBG},
+		{Content: "NAME", BGColor: sbStyle.Dirs.PathBG},
+		{
+			Content: fullEntryName,
+			BGColor: sbStyle.BG,
+			Wrapper: WrapPath,
+			Width:   -1,
+		},
+	}
+
+	entryType := "DIR"
+	if !isDir {
+		entryType = "FILE"
+	}
+
+	barItems = append(
+		barItems,
+		[]*BarItem{
+			{Content: entryType, BGColor: sbStyle.Dirs.ModeBG},
+			{Content: "PICKED", BGColor: sbStyle.Dirs.SizeBG},
+			{
+				Content: unitFmt(max(uint64(len(dm.dirsTable.MarkedRows())), 1)),
+				BGColor: sbStyle.BG,
+			},
+			{Content: "TO FREE", BGColor: style.cs.StatusBar.Dirs.RowsCounter},
+			{Content: FmtSizeColor(selectedSize, 0, 0), BGColor: sbStyle.BG},
+		}...,
+	)
+
+	dm.topStatusBar.Add(barItems)
+
+	return style.StatusBar().Margin(1, 0, 1, 0).Render(
+		dm.topStatusBar.Render(dm.width),
+	)
+}
+
+func (dm *DirModel) viewBottomStatusBar() string {
+	if dm.bottomStatusBar == nil {
+		return ""
+	}
+
+	dm.bottomStatusBar.Clear()
 
 	sbStyle := style.CS().StatusBar
 
@@ -588,7 +659,7 @@ func (dm *DirModel) dirsSummary() string {
 		[]*BarItem{
 			{Content: string(dm.mode), BGColor: sbStyle.Dirs.ModeBG},
 			{Content: "SIZE", BGColor: sbStyle.Dirs.SizeBG},
-			{Content: FmtSize(dm.summaryInfo.size, 0), BGColor: sbStyle.BG},
+			{Content: FmtSizeColor(dm.summaryInfo.size, 0, 0), BGColor: sbStyle.BG},
 			{Content: "DIRS", BGColor: sbStyle.Dirs.DirsBG},
 			{Content: unitFmt(dm.summaryInfo.dirs), BGColor: sbStyle.BG},
 			{Content: "FILES", BGColor: sbStyle.Dirs.FilesBG},
@@ -601,10 +672,10 @@ func (dm *DirModel) dirsSummary() string {
 		}...,
 	)
 
-	dm.statusBar.Add(barItems)
+	dm.bottomStatusBar.Add(barItems)
 
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(
-		dm.statusBar.Render(dm.width),
+		dm.bottomStatusBar.Render(dm.width),
 	)
 }
 
