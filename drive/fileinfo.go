@@ -4,10 +4,6 @@ import (
 	"os"
 )
 
-type Allocator interface {
-	Alloc(size uint32) ([]byte, error)
-}
-
 // FileInfo defines a custom fs.FileInfo implementation for wrapping the results
 // from the file info system calls.
 type FileInfo struct {
