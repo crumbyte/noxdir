@@ -4,12 +4,7 @@ package drive
 
 /*
 #include "readdir.h"
-#include <dirent.h>
 #include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <fcntl.h>
 */
 import "C"
 
@@ -114,7 +109,7 @@ var direntBufPool = sync.Pool{
 	},
 }
 
-func ReadDirC(_ Allocator, path string) ([]FileInfo, error) {
+func ReadDir(_ Allocator, path string) ([]FileInfo, error) {
 	cPath := C.CString(path)
 	defer C.free(unsafe.Pointer(cPath)) //nolint:nlreturn
 
@@ -124,16 +119,22 @@ func ReadDirC(_ Allocator, path string) ([]FileInfo, error) {
 	)
 
 	//nolint:gocritic,nlreturn
-	if errno := C.ReadDirC(cPath, &arr, &count); errno != 0 {
+	if errno := C.read_dir(cPath, &arr, &count); errno != 0 {
 		return nil, fmt.Errorf("readdir failed: %d", int(errno))
 	}
 
-	defer C.FreeFileInfoC(arr)
+	defer C.free_result(arr)
 
 	fis := make([]FileInfo, 0, int(count))
 	slice := unsafe.Slice(arr, int(count))
 
 	for _, fi := range slice {
+		name := C.GoString(&fi.name[0])
+
+		if pathExcluded(path, name) || !InoFilterInstance.Add(uint64(fi.ino)) {
+			continue
+		}
+
 		fis = append(
 			fis,
 			FileInfo{
@@ -148,7 +149,7 @@ func ReadDirC(_ Allocator, path string) ([]FileInfo, error) {
 	return fis, nil
 }
 
-func ReadDir(a Allocator, path string) ([]FileInfo, error) {
+func ReadDir1(a Allocator, path string) ([]FileInfo, error) {
 	var rootStat unix.Stat_t
 
 	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_DIRECTORY, 0)

@@ -3,19 +3,20 @@
 #ifndef READDIR_H
 #define READDIR_H
 
-#include <sys/stat.h>
 #include <stdint.h>
 
 typedef struct {
     char     name[256];
+    uint64_t ino;
+    int64_t  dev;
     int      isDir;
     int64_t  size;
     int64_t  modSec;
     int64_t  modNSec;
 } FileInfoC;
 
-int ReadDirC(const char* path, FileInfoC** out, int* count);
+int read_dir(const char* path, FileInfoC** out, int* count);
 
-void FreeFileInfoC(FileInfoC* arr);
+void free_result(FileInfoC* arr);
 
 #endif
