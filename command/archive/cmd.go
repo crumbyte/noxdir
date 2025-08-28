@@ -23,7 +23,7 @@ func NewPackCmd() *cobra.Command {
 	)
 
 	packCmd.PersistentFlags().StringSliceVarP(&entries, "entries", "e", nil, "")
-	packCmd.PersistentFlags().StringVarP(&compression, "compression", "c", "", "tar,gz")
+	packCmd.PersistentFlags().StringVarP(&compression, "compression", "c", "", "zst,gz")
 	packCmd.PersistentFlags().StringVarP(&output, "output", "o", ".", "")
 	packCmd.PersistentFlags().StringVarP(&ctxPath, "ctx-path", "", "", "")
 
