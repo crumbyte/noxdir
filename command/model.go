@@ -2,17 +2,21 @@ package command
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"sync/atomic"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
 type Model struct {
 	input         textinput.Model
+	viewport      viewport.Model
 	entries       []string
+	messages      []string
 	onStateChange func()
 	history       *History
 	path          string
@@ -27,9 +31,18 @@ func NewModel(onStateChange func()) *Model {
 	ti.Focus()
 	ti.Prompt = "$ "
 	ti.PromptStyle, ti.TextStyle = textStyle, textStyle
+	ti.Placeholder = "type the command..."
+
+	vp := viewport.New(30, 5)
+	vp.VisibleLineCount()
+	vp.Style = vp.Style.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderTop(true)
 
 	return &Model{
 		input:         ti,
+		viewport:      vp,
 		onStateChange: onStateChange,
 		history:       NewHistory(50),
 		enabled:       false,
@@ -56,7 +69,9 @@ func (m *Model) Enabled() bool {
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.input.Width = msg.Width
+		m.input.Width, m.viewport.Width = msg.Width, msg.Width
+
+		m.updateViewportMessages()
 
 		return m, nil
 	case tea.KeyMsg:
@@ -67,6 +82,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "enter":
 			m.executeCmd()
+			m.updateViewportMessages()
 		case "ctrl+c":
 			m.input.Reset()
 			m.history.ResetCursor()
@@ -106,7 +122,31 @@ func (m *Model) View() string {
 		BorderForeground(lipgloss.Color("240")).
 		BorderTop(true)
 
-	return s.Render(m.input.View())
+	var viewportContent string
+
+	if len(m.messages) > 0 {
+		viewportContent = m.viewport.View()
+	}
+
+	return fmt.Sprintf(
+		"%s\n%s",
+		viewportContent,
+		s.Render(m.input.View()),
+	)
+}
+
+func (m *Model) updateViewportMessages() {
+	if len(m.messages) == 0 {
+		return
+	}
+
+	m.viewport.SetContent(
+		lipgloss.NewStyle().Width(m.viewport.Width).Render(
+			strings.Join(m.messages, "\n"),
+		),
+	)
+
+	m.viewport.GotoBottom()
 }
 
 func (m *Model) executeCmd() {
@@ -135,14 +175,15 @@ func (m *Model) executeCmd() {
 	args = append(args, "--entries", strings.Join(m.entries, ","))
 	args = append(args, "--ctx-path", m.path)
 
+	m.messages = append(m.messages, input)
 	m.input.Reset()
 
 	if err := Execute(NewRootCmd(), args, outBuffer); err != nil {
-		m.input.Placeholder = err.Error()
+		m.messages = append(m.messages, err.Error())
 
 		return
 	}
 
-	m.input.Placeholder = outBuffer.String()
+	m.messages = append(m.messages, outBuffer.String())
 	m.onStateChange()
 }

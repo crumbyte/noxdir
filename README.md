@@ -50,7 +50,7 @@ curl -s https://crumbyte.github.io/noxdir/scripts/install.sh | bash
 ```
 
 ```bash
-curl -s https://crumbyte.github.io/noxdir/scripts/install.sh | bash -s -- v0.3.0
+curl -s https://crumbyte.github.io/noxdir/scripts/install.sh | bash -s -- v0.6.0
 ```
 
 ### Pre-compiled Binaries
@@ -300,14 +300,12 @@ To clear all cached data, use the `--clear-cache` flag.
 NoxDir provides a set of commands you can run on one or multiple selected entries.
 
 1. Open the command bar. Press the `:` key inside NoxDir to bring up the command bar.
-   ![cmd!](/img/cmd.png "cmd")
-
 2. Explore available commands. Type: `help` to list all currently available commands. For details on a specific command,
    use the `-h` flag. Example: `pack -h`.
-
 3. Run a command. Select the entries you want, then type a command in the command bar. In the example below, four
    selected items are packed into an archive named `archive` with no compression: `pack -o archive`
-![pack!](/img/pack.png "pack")
+4. Press `esc` to close the command bar.
+![cmd!](/img/cmd.png "cmd")
 
 ## ⌨️ Key Bindings
 

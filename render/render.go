@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Version = "v0.6.0"
+	Version = "v0.7.0"
 
 	updateTickerInterval = time.Millisecond * 500
 )
