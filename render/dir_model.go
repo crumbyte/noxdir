@@ -101,7 +101,10 @@ type DirModel struct {
 func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 	defaultFilters := append(
 		[]filter.EntryFilter{
-			filter.NewNameFilter("Filter...", style.CS().FilterText),
+			filter.NewNameFilter(
+				"Filter... \\ at the beginning for a negative search",
+				style.CS().FilterText,
+			),
 			&filter.DirsFilter{},
 			&filter.FilesFilter{},
 		},

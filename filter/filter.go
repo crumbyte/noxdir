@@ -110,10 +110,18 @@ func (nf *NameFilter) Toggle() {
 // Filter filters an instance of *structure.Entry by checking if its path value
 // contains the current filter input.
 func (nf *NameFilter) Filter(e *structure.Entry) bool {
-	return strings.Contains(
+	filterValue, positiveSearch := nf.input.Value(), true
+
+	if len(filterValue) > 1 && filterValue[0] == '\\' {
+		filterValue, positiveSearch = filterValue[1:], false
+	}
+
+	contains := strings.Contains(
 		strings.ToLower(e.Name()),
-		strings.ToLower(nf.input.Value()),
+		strings.ToLower(filterValue),
 	)
+
+	return (positiveSearch && contains) || (!positiveSearch && !contains)
 }
 
 func (nf *NameFilter) Update(msg tea.Msg) {
