@@ -50,6 +50,8 @@
   "diffAddedMarker": "#06923E",
   "diffRemovedMarker": "#FF303E",
   "usageThresholdText": "#dc2f02",
+  "cmdInputText": "#80ed99",
+  "cmdBarBorder": "240",
   "sizeUnit": {
     "gb": "#f48c06",
     "tb": "#dc2f02",

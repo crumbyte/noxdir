@@ -145,6 +145,12 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		usagePG:     &usagePG,
 	}
 
+	dm.cmd.SetStyles(command.Styles{
+		InputTextStyle: *style.CmdInputText(),
+		InputBarStyle:  *style.CmdBarBorder(),
+		OutputStyle:    *style.CmdBarBorder(),
+	})
+
 	return dm
 }
 
