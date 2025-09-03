@@ -12,9 +12,31 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+type Styles struct {
+	InputTextStyle lipgloss.Style
+	InputBarStyle  lipgloss.Style
+	OutputStyle    lipgloss.Style
+}
+
+var DefaultStyles = Styles{
+	InputTextStyle: lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#80ed99")),
+
+	InputBarStyle: lipgloss.NewStyle().
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderTop(true),
+
+	OutputStyle: lipgloss.NewStyle().
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderTop(true),
+}
+
 type Model struct {
 	input         textinput.Model
 	viewport      viewport.Model
+	styles        Styles
 	entries       []string
 	messages      []string
 	onStateChange func()
@@ -25,28 +47,35 @@ type Model struct {
 }
 
 func NewModel(onStateChange func()) *Model {
-	textStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#80ed99"))
+	styles := DefaultStyles
 
 	ti := textinput.New()
 	ti.Focus()
 	ti.Prompt = "$ "
-	ti.PromptStyle, ti.TextStyle = textStyle, textStyle
+	ti.PromptStyle, ti.TextStyle = styles.InputTextStyle, styles.InputTextStyle
 	ti.Placeholder = "type the command..."
 
 	vp := viewport.New(30, 5)
+	vp.Style = styles.OutputStyle
 	vp.VisibleLineCount()
-	vp.Style = vp.Style.
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
-		BorderTop(true)
 
 	return &Model{
+		styles:        styles,
 		input:         ti,
 		viewport:      vp,
 		onStateChange: onStateChange,
 		history:       NewHistory(50),
 		enabled:       false,
 	}
+}
+
+func (m *Model) SetStyles(s Styles) {
+	m.styles = s
+
+	m.input.PromptStyle = m.styles.InputTextStyle
+	m.input.TextStyle = m.styles.InputTextStyle
+
+	m.viewport.Style = m.styles.OutputStyle
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -117,11 +146,6 @@ func (m *Model) View() string {
 		return ""
 	}
 
-	s := lipgloss.NewStyle().
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
-		BorderTop(true)
-
 	var viewportContent string
 
 	if len(m.messages) > 0 {
@@ -131,7 +155,7 @@ func (m *Model) View() string {
 	return fmt.Sprintf(
 		"%s\n%s",
 		viewportContent,
-		s.Render(m.input.View()),
+		m.styles.InputBarStyle.Render(m.input.View()),
 	)
 }
 

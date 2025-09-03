@@ -257,3 +257,32 @@ func (s *Style) SizeUnit(unit string) *lipgloss.Style {
 
 	return cv
 }
+
+func (s *Style) CmdInputText() *lipgloss.Style {
+	cv, ok := s.cache["commandInputText"]
+	if !ok {
+		cs := lipgloss.NewStyle().Foreground(lipgloss.Color(s.cs.CmdInputText))
+
+		s.cache["commandInputText"] = &cs
+
+		return &cs
+	}
+
+	return cv
+}
+
+func (s *Style) CmdBarBorder() *lipgloss.Style {
+	cv, ok := s.cache["commandBarBorder"]
+	if !ok {
+		cs := lipgloss.NewStyle().
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color(s.cs.CmdBarBorder)).
+			BorderTop(true)
+
+		s.cache["commandBarBorder"] = &cs
+
+		return &cs
+	}
+
+	return cv
+}
