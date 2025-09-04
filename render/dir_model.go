@@ -364,7 +364,7 @@ func (dm *DirModel) viewChart() string {
 	}
 
 	c := NewChart(
-		dm.width/2,
+		max(int(float64(dm.width)*0.45), 100),
 		int(float64(dm.height)*0.43),
 		int(float64(dm.height)*0.43),
 		style.CS().ChartColors.AspectRatioFix,
