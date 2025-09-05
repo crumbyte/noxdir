@@ -101,7 +101,10 @@ type DirModel struct {
 func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 	defaultFilters := append(
 		[]filter.EntryFilter{
-			filter.NewNameFilter("Filter...", style.CS().FilterText),
+			filter.NewNameFilter(
+				"Filter... \\ at the beginning for a negative search",
+				style.CS().FilterText,
+			),
 			&filter.DirsFilter{},
 			&filter.FilesFilter{},
 		},
@@ -141,6 +144,12 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		scanPG:      &style.CS().ScanProgressBar,
 		usagePG:     &usagePG,
 	}
+
+	dm.cmd.SetStyles(command.Styles{
+		InputTextStyle: *style.CmdInputText(),
+		InputBarStyle:  *style.CmdBarBorder(),
+		OutputStyle:    *style.CmdBarBorder(),
+	})
 
 	return dm
 }
@@ -355,7 +364,7 @@ func (dm *DirModel) viewChart() string {
 	}
 
 	c := NewChart(
-		dm.width/2,
+		max(int(float64(dm.width)*0.45), 100),
 		int(float64(dm.height)*0.43),
 		int(float64(dm.height)*0.43),
 		style.CS().ChartColors.AspectRatioFix,

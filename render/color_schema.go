@@ -80,6 +80,8 @@ type ColorSchema struct {
 	DiffAddedMarker    string          `json:"diffAddedText"`
 	DiffRemovedMarker  string          `json:"diffRemovedText"`
 	UsageThresholdText string          `json:"usageThresholdText"`
+	CmdInputText       string          `json:"cmdInputText"`
+	CmdBarBorder       string          `json:"cmdBarBorder"`
 	SizeUnit           SizeUnitColors  `json:"sizeUnit"`
 	ScanProgressBar    PG              `json:"scanProgressBar"`
 	UsageProgressBar   PG              `json:"usageProgressBar"`
@@ -170,6 +172,8 @@ func DefaultColorSchema() ColorSchema {
 		DiffAddedMarker:    "#06923E",
 		DiffRemovedMarker:  "#FF303E",
 		UsageThresholdText: "#dc2f02",
+		CmdInputText:       "#80ed99",
+		CmdBarBorder:       "240",
 		SizeUnit: SizeUnitColors{
 			GB: "#f48c06",
 			TB: "#dc2f02",
