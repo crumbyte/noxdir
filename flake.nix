@@ -27,7 +27,7 @@
 
         packages.noxdir = pkgs.buildGoModule {
           pname = "noxdir";
-          version = "0.7.0";
+          version = "0.8.0";
           src = ./.;
           vendorHash = "sha256-NtrTLF6J+4n+bnVsfs+WAmlYeL0ElJzwaiK1sk59z9k=";
           ldflags = [
