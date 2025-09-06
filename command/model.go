@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -13,9 +14,11 @@ import (
 )
 
 type Styles struct {
-	InputTextStyle lipgloss.Style
-	InputBarStyle  lipgloss.Style
-	OutputStyle    lipgloss.Style
+	InputTextStyle    lipgloss.Style
+	InputBarStyle     lipgloss.Style
+	OutputStyle       lipgloss.Style
+	ErrTextStyle      lipgloss.Style
+	ExecTimeTextStyle lipgloss.Style
 }
 
 var DefaultStyles = Styles{
@@ -31,6 +34,12 @@ var DefaultStyles = Styles{
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color("240")).
 		BorderTop(true),
+
+	ErrTextStyle: lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FF303E")),
+
+	ExecTimeTextStyle: lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#EBBD34")),
 }
 
 type Model struct {
@@ -202,12 +211,26 @@ func (m *Model) executeCmd() {
 	m.messages = append(m.messages, input)
 	m.input.Reset()
 
+	beforeExec := time.Now()
+
 	if err := Execute(NewRootCmd(), args, outBuffer); err != nil {
-		m.messages = append(m.messages, err.Error())
+		m.messages = append(
+			m.messages, m.styles.ErrTextStyle.Render(err.Error()),
+		)
 
 		return
 	}
 
-	m.messages = append(m.messages, outBuffer.String())
+	took := m.styles.ExecTimeTextStyle.Render(
+		"took " + time.Since(beforeExec).String(),
+	)
+
+	output := outBuffer.String()
+
+	if len(output) > 0 && output[len(output)-1] != '\n' {
+		output += "\n"
+	}
+
+	m.messages = append(m.messages, output+took)
 	m.onStateChange()
 }

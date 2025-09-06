@@ -145,11 +145,13 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		usagePG:     &usagePG,
 	}
 
-	dm.cmd.SetStyles(command.Styles{
-		InputTextStyle: *style.CmdInputText(),
-		InputBarStyle:  *style.CmdBarBorder(),
-		OutputStyle:    *style.CmdBarBorder(),
-	})
+	cmdDefaultStyle := command.DefaultStyles
+
+	cmdDefaultStyle.InputTextStyle = *style.CmdInputText()
+	cmdDefaultStyle.InputBarStyle = *style.CmdBarBorder()
+	cmdDefaultStyle.OutputStyle = *style.CmdBarBorder()
+
+	dm.cmd.SetStyles(cmdDefaultStyle)
 
 	return dm
 }
