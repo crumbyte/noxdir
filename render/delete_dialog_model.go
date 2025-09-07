@@ -1,6 +1,7 @@
 package render
 
 import (
+	"fmt"
 	"slices"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,6 +16,7 @@ const (
 
 	deleteDialogWidth    = 50
 	maxDeleteEntryLength = 40
+	maxEntriesDisplay    = 20
 )
 
 type EntryDeleted struct {
@@ -93,15 +95,27 @@ func (ddm *DeleteDialogModel) View() string {
 	pathList := make([]string, 0, len(ddm.pathMap))
 
 	for path, size := range ddm.pathMap {
+		totalReclaimed += size
+
+		if len(pathList) >= maxEntriesDisplay {
+			continue
+		}
+
 		if len(path) > maxDeleteEntryLength {
 			path = path[:maxDeleteEntryLength] + "..."
 		}
 
 		pathList = append(pathList, path)
-		totalReclaimed += size
 	}
 
 	slices.Sort(pathList)
+
+	if len(pathList) < len(ddm.pathMap) {
+		pathList = append(
+			pathList,
+			fmt.Sprintf("%d more...", len(ddm.pathMap)-maxEntriesDisplay),
+		)
+	}
 
 	target := textStyle.Render(
 		lipgloss.JoinVertical(lipgloss.Center, pathList...),
