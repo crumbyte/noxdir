@@ -95,22 +95,20 @@ func (ddm *DeleteDialogModel) View() string {
 	pathList := make([]string, 0, len(ddm.pathMap))
 
 	for path, size := range ddm.pathMap {
-		totalReclaimed += size
-
-		if len(pathList) >= maxEntriesDisplay {
-			continue
-		}
-
 		if len(path) > maxDeleteEntryLength {
 			path = path[:maxDeleteEntryLength] + "..."
 		}
 
 		pathList = append(pathList, path)
+
+		totalReclaimed += size
 	}
 
 	slices.Sort(pathList)
 
-	if len(pathList) < len(ddm.pathMap) {
+	if len(pathList) >= maxEntriesDisplay {
+		pathList = pathList[:maxEntriesDisplay]
+
 		pathList = append(
 			pathList,
 			fmt.Sprintf("%d more...", len(ddm.pathMap)-maxEntriesDisplay),
