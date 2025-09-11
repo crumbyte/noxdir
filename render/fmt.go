@@ -94,7 +94,7 @@ func FmtUsage(usage, threshold float64, fullWidth int) string {
 	}
 
 	usageStr := strconv.FormatFloat(usagePercent, 'f', 2, 64)
-	spacing := strings.Repeat(" ", minWidth-len(usageStr)-2)
+	spacing := strings.Repeat(" ", max(minWidth-len(usageStr)-2, 0))
 	suffix := " %" + strings.Repeat(" ", max(fullWidth-minWidth, 0))
 
 	return s.Render(usageStr + spacing + suffix)

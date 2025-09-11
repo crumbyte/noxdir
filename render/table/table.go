@@ -236,6 +236,20 @@ func (m *Model) MarkSelected() {
 	m.UpdateViewport()
 }
 
+func (m *Model) ToggleMarkAll() {
+	defer m.UpdateViewport()
+
+	if len(m.marked) == len(m.rows) {
+		m.marked = make(map[int]struct{})
+
+		return
+	}
+
+	for i := range m.rows {
+		m.marked[i] = struct{}{}
+	}
+}
+
 func (m *Model) ResetMarked() {
 	m.marked = make(map[int]struct{})
 }

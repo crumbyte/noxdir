@@ -20,16 +20,17 @@ type DriveBindings struct {
 }
 
 type DirBindings struct {
-	LevelUp    []string `json:"levelUp"`
-	LevelDown  []string `json:"levelDown"`
-	Delete     []string `json:"delete"`
-	TopFiles   []string `json:"topFiles"`
-	TopDirs    []string `json:"topDirs"`
-	FilesOnly  []string `json:"filesOnly"`
-	DirsOnly   []string `json:"dirsOnly"`
-	NameFilter []string `json:"nameFilter"`
-	Chart      []string `json:"chart"`
-	Diff       []string `json:"diff"`
+	LevelUp         []string `json:"levelUp"`
+	LevelDown       []string `json:"levelDown"`
+	Delete          []string `json:"delete"`
+	TopFiles        []string `json:"topFiles"`
+	TopDirs         []string `json:"topDirs"`
+	FilesOnly       []string `json:"filesOnly"`
+	DirsOnly        []string `json:"dirsOnly"`
+	NameFilter      []string `json:"nameFilter"`
+	ToggleSelectAll []string `json:"toggleSelectAll"`
+	Chart           []string `json:"chart"`
+	Diff            []string `json:"diff"`
 }
 
 type Bindings struct {

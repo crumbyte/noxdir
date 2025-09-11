@@ -351,6 +351,9 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 	case key.Matches(msg, Bindings.Dirs.FilesOnly):
 		dm.filters.ToggleFilter(filter.FilesOnlyFilterID)
 		dm.updateTableData()
+	case key.Matches(msg, Bindings.Dirs.ToggleSelectAll):
+		dm.dirsTable.ToggleMarkAll()
+		dm.updateTableData()
 	}
 
 	dm.topEntries.Update(msg)

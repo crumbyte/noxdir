@@ -21,17 +21,18 @@ type DriveKeyMap struct {
 }
 
 type DirsKeyMap struct {
-	LevelUp    key.Binding
-	LevelDown  key.Binding
-	Delete     key.Binding
-	TopFiles   key.Binding
-	TopDirs    key.Binding
-	FilesOnly  key.Binding
-	DirsOnly   key.Binding
-	NameFilter key.Binding
-	Chart      key.Binding
-	Diff       key.Binding
-	Command    key.Binding
+	LevelUp         key.Binding
+	LevelDown       key.Binding
+	Delete          key.Binding
+	TopFiles        key.Binding
+	TopDirs         key.Binding
+	FilesOnly       key.Binding
+	DirsOnly        key.Binding
+	NameFilter      key.Binding
+	ToggleSelectAll key.Binding
+	Chart           key.Binding
+	Diff            key.Binding
+	Command         key.Binding
 }
 
 type KeyMap struct {
@@ -77,7 +78,7 @@ func (km *KeyMap) DirBindings() [][]key.Binding {
 		[][]key.Binding{
 			{km.Dirs.LevelDown, km.Dirs.LevelUp, km.Explore, km.Quit},
 			{km.Dirs.TopFiles, km.Dirs.TopDirs, km.Dirs.NameFilter, km.Dirs.Chart},
-			{km.Dirs.DirsOnly, km.Dirs.FilesOnly, km.Refresh, km.Dirs.Delete},
+			{km.Dirs.ToggleSelectAll, km.Dirs.DirsOnly, km.Dirs.FilesOnly, km.Refresh},
 			{km.Dirs.Diff, km.Config, km.Refresh, km.Dirs.Delete},
 			{km.Dirs.Command},
 		}...,
@@ -198,6 +199,13 @@ func DefaultKeyMap(s *Style) KeyMap {
 					s.Help().Render(" - usage chart"),
 				),
 			),
+			ToggleSelectAll: key.NewBinding(
+				key.WithKeys("ctrl+a"),
+				key.WithHelp(
+					s.BindKey().Render("ctrl+a"),
+					s.Help().Render(" - select/unselect all"),
+				),
+			),
 			Diff: key.NewBinding(
 				key.WithKeys("+"),
 				key.WithHelp(
@@ -295,6 +303,9 @@ func InitKeyMap(b *config.Bindings, s *Style) {
 		)
 		Bindings.Dirs.NameFilter = Bindings.override(
 			Bindings.Dirs.NameFilter, b.DirBindings.NameFilter,
+		)
+		Bindings.Dirs.ToggleSelectAll = Bindings.override(
+			Bindings.Dirs.ToggleSelectAll, b.DirBindings.ToggleSelectAll,
 		)
 		Bindings.Dirs.Diff = Bindings.override(
 			Bindings.Dirs.Diff, b.DirBindings.Diff,
