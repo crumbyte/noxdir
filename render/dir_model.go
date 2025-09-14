@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/crumbyte/noxdir/command"
+	"github.com/crumbyte/noxdir/drive"
 	"github.com/crumbyte/noxdir/filter"
 	"github.com/crumbyte/noxdir/render/table"
 	"github.com/crumbyte/noxdir/structure"
@@ -92,6 +93,7 @@ type DirModel struct {
 	topStatusBar    *StatusBar
 	bottomStatusBar *StatusBar
 	summaryInfo     *summaryInfo
+	sortState       SortState
 	height          int
 	width           int
 	fullHelp        bool
@@ -118,10 +120,10 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		columns: []Column{
 			{Title: ""},
 			{Title: ""},
-			{Title: "Name"},
-			{Title: "Size"},
-			{Title: "Total Dirs"},
-			{Title: "Total Files"},
+			{Title: "Name", SortKey: structure.SortPath},
+			{Title: "Size", SortKey: structure.SortSize},
+			{Title: "Total Dirs", SortKey: structure.SortTotalDirs},
+			{Title: "Total Files", SortKey: structure.SortTotalFiles},
 			{Title: "Last Change"},
 			{Title: "Parent usage"},
 			{Title: ""},
@@ -139,6 +141,7 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 			ErrorTitle, time.Second*10, PopupDefaultErrorStyle(),
 		),
 		summaryInfo: &summaryInfo{},
+		sortState:   SortState{Key: structure.SortSize, Desc: true},
 		mode:        PENDING,
 		nav:         nav,
 		scanPG:      &style.CS().ScanProgressBar,
@@ -336,6 +339,10 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 	}
 
 	switch {
+	case key.Matches(msg, Bindings.Dirs.SortKeys):
+		dm.sortEntries(drive.SortKey(msg.String()))
+
+		return true
 	case key.Matches(msg, Bindings.Dirs.Chart):
 		dm.showCart = !dm.showCart
 		dm.updateTableData()
@@ -514,11 +521,13 @@ func (dm *DirModel) updateTableData() {
 	colWidth := int(float64(dm.width-iconWidth-nameWidth) * colWidthRatio)
 	progressWidth := dm.width - (colWidth * 5) - iconWidth - nameWidth
 
-	// columns must be re-rendered ech time to support window resize
+	// columns must be re-rendered each time to support window resize
 	columns := make([]table.Column, len(dm.columns))
 
 	for i, c := range dm.columns {
-		columns[i] = table.Column{Title: c.Title, Width: colWidth}
+		columns[i] = table.Column{
+			Title: c.FmtName(dm.sortState), Width: colWidth,
+		}
 	}
 
 	columns[0].Width = iconWidth
@@ -532,7 +541,7 @@ func (dm *DirModel) updateTableData() {
 	dm.summaryInfo.clear()
 
 	rows := make([]table.Row, 0, len(dm.nav.Entry().Child))
-	dm.nav.Entry().SortChild()
+	dm.nav.Entry().SortedChild(dm.sortState.Key, dm.sortState.Desc)
 
 	for _, child := range dm.nav.Entry().Child {
 		if !dm.filters.Valid(child) {
@@ -711,4 +720,18 @@ func (dm *DirModel) viewProgress() string {
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(
 		dm.scanPG.New(dm.width).ViewAs(completed),
 	)
+}
+
+func (dm *DirModel) sortEntries(sortKey drive.SortKey) {
+	if dm.nav.OnDrives() {
+		return
+	}
+
+	if dm.sortState.Key == sortKey {
+		dm.sortState.Desc = !dm.sortState.Desc
+	} else {
+		dm.sortState = SortState{Key: sortKey}
+	}
+
+	dm.updateTableData()
 }

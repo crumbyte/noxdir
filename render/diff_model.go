@@ -199,7 +199,7 @@ func (dm *DiffModel) updateTableData() {
 	}
 
 	rows := make([]table.Row, 0, len(dm.nav.Entry().Child))
-	dm.nav.Entry().SortChild()
+	dm.nav.Entry().SortedChild(structure.SortSize, true)
 
 	for _, child := range dm.diff.Added {
 		rows = append(

@@ -77,14 +77,7 @@ func (dm *DriveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, Bindings.Help):
 			dm.fullHelp = !dm.fullHelp
 		case key.Matches(msg, Bindings.Drive.SortKeys):
-			sortKeys := strings.Split(msg.String(), "+")
-			if len(sortKeys) < 2 {
-				return dm, nil
-			}
-
-			dm.sortDrives(
-				drive.SortKey(strings.TrimPrefix(msg.String(), sortKeys[1])),
-			)
+			dm.sortDrives(drive.SortKey(msg.String()))
 
 			return dm, nil
 		case key.Matches(msg, Bindings.Explore):

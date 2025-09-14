@@ -16,7 +16,6 @@ const (
 
 type DriveBindings struct {
 	LevelDown []string `json:"levelDown"`
-	SortKeys  []string `json:"sortTotalCap"`
 }
 
 type DirBindings struct {

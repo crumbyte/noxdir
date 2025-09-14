@@ -238,8 +238,7 @@ The created configurations file already contains all available settings and has 
   "useCache": false,
   "bindings": {
     "driveBindings": {
-      "levelDown": [],
-      "sortTotalCap": null
+      "levelDown": []
     },
     "dirBindings": {
       "levelUp": null,
@@ -319,7 +318,6 @@ Default bindings are defined as follows:
 {
   "driveBindings": {
     "levelDown":    ["enter", "right"],
-    "sortTotalCap": ["alt+t,alt+u,alt+f,alt+g"] // yes, just a string
   },
   "dirBindings": {
     "levelUp":    ["backspace", "left"],

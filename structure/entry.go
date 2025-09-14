@@ -10,6 +10,15 @@ import (
 	"slices"
 	"strings"
 	"sync"
+
+	"github.com/crumbyte/noxdir/drive"
+)
+
+const (
+	SortPath       drive.SortKey = "1"
+	SortSize       drive.SortKey = "2"
+	SortTotalDirs  drive.SortKey = "3"
+	SortTotalFiles drive.SortKey = "4"
 )
 
 // Entry contains the information about a single directory or a file instance
@@ -157,9 +166,31 @@ func (e *Entry) HasChild() bool {
 	return len(e.Child) != 0
 }
 
-func (e *Entry) SortChild() *Entry {
+//nolint:gosec
+func (e *Entry) SortedChild(sk drive.SortKey, desc bool) *Entry {
+	sortMod := 1
+
+	if desc {
+		sortMod = -1
+	}
+
 	slices.SortFunc(e.Child, func(a, b *Entry) int {
-		return cmp.Compare(b.Size, a.Size)
+		var x, y int64
+
+		switch sk {
+		case SortTotalDirs:
+			x, y = int64(a.TotalDirs), int64(b.TotalDirs)
+		case SortTotalFiles:
+			x, y = int64(a.TotalFiles), int64(b.TotalFiles)
+		case SortPath:
+			return cmp.Compare(
+				strings.ToLower(a.Path), strings.ToLower(b.Path),
+			) * sortMod
+		default:
+			x, y = a.Size, b.Size
+		}
+
+		return cmp.Compare(x, y) * sortMod
 	})
 
 	return e

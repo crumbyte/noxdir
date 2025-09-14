@@ -9,10 +9,10 @@ import (
 type SortKey string
 
 const (
-	TotalCap   SortKey = "t"
-	TotalUsed  SortKey = "u"
-	TotalFree  SortKey = "f"
-	TotalUsedP SortKey = "g"
+	TotalCap   SortKey = "1"
+	TotalUsed  SortKey = "2"
+	TotalFree  SortKey = "3"
+	TotalUsedP SortKey = "4"
 )
 
 // Info contains information about a single drive/volume/mount. The data can be
