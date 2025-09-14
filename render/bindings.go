@@ -33,6 +33,7 @@ type DirsKeyMap struct {
 	Chart           key.Binding
 	Diff            key.Binding
 	Command         key.Binding
+	SortKeys        key.Binding
 }
 
 type KeyMap struct {
@@ -80,7 +81,7 @@ func (km *KeyMap) DirBindings() [][]key.Binding {
 			{km.Dirs.TopFiles, km.Dirs.TopDirs, km.Dirs.NameFilter, km.Dirs.Chart},
 			{km.Dirs.ToggleSelectAll, km.Dirs.DirsOnly, km.Dirs.FilesOnly, km.Refresh},
 			{km.Dirs.Diff, km.Config, km.Refresh, km.Dirs.Delete},
-			{km.Dirs.Command},
+			{km.Dirs.Command, km.Dirs.SortKeys},
 		}...,
 	)
 }
@@ -128,14 +129,21 @@ func DefaultKeyMap(s *Style) KeyMap {
 				),
 			),
 			SortKeys: key.NewBinding(
-				key.WithKeys("alt+t", "alt+u", "alt+f", "alt+g"),
+				key.WithKeys("1", "2", "3", "4"),
 				key.WithHelp(
-					s.BindKey().Render("alt+(t/f/u/g)"),
+					s.BindKey().Render("1/2/3/4"),
 					s.Help().Render(" - sort total/free/used/usage"),
 				),
 			),
 		},
 		Dirs: DirsKeyMap{
+			SortKeys: key.NewBinding(
+				key.WithKeys("1", "2", "3", "4"),
+				key.WithHelp(
+					s.BindKey().Render("1/2/3/4"),
+					s.Help().Render(" - sort name/dirs/files/usage"),
+				),
+			),
 			LevelUp: key.NewBinding(
 				key.WithKeys("backspace", "left"),
 				key.WithHelp(
@@ -275,9 +283,6 @@ func InitKeyMap(b *config.Bindings, s *Style) {
 
 		Bindings.Drive.LevelDown = Bindings.override(
 			Bindings.Drive.LevelDown, b.DriveBindings.LevelDown,
-		)
-		Bindings.Drive.SortKeys = Bindings.override(
-			Bindings.Drive.SortKeys, b.DriveBindings.SortKeys,
 		)
 
 		Bindings.Dirs.DirsOnly = Bindings.override(
