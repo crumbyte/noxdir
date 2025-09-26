@@ -43,7 +43,13 @@ brew uninstall --cask noxdir # If the stable version was installed previously
 brew install --cask noxdir-nightly
 ```
 
-### Linux
+### Arch based Linux distros
+
+```bash
+pacman -S noxdir
+```
+
+### Other Linux distros
 
 ```bash
 curl -s https://crumbyte.github.io/noxdir/scripts/install.sh | bash
