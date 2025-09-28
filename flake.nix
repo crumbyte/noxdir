@@ -29,7 +29,7 @@
           pname = "noxdir";
           version = "0.8.0";
           src = ./.;
-          vendorHash = "sha256-NtrTLF6J+4n+bnVsfs+WAmlYeL0ElJzwaiK1sk59z9k=";
+          vendorHash = "sha256-uRJP21bJ8NlJ0qOG81Gax9LJ+HdPfxLKj1Jjzbweync=";
           ldflags = [
             "-s"
             "-w"
