@@ -132,7 +132,7 @@ func DefaultKeyMap(s *Style) KeyMap {
 				key.WithKeys("1", "2", "3", "4"),
 				key.WithHelp(
 					s.BindKey().Render("1/2/3/4"),
-					s.Help().Render(" - sort total/free/used/usage"),
+					s.Help().Render(" - sort total/used/free/usage"),
 				),
 			),
 		},
@@ -141,7 +141,7 @@ func DefaultKeyMap(s *Style) KeyMap {
 				key.WithKeys("1", "2", "3", "4"),
 				key.WithHelp(
 					s.BindKey().Render("1/2/3/4"),
-					s.Help().Render(" - sort name/dirs/files/usage"),
+					s.Help().Render(" - sort name/size/dirs/files"),
 				),
 			),
 			LevelUp: key.NewBinding(
