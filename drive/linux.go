@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 	"unsafe"
 
@@ -18,8 +17,7 @@ import (
 )
 
 const (
-	NTFSSbMagic   = 0x5346544e
-	SysNewFstatat = 262
+	NTFSSbMagic = 0x5346544e
 )
 
 const mountInfoPath = "/proc/self/mounts"
@@ -232,7 +230,7 @@ func ReadDir(alloc Allocator, path string) ([]FileInfo, error) {
 
 			var stat unix.Stat_t
 
-			err = fstatat(alloc, fd, name, &stat, unix.AT_SYMLINK_NOFOLLOW)
+			err = unix.Fstatat(fd, name, &stat, unix.AT_SYMLINK_NOFOLLOW)
 			if err == nil && InoFilterInstance.Add(stat.Ino) && stat.Dev == rootStat.Dev {
 				fis = append(fis, NewFileInfo(name, &stat))
 			}
@@ -260,46 +258,6 @@ func Explore(path string) error {
 	}()
 
 	return nil
-}
-
-func fstatat(alloc Allocator, dirFD int, path string, stat *unix.Stat_t, flags int) (err error) {
-	var _p0 *byte
-
-	_p0, err = bytePtrFromString(alloc, path)
-	if err != nil {
-		return
-	}
-
-	_, _, e1 := syscall.Syscall6(
-		SysNewFstatat,
-		uintptr(dirFD),
-		uintptr(unsafe.Pointer(_p0)),
-		uintptr(unsafe.Pointer(stat)),
-		uintptr(flags),
-		0,
-		0,
-	)
-	if e1 != 0 {
-		return e1
-	}
-
-	return
-}
-
-func bytePtrFromString(alloc Allocator, s string) (*byte, error) {
-	if strings.IndexByte(s, 0) != -1 {
-		return nil, syscall.EINVAL
-	}
-
-	//nolint:gosec
-	buf, err := alloc.Alloc(uint32(len(s) + 1))
-	if err != nil {
-		return nil, err
-	}
-
-	copy(buf, s)
-
-	return &buf[0], nil
 }
 
 func bytePtrToString(alloc Allocator, bytes []byte) string {
