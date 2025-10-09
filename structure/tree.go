@@ -61,6 +61,12 @@ func WithCache(c *cache.Cache) TreeOpt {
 	}
 }
 
+func WithUseCache() TreeOpt {
+	return func(t *Tree) {
+		t.useCache = true
+	}
+}
+
 func WithPartialRoot() TreeOpt {
 	return func(t *Tree) {
 		t.partialRoot = true
@@ -75,6 +81,7 @@ type Tree struct {
 	fiFilters        []drive.FileInfoFilter
 	calculateSizeSem uint32
 	partialRoot      bool
+	useCache         bool
 }
 
 func NewTree(root *Entry, opts ...TreeOpt) *Tree {
@@ -176,7 +183,7 @@ func (t *Tree) Traverse(skipCache bool) error {
 		currentNode *Entry
 	)
 
-	if !skipCache && t.cache != nil {
+	if !skipCache && t.cachingEnabled() {
 		if err := t.cache.Get(t.root.Path, t.root); err == nil {
 			return nil
 		}
@@ -206,12 +213,25 @@ func (t *Tree) Traverse(skipCache bool) error {
 	return errors.Join(errList...)
 }
 
-func (t *Tree) PersistCache() error {
-	if t.cache == nil || t.partialRoot || t.root == nil {
-		return nil
+func (t *Tree) Cached() (*Tree, error) {
+	if t.cache == nil || !t.cache.Has(t.root.Path) {
+		return nil, nil
 	}
 
-	return t.cache.Set(t.root.Path, t.root)
+	tree := NewTree(NewDirEntry(t.root.Path, time.Now().Unix()))
+	if err := t.cache.Get(tree.root.Path, tree.root); err != nil {
+		return nil, err
+	}
+
+	return tree, nil
+}
+
+func (t *Tree) PersistCache() (chan struct{}, error) {
+	if t.cache == nil || t.partialRoot || t.root == nil {
+		return nil, nil
+	}
+
+	return t.cache.SetAsync(t.root.Path, t.root)
 }
 
 func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
@@ -226,7 +246,7 @@ func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 	queue := make(chan *Entry, bfsQueueSize)
 	done, errChan := make(chan struct{}), make(chan error, 1)
 
-	if !skipCache && t.cache != nil && t.cache.Has(t.root.Path) {
+	if !skipCache && t.cachingEnabled() && t.cache.Has(t.root.Path) {
 		go func() {
 			if err := t.cache.Get(t.root.Path, t.root); err == nil {
 				close(done)
@@ -359,4 +379,8 @@ func (t *Tree) filterFileInfo(fi drive.FileInfo) bool {
 	}
 
 	return true
+}
+
+func (t *Tree) cachingEnabled() bool {
+	return t.useCache && t.cache != nil
 }

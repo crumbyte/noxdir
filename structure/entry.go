@@ -141,6 +141,27 @@ func (e *Entry) GetChild(name string) *Entry {
 	return nil
 }
 
+func (e *Entry) FindChild(path string) *Entry {
+	e.mx.RLock()
+	defer e.mx.RUnlock()
+
+	queue := []*Entry{e}
+
+	for len(queue) > 0 {
+		entry := queue[0]
+
+		if entry.Path == path {
+			return entry
+		}
+
+		if entry.IsDir {
+			queue = append(queue, entry)
+		}
+	}
+
+	return nil
+}
+
 // AddChild adds the provided [*Entry] instance to a list of child entries. The
 // counters will be updated respectively depending on the type of child entry.
 func (e *Entry) AddChild(child *Entry) {
