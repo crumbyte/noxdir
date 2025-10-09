@@ -157,6 +157,13 @@ func (c *Cache) Set(key string, val any) error {
 	return c.ei(w).Encode(val)
 }
 
+func (c *Cache) SetAsync(key string, val any) (chan struct{}, error) {
+	done := make(chan struct{})
+	defer close(done)
+
+	return done, c.Set(key, val)
+}
+
 func (c *Cache) Has(key string) bool {
 	fi, err := os.Lstat(filepath.Join(c.cachePath, c.keyHash(key)))
 

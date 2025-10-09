@@ -141,6 +141,33 @@ func (e *Entry) GetChild(name string) *Entry {
 	return nil
 }
 
+// FindChild tries to find a child element by its full path. Unlike the GetChild
+// method, which searches within the top level, it searches through the entire
+// root entry structure until it finds the path matching.
+func (e *Entry) FindChild(path string) *Entry {
+	e.mx.RLock()
+	defer e.mx.RUnlock()
+
+	queue := []*Entry{e}
+
+	for len(queue) > 0 {
+		entry := queue[0]
+		queue = queue[1:]
+
+		if entry.Path == path {
+			return entry
+		}
+
+		for _, child := range entry.Child {
+			if entry.IsDir {
+				queue = append(queue, child)
+			}
+		}
+	}
+
+	return nil
+}
+
 // AddChild adds the provided [*Entry] instance to a list of child entries. The
 // counters will be updated respectively depending on the type of child entry.
 func (e *Entry) AddChild(child *Entry) {

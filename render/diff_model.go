@@ -27,6 +27,7 @@ type DiffModel struct {
 	targetTree   *structure.Tree
 	diff         *structure.Diff
 	columns      []table.Column
+	lastError    error
 	height       int
 	width        int
 	ready        bool
@@ -69,7 +70,9 @@ func (dm *DiffModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		dm.updateTableData()
 	case DiffScanFinished:
-		dm.ready = true
+		if dm.lastError == nil {
+			dm.ready = true
+		}
 
 		runtime.GC()
 		dm.updateTableData()
@@ -88,17 +91,16 @@ func (dm *DiffModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (dm *DiffModel) View() string {
 	hasDiff := dm.diff != nil && !dm.diff.Empty()
 
-	rows, message := make([]string, 0, 3), "No delta found for: "+dm.nav.Entry().Path
+	rows := make([]string, 0, 3)
 
 	messageStyle := lipgloss.NewStyle().
 		Align(lipgloss.Center).
 		Width(dm.width).
 		Bold(true)
 
-	if !dm.ready {
+	if !dm.ready && dm.lastError == nil {
 		rows = append(
 			rows,
-			dm.viewProgress(),
 			messageStyle.Render("Scanning the delta for: "+dm.nav.Entry().Path),
 		)
 	}
@@ -111,7 +113,19 @@ func (dm *DiffModel) View() string {
 	}
 
 	if dm.ready && !hasDiff {
-		rows = append(rows, messageStyle.Render(message))
+		rows = append(
+			rows,
+			messageStyle.Render("No delta found for: "+dm.nav.Entry().Path),
+		)
+	}
+
+	if dm.lastError != nil {
+		rows = append(
+			rows,
+			messageStyle.Render(
+				"Error occurred during scanning diff: "+dm.lastError.Error(),
+			),
+		)
 	}
 
 	return style.DialogBox().Render(
@@ -130,9 +144,13 @@ func (dm *DiffModel) Run(width, height int) {
 
 	dm.diff, dm.targetTree = nil, nil
 
-	tree, done, errChan := dm.nav.Diff()
+	done := make(chan struct{})
 
-	dm.targetTree = tree
+	go func() {
+		dm.targetTree, dm.diff, dm.lastError = dm.nav.Diff()
+
+		close(done)
+	}()
 
 	go func() {
 		ticker := time.NewTicker(updateTickerInterval)
@@ -144,15 +162,14 @@ func (dm *DiffModel) Run(width, height int) {
 
 		for {
 			select {
-			case <-errChan:
 			case <-ticker.C:
 				teaProg.Send(UpdateDiffState{})
-
-				dm.targetTree.CalculateSize()
-			case dm.diff = <-done:
+			case <-done:
 				teaProg.Send(DiffScanFinished{})
 
-				dm.targetTree.CalculateSize()
+				if dm.targetTree != nil {
+					dm.targetTree.CalculateSize()
+				}
 
 				return
 			}
@@ -272,12 +289,4 @@ func (dm *DiffModel) viewStats() string {
 		BorderTop(true).
 		Align(lipgloss.Center).
 		Render(lipgloss.JoinHorizontal(lipgloss.Center, addedStats, " | ", removedStats))
-}
-
-func (dm *DiffModel) viewProgress() string {
-	completed := (float64(dm.targetTree.Root().Size) / float64(dm.nav.entry.Size)) - 0.01
-
-	return style.StatusBar().Margin(1, 0, 1, 0).Render(
-		dm.pg.New(dm.width).ViewAs(completed),
-	)
 }

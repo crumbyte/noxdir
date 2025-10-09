@@ -171,10 +171,7 @@ func (n *Navigation) Up(ocl OnChangeLevel) {
 	defer n.unlock()
 
 	if n.entryStack.len() == 0 {
-		if err := n.tree.PersistCache(); err != nil {
-			// ignore caching error
-			_ = err
-		}
+		_, _ = n.tree.PersistCache()
 
 		n.state, n.cursor = Drives, 0
 
@@ -361,27 +358,28 @@ func (n *Navigation) Delete(path string) error {
 	return nil
 }
 
-func (n *Navigation) Diff() (*structure.Tree, chan *structure.Diff, chan error) {
+func (n *Navigation) Diff() (*structure.Tree, *structure.Diff, error) {
 	if n.OnDrives() || !n.lock() || n.entry == nil {
 		return nil, nil, nil
 	}
 
-	diffChan := make(chan *structure.Diff)
-	entry := n.entry.Copy()
-	tree := structure.NewTree(entry, structure.WithPartialRoot())
+	defer n.unlock()
 
-	doneChan, errChan := tree.TraverseAsync(true)
+	cachedTree, err := n.tree.Cached()
+	if err != nil {
+		return nil, nil, err
+	}
 
-	go func() {
-		<-doneChan
+	if cachedTree == nil {
+		return nil, nil, err
+	}
 
-		diffChan <- n.entry.Diff(entry)
-		close(diffChan)
+	cashedEntry := cachedTree.Root().FindChild(n.entry.Path)
+	if cashedEntry == nil {
+		return nil, nil, nil
+	}
 
-		n.unlock()
-	}()
-
-	return tree, diffChan, errChan
+	return cachedTree, cashedEntry.Diff(n.entry), nil
 }
 
 func (n *Navigation) lock() bool {

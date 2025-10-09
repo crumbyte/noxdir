@@ -49,12 +49,18 @@ selected drive and presents the space consumption in a clear, user-friendly layo
 🔗 Learn more: https://github.com/crumbyte/noxdir`,
 		RunE: runApp,
 		PostRun: func(_ *cobra.Command, _ []string) {
-			if tree == nil || !settings.UseCache {
+			if tree == nil {
 				return
 			}
 
-			if err := tree.PersistCache(); err != nil {
+			done, err := tree.PersistCache()
+			if err != nil {
 				printError(err.Error())
+			}
+
+			select {
+			case <-done:
+			case <-time.After(time.Second * 5):
 			}
 		},
 	}
@@ -375,21 +381,15 @@ func resolveNavigation(s *config.Settings) (*render.Navigation, error) {
 		fif = append(fif, drive.HiddenFilter)
 	}
 
-	if s.UseCache || clearCache {
-		cacheInstance, err = cache.NewCache(
-			func(w io.Writer) cache.Encoder {
-				return structure.NewEncoder(w)
-			},
-			func(r io.Reader) cache.Decoder {
-				return structure.NewDecoder(r)
-			},
-			clearCache,
-			s.Path,
-			cache.WithCompress(),
-		)
-		if err != nil {
-			return nil, err
-		}
+	cacheInstance, err = cache.NewCache(
+		func(w io.Writer) cache.Encoder { return structure.NewEncoder(w) },
+		func(r io.Reader) cache.Decoder { return structure.NewDecoder(r) },
+		clearCache,
+		s.Path,
+		cache.WithCompress(),
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	opts = append(
@@ -397,6 +397,10 @@ func resolveNavigation(s *config.Settings) (*render.Navigation, error) {
 		structure.WithFileInfoFilter(fif),
 		structure.WithCache(cacheInstance),
 	)
+
+	if s.UseCache {
+		opts = append(opts, structure.WithUseCache())
+	}
 
 	if root != "" {
 		root = strings.TrimSuffix(root, string(os.PathSeparator))

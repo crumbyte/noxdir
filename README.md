@@ -8,17 +8,7 @@
 visualizing and exploring your file system usage. It detects mounted drives or
 volumes and presents disk usage metrics through a responsive, keyboard-driven
 terminal UI. Designed to help you quickly locate space hogs and streamline your
-cleanup workflow.
-
-## 🚀 Features
-
-- ✅ Cross-platform drive and mount point detection (**Windows**, **macOS**, **Linux**)
-- 📊 Real-time disk usage insights: used, free, total capacity, and utilization
-  percentage
-- 🖥️ Interactive and intuitive terminal interface with keyboard navigation
-- ⚡ Built for speed — uses native system calls for maximum performance
-- 🔒 Fully local and privacy-respecting — **no telemetry**, ever
-- 🧰 Single binary, portable
+cleanup workflow. Supports: **Windows**, **macOS**, and **Linux**.
 
 ![full-preview!](/img/full-preview.png "full preview")
 
@@ -206,21 +196,16 @@ see the biggest directories. Use `ctrl+f` to filter entries by their names or
 
 ## 🔍 Viewing Changes (Delta Mode)
 
-The diff is calculated be performing a scan of the **current** directory and compares it with the cached version you
-currently have. If the caching was not enabled for the previous session the diff will show nothing.
-
 NoxDir can display file system changes since your last session. It highlights added or deleted files and directories, as
 well as changes in disk space usage.
-
-> Caching must be enabled (`--use-cache` or `-c`) for diffs to work.
 
 To view changes in the current directory, press the `+` key (toggle diff). NoxDir will compare the current state of the
 directory with its cached version and display the difference:
 
 ![diff!](/img/diff.png "diff")
 
-The diff is calculated by scanning only the current directory and comparing it against the previously cached state. If
-no cache exists from the previous session, no differences will be shown.
+The diff is calculated by comparing the current directory state against its cached version. If no cache exists from the
+previous session, no differences will be shown.
 
 ## 🔧 Configuration File
 
