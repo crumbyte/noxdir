@@ -398,7 +398,7 @@ func resolveNavigation(s *config.Settings) (*render.Navigation, error) {
 		structure.WithCache(cacheInstance),
 	)
 
-	if settings.UseCache {
+	if s.UseCache {
 		opts = append(opts, structure.WithUseCache())
 	}
 

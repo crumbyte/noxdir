@@ -214,7 +214,11 @@ func (t *Tree) Traverse(skipCache bool) error {
 }
 
 func (t *Tree) Cached() (*Tree, error) {
-	if t.cache == nil || !t.cache.Has(t.root.Path) {
+	if t.cachingEnabled() {
+		return t, nil
+	}
+
+	if !t.cache.Has(t.root.Path) {
 		return nil, nil
 	}
 

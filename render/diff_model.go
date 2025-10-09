@@ -167,7 +167,9 @@ func (dm *DiffModel) Run(width, height int) {
 			case <-done:
 				teaProg.Send(DiffScanFinished{})
 
-				dm.targetTree.CalculateSize()
+				if dm.targetTree != nil {
+					dm.targetTree.CalculateSize()
+				}
 
 				return
 			}
