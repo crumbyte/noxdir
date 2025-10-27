@@ -17,7 +17,7 @@ const driveSizeWidth = 10
 type RefreshDrives struct{}
 
 type DriveModel struct {
-	driveColumns []Column
+	driveColumns Columns
 	drivesTable  *table.Model
 	nav          *Navigation
 	usagePG      *PG
@@ -29,7 +29,7 @@ type DriveModel struct {
 }
 
 func NewDriveModel(n *Navigation) *DriveModel {
-	dc := []Column{
+	dc := Columns{
 		{},
 		{},
 		{Title: "Path"},
