@@ -78,7 +78,7 @@ func (si *summaryInfo) clear() {
 }
 
 type DirModel struct {
-	columns         []Column
+	columns         Columns
 	mode            Mode
 	dirsTable       *table.Model
 	topEntries      *TopEntries
@@ -117,16 +117,39 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 	usagePG.EmptyChar = " "
 
 	dm := &DirModel{
-		columns: []Column{
-			{Title: ""},
-			{Title: ""},
-			{Title: "Name", SortKey: structure.SortPath},
-			{Title: "Size", SortKey: structure.SortSize},
-			{Title: "Total Dirs", SortKey: structure.SortTotalDirs},
-			{Title: "Total Files", SortKey: structure.SortTotalFiles},
-			{Title: "Last Change"},
-			{Title: "Parent usage"},
-			{Title: ""},
+		columns: Columns{
+			{Title: "", Width: 5, Fixed: true},
+			{Title: "", Hidden: func(_ int) bool { return true }},
+			{Title: "Name", SortKey: structure.SortPath, WidthRatio: 0.25},
+			{
+				Title:      "Size",
+				SortKey:    structure.SortSize,
+				MinWidth:   12,
+				WidthRatio: DefaultColWidthRatio,
+			},
+			{
+				Title:      "Total Dirs",
+				SortKey:    structure.SortTotalDirs,
+				WidthRatio: DefaultColWidthRatio,
+				Hidden:     func(fw int) bool { return fw < 100 },
+			},
+			{
+				Title:      "Total Files",
+				SortKey:    structure.SortTotalFiles,
+				WidthRatio: DefaultColWidthRatio,
+				Hidden:     func(fw int) bool { return fw < 100 },
+			},
+			{
+				Title:      "Last Change",
+				WidthRatio: DefaultColWidthRatio,
+				Hidden:     func(fw int) bool { return fw < 150 },
+			},
+			{
+				Title:      "Parent Usage",
+				WidthRatio: DefaultColWidthRatio,
+				MinWidth:   12,
+			},
+			{Title: "", Full: true},
 		},
 		filters:         filter.NewFiltersList(defaultFilters...),
 		dirsTable:       buildTable(),
@@ -515,29 +538,14 @@ func (dm *DirModel) updateTableData() {
 		return
 	}
 
-	iconWidth := 5
-	nameWidth := (dm.width - iconWidth) / 4
+	nameCol, _ := dm.columns.Get(2)
+	sizeCol, _ := dm.columns.Get(3)
+	usageCol, _ := dm.columns.Get(7)
+	pgCol, _ := dm.columns.Get(8)
 
-	colWidth := int(float64(dm.width-iconWidth-nameWidth) * colWidthRatio)
-	progressWidth := dm.width - (colWidth * 5) - iconWidth - nameWidth
+	dm.dirsTable.SetColumns(dm.columns.TableColumns(dm.width, dm.sortState))
+	fillProgress := dm.usagePG.New(pgCol.Width)
 
-	// columns must be re-rendered each time to support window resize
-	columns := make([]table.Column, len(dm.columns))
-
-	for i, c := range dm.columns {
-		columns[i] = table.Column{
-			Title: c.FmtName(dm.sortState), Width: colWidth,
-		}
-	}
-
-	columns[0].Width = iconWidth
-	columns[1].Width = 0
-	columns[2].Width = nameWidth
-	columns[len(columns)-1].Width = progressWidth
-
-	dm.dirsTable.SetColumns(columns)
-
-	fillProgress := dm.usagePG.New(progressWidth)
 	dm.summaryInfo.clear()
 
 	rows := make([]table.Row, 0, len(dm.nav.Entry().Child))
@@ -565,12 +573,12 @@ func (dm *DirModel) updateTableData() {
 			table.Row{
 				EntryIcon(child),
 				child.Name(),
-				WrapString(child.Name(), nameWidth),
-				FmtSizeColor(child.Size, entrySizeWidth, colWidth),
+				WrapString(child.Name(), nameCol.Width),
+				FmtSizeColor(child.Size, entrySizeWidth, sizeCol.Width),
 				totalDirs,
 				totalFiles,
 				time.Unix(child.ModTime, 0).Format("02 Jan 2006"),
-				FmtUsage(parentUsage, 20, colWidth),
+				FmtUsage(parentUsage, 20, usageCol.Width),
 				pgBar,
 			},
 		)
