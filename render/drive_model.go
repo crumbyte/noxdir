@@ -17,29 +17,61 @@ const driveSizeWidth = 10
 type RefreshDrives struct{}
 
 type DriveModel struct {
-	driveColumns Columns
-	drivesTable  *table.Model
-	nav          *Navigation
-	usagePG      *PG
-	statusBar    *StatusBar
-	sortState    SortState
-	height       int
-	width        int
-	fullHelp     bool
+	columns     Columns
+	drivesTable *table.Model
+	nav         *Navigation
+	usagePG     *PG
+	statusBar   *StatusBar
+	sortState   SortState
+	height      int
+	width       int
+	fullHelp    bool
 }
 
 func NewDriveModel(n *Navigation) *DriveModel {
 	dc := Columns{
-		{},
-		{},
-		{Title: "Path"},
-		{Title: "Volume"},
-		{Title: "File System"},
-		{Title: "Total", SortKey: drive.TotalCap},
-		{Title: "Used", SortKey: drive.TotalUsed},
-		{Title: "Free", SortKey: drive.TotalFree},
-		{Title: "Usage", SortKey: drive.TotalUsedP},
-		{},
+		{Width: 5, Fixed: true},
+		{Hidden: func(_ int) bool { return true }},
+		{
+			Title: "Path",
+			Width: 20,
+			Fixed: true,
+		},
+		{
+			Title: "Volume",
+			Width: 20,
+			Fixed: true,
+		},
+		{
+			Title:      "File System",
+			Hidden:     func(fw int) bool { return fw < 150 },
+			WidthRatio: DefaultColWidthRatio,
+		},
+		{
+			Title:      "Total",
+			WidthRatio: DefaultColWidthRatio,
+			SortKey:    drive.TotalCap,
+			MinWidth:   12,
+		},
+		{
+			Title:      "Used",
+			WidthRatio: DefaultColWidthRatio,
+			SortKey:    drive.TotalUsed,
+			MinWidth:   12,
+		},
+		{
+			Title:      "Free",
+			WidthRatio: DefaultColWidthRatio,
+			SortKey:    drive.TotalFree,
+			MinWidth:   12,
+		},
+		{
+			Title:      "Usage",
+			WidthRatio: DefaultColWidthRatio,
+			SortKey:    drive.TotalUsedP,
+			MinWidth:   12,
+		},
+		{Full: true},
 	}
 
 	if runtime.GOOS == "linux" {
@@ -48,12 +80,12 @@ func NewDriveModel(n *Navigation) *DriveModel {
 	}
 
 	return &DriveModel{
-		nav:          n,
-		driveColumns: dc,
-		sortState:    SortState{Key: drive.TotalUsedP, Desc: true},
-		drivesTable:  buildTable(),
-		statusBar:    NewStatusBar(),
-		usagePG:      &style.CS().UsageProgressBar,
+		nav:         n,
+		columns:     dc,
+		sortState:   SortState{Key: drive.TotalUsedP, Desc: true},
+		drivesTable: buildTable(),
+		statusBar:   NewStatusBar(),
+		usagePG:     &style.CS().UsageProgressBar,
 	}
 }
 
@@ -129,31 +161,14 @@ func (dm *DriveModel) View() string {
 }
 
 func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
-	pathWidth, iconWidth := 20, 5
-	tableWidth := dm.width
+	pathCol, _ := dm.columns.Get(2)
+	usageCol, _ := dm.columns.Get(8)
+	pgCol, _ := dm.columns.Get(9)
 
-	colWidth := int(float64(tableWidth) * 0.085)
-	progressWidth := tableWidth - (colWidth * 5) - iconWidth - (pathWidth * 2)
-
-	columns := make([]table.Column, len(dm.driveColumns))
-
-	for i, c := range dm.driveColumns {
-		columns[i] = table.Column{
-			Title: c.FmtName(dm.sortState),
-			Width: colWidth,
-		}
-	}
-
-	columns[0].Width = iconWidth
-	columns[1].Width = 0
-	columns[2].Width = pathWidth
-	columns[3].Width = pathWidth
-	columns[len(columns)-1].Width = progressWidth
-
-	dm.drivesTable.SetColumns(columns)
+	dm.drivesTable.SetColumns(dm.columns.TableColumns(dm.width, dm.sortState))
 	dm.drivesTable.SetCursor(0)
 
-	diskFillProgress := dm.usagePG.New(progressWidth)
+	diskFillProgress := dm.usagePG.New(pgCol.Width)
 
 	drivesList := dm.nav.DrivesList()
 	sortedDrives := drivesList.Sort(key, sortDesc)
@@ -165,16 +180,16 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 		r := table.Row{
 			"⛃",
 			d.Path,
-			WrapString(d.Path, pathWidth),
+			WrapString(d.Path, pathCol.Width),
 			d.Volume,
 			d.FSName,
 			FmtSize(d.TotalBytes, driveSizeWidth),
 			FmtSize(d.UsedBytes, driveSizeWidth),
 			FmtSize(d.FreeBytes, driveSizeWidth),
-			FmtUsage(d.UsedPercent/100, 80, colWidth),
+			FmtUsage(d.UsedPercent/100, 80, usageCol.Width),
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
-				strings.Repeat(" ", max(0, progressWidth-lipgloss.Width(pgBar))),
+				strings.Repeat(" ", max(0, pgCol.Width-lipgloss.Width(pgBar))),
 				pgBar,
 			),
 		}
@@ -195,7 +210,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 				"⤷",
 				d.Path,
 				"",
-				WrapString(d.Path, pathWidth),
+				WrapString(d.Path, pathCol.Width),
 				d.FSName,
 				"-", "-", "-", "-", "",
 			}
