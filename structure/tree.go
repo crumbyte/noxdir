@@ -82,6 +82,7 @@ type Tree struct {
 	calculateSizeSem uint32
 	partialRoot      bool
 	useCache         bool
+	dirty            bool
 }
 
 func NewTree(root *Entry, opts ...TreeOpt) *Tree {
@@ -189,6 +190,8 @@ func (t *Tree) Traverse(skipCache bool) error {
 		}
 	}
 
+	t.dirty = true
+
 	drive.InoFilterInstance.Reset()
 
 	if t.root == nil || !t.root.IsDir {
@@ -231,8 +234,11 @@ func (t *Tree) Cached() (*Tree, error) {
 }
 
 func (t *Tree) PersistCache() (chan struct{}, error) {
-	if t.cache == nil || t.partialRoot || t.root == nil {
-		return nil, nil
+	if t.cache == nil || t.partialRoot || t.root == nil || !t.dirty {
+		done := make(chan struct{})
+		close(done)
+
+		return done, nil
 	}
 
 	return t.cache.SetAsync(t.root.Path, t.root)
@@ -259,6 +265,8 @@ func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 
 		return done, errChan
 	}
+
+	t.dirty = true
 
 	queue <- t.root
 
