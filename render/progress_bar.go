@@ -5,7 +5,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/lipgloss"
-
 	"github.com/muesli/termenv"
 )
 
@@ -17,7 +16,7 @@ type PG struct {
 	FullChar     string          `json:"fullChar"`
 	EmptyChar    string          `json:"emptyChar"`
 	ColorProfile termenv.Profile `json:"colorProfile"`
-	HidePercent  bool            `json:"hidePercent"`
+	ShowPercent  bool            `json:"showPercent"`
 }
 
 func (pg *PG) New(width int) progress.Model {
@@ -36,7 +35,7 @@ func (pg *PG) New(width int) progress.Model {
 		progress.WithGradient(pg.StartColor, pg.EndColor),
 	}
 
-	if pg.HidePercent {
+	if !pg.ShowPercent {
 		opts = append(opts, progress.WithoutPercentage())
 	}
 

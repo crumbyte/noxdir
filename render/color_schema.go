@@ -119,7 +119,6 @@ func DefaultColorSchema() ColorSchema {
 			ColorProfile: 3,
 			FullChar:     "🟥",
 			EmptyChar:    "🟩",
-			HidePercent:  true,
 		},
 		StatusBar: StatusBarColors{
 			VersionBG: "#8338EC",
@@ -194,7 +193,6 @@ func SimpleColorSchema() ColorSchema {
 		ColorProfile: 3,
 		FullChar:     "█",
 		EmptyChar:    "░",
-		HidePercent:  true,
 	}
 
 	return dcs

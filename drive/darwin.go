@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 	"unsafe"
@@ -149,7 +150,7 @@ func ReadDir(_ Allocator, path string) ([]FileInfo, error) {
 	return fis, nil
 }
 
-func ReadDir1(a Allocator, path string) ([]FileInfo, error) {
+func ReadDirFallback(a Allocator, path string) ([]FileInfo, error) {
 	var rootStat unix.Stat_t
 
 	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_DIRECTORY, 0)
@@ -216,7 +217,9 @@ func ReadDir1(a Allocator, path string) ([]FileInfo, error) {
 }
 
 func pathExcluded(path, name string) bool {
-	if name == "." || name == ".." {
+	if name == "." || name == ".." ||
+		strings.HasPrefix(name, "\u2400") ||
+		strings.HasPrefix(name, ".HFS+") {
 		return true
 	}
 

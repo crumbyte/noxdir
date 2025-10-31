@@ -75,10 +75,6 @@ int read_dir(const char *path, FileInfoC **out, int *count) {
                 continue;
                  }
 
-            if (de->d_name[0] == '\0' || de->d_name[0] < 0) {
-                continue;
-            }
-
             if (n == capacity) {
                 capacity *= 2;
                 FileInfoC *tmp = realloc(result, capacity * sizeof(FileInfoC));
