@@ -9,6 +9,7 @@ package drive
 import "C"
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -21,16 +22,17 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var excludedVolumes = map[string]struct{}{
-	"/":                          {},
-	"/dev":                       {},
-	"/System/Volumes/VM":         {},
-	"/System/Volumes/Preboot":    {},
-	"/System/Volumes/Update":     {},
-	"/System/Volumes/xarts":      {},
-	"/System/Volumes/iSCPreboot": {},
-	"/System/Volumes/Hardware":   {},
-	"/System/Volumes/Data/home":  {},
+var excludedFlags uint32 = unix.MNT_RDONLY | unix.MNT_SNAPSHOT | unix.MNT_ROOTFS | unix.MNT_AUTOMOUNTED
+
+var excludedMounts = []string{
+	"/dev",
+	"/System/Volumes/VM",
+	"/System/Volumes/Preboot",
+	"/System/Volumes/Update",
+	"/System/Volumes/xarts",
+	"/System/Volumes/iSCPreboot",
+	"/System/Volumes/Hardware",
+	"/System/Volumes/Data/home",
 }
 
 var excludedPaths = map[string]map[string]struct{}{
@@ -47,12 +49,19 @@ func NewList() (*List, error) {
 
 	list := &List{pathInfoMap: make(map[string]*Info, len(mounts))}
 
+mounts:
 	for _, mount := range mounts {
-		info := statFSToInfo(&mount)
-
-		if _, excluded := excludedVolumes[info.Path]; excluded {
+		if mount.Flags&excludedFlags != 0 {
 			continue
 		}
+
+		for _, mntName := range excludedMounts {
+			if bytes.HasPrefix(mount.Mntonname[:], []byte(mntName)) {
+				continue mounts
+			}
+		}
+
+		info := statFSToInfo(&mount)
 
 		list.pathInfoMap[info.Path] = info
 		list.TotalCapacity += info.TotalBytes
@@ -217,9 +226,9 @@ func ReadDirFallback(a Allocator, path string) ([]FileInfo, error) {
 }
 
 func pathExcluded(path, name string) bool {
-	if name == "." || name == ".." ||
-		strings.HasPrefix(name, "\u2400") ||
-		strings.HasPrefix(name, ".HFS+") {
+	fsMetaData := strings.HasPrefix(name, "\u2400") || strings.HasPrefix(name, ".HFS+")
+
+	if name == "." || name == ".." || fsMetaData {
 		return true
 	}
 
