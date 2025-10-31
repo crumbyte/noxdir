@@ -29,18 +29,25 @@ type DriveModel struct {
 }
 
 func NewDriveModel(n *Navigation) *DriveModel {
+	pathRatio := DefaultColWidthRatio
+
+	if runtime.GOOS == "darwin" {
+		pathRatio = 0.17
+	}
+
 	dc := Columns{
 		{Width: 5, Fixed: true},
 		{Hidden: func(_ int) bool { return true }},
 		{
-			Title: "Path",
-			Width: 20,
-			Fixed: true,
+			Title:      "Path",
+			WidthRatio: pathRatio,
+			MinWidth:   20,
 		},
 		{
-			Title: "Volume",
-			Width: 20,
-			Fixed: true,
+			Title:      "Volume",
+			WidthRatio: pathRatio,
+			MinWidth:   20,
+			Hidden:     func(_ int) bool { return runtime.GOOS == "darwin" },
 		},
 		{
 			Title:      "File System",
