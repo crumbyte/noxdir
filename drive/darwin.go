@@ -226,9 +226,9 @@ func ReadDirFallback(a Allocator, path string) ([]FileInfo, error) {
 }
 
 func pathExcluded(path, name string) bool {
-	if name == "." || name == ".." ||
-	strings.HasPrefix(name, "\u2400") ||
-	strings.HasPrefix(name, ".HFS+") {
+	fsMetaData := strings.HasPrefix(name, "\u2400") || strings.HasPrefix(name, ".HFS+")
+
+	if name == "." || name == ".." || fsMetaData {
 		return true
 	}
 
