@@ -45,7 +45,7 @@ func NewDriveModel(n *Navigation) *DriveModel {
 		},
 		{
 			Title:      "Volume",
-			WidthRatio: pathRatio,
+			WidthRatio: DefaultColWidthRatio,
 			MinWidth:   20,
 			Hidden:     func(_ int) bool { return runtime.GOOS == "darwin" },
 		},
@@ -169,6 +169,7 @@ func (dm *DriveModel) View() string {
 
 func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 	pathCol, _ := dm.columns.Get(2)
+	volumeCol, _ := dm.columns.Get(3)
 	usageCol, _ := dm.columns.Get(8)
 	pgCol, _ := dm.columns.Get(9)
 
@@ -217,7 +218,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 				"⤷",
 				d.Path,
 				"",
-				WrapString(d.Path, pathCol.Width),
+				WrapString(d.Path, volumeCol.Width),
 				d.FSName,
 				"-", "-", "-", "-", "",
 			}
