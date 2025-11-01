@@ -3,6 +3,9 @@
 package table
 
 import (
+	"regexp"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -10,6 +13,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mattn/go-runewidth"
 )
+
+var ansiEscapeRegexp = regexp.MustCompile(`\x1B\[0m`)
 
 type Model struct {
 	KeyMap   KeyMap
@@ -334,6 +339,21 @@ func (m *Model) renderRow(r int) string {
 
 		if r == m.cursor {
 			renderer = m.styles.Selected
+		}
+
+		// filling the cell's space between text content and the escape
+		// character so the selected style background can be applied.
+		escapeBounds := ansiEscapeRegexp.FindStringIndex(value)
+
+		if len(escapeBounds) > 0 {
+			startEscapeIdx := escapeBounds[0]
+
+			padding := strings.Repeat(
+				" ",
+				max(0, m.cols[i].Width-lipgloss.Width(value[:startEscapeIdx])),
+			)
+
+			value = value[:startEscapeIdx] + padding + value[startEscapeIdx:]
 		}
 
 		cell := lipgloss.NewStyle().

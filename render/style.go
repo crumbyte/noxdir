@@ -39,6 +39,7 @@ func (s *Style) TableHeader() *lipgloss.Style {
 			Bold(true).
 			BorderStyle(lipgloss.ThickBorder()).
 			BorderForeground(lipgloss.Color(s.cs.TableHeaderBorder)).
+			Foreground(lipgloss.Color(s.cs.TableHeaderText)).
 			BorderBottom(true)
 
 		s.cache["tableHeader"] = &cs
@@ -243,6 +244,9 @@ func (s *Style) SizeUnit(unit string) *lipgloss.Style {
 	cv, ok := s.cache[ck]
 	if !ok {
 		sizeUnitColorsMap := map[string]string{
+			"B":  s.cs.SizeUnit.B,
+			"KB": s.cs.SizeUnit.KB,
+			"MB": s.cs.SizeUnit.MB,
 			"GB": s.cs.SizeUnit.GB,
 			"TB": s.cs.SizeUnit.TB,
 			"PB": s.cs.SizeUnit.PB,
@@ -285,4 +289,8 @@ func (s *Style) CmdBarBorder() *lipgloss.Style {
 	}
 
 	return cv
+}
+
+func Faint(content string) string {
+	return lipgloss.NewStyle().Faint(true).Render(content)
 }

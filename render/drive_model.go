@@ -170,7 +170,6 @@ func (dm *DriveModel) View() string {
 func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 	pathCol, _ := dm.columns.Get(2)
 	volumeCol, _ := dm.columns.Get(3)
-	usageCol, _ := dm.columns.Get(8)
 	pgCol, _ := dm.columns.Get(9)
 
 	dm.drivesTable.SetColumns(dm.columns.TableColumns(dm.width, dm.sortState))
@@ -190,11 +189,11 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 			d.Path,
 			WrapString(d.Path, pathCol.Width),
 			d.Volume,
-			d.FSName,
+			Faint(d.FSName),
 			FmtSize(d.TotalBytes, driveSizeWidth),
 			FmtSize(d.UsedBytes, driveSizeWidth),
 			FmtSize(d.FreeBytes, driveSizeWidth),
-			FmtUsage(d.UsedPercent/100, 80, usageCol.Width),
+			FmtUsage(d.UsedPercent/100, 80),
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
 				strings.Repeat(" ", max(0, pgCol.Width-lipgloss.Width(pgBar))),

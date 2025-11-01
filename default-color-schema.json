@@ -34,6 +34,7 @@
   },
   "cellText": "",
   "tableHeaderBorder": "240",
+  "tableHeaderText": "#FFBF69",
   "selectedRowText": "#262626",
   "selectedRowBackground": "#EBBD34",
   "markedRowText": "#262626",
@@ -53,6 +54,9 @@
   "cmdInputText": "#80ed99",
   "cmdBarBorder": "240",
   "sizeUnit": {
+    "b": "#C4FFCE",
+    "kb": "#A1E162",
+    "mb": "#FFEB6A",
     "gb": "#f48c06",
     "tb": "#dc2f02",
     "pb": "#9d0208",
