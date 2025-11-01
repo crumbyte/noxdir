@@ -232,8 +232,7 @@ func buildTable() *table.Model {
 	s.Header = *style.TableHeader()
 	s.Selected = *style.SelectedRow()
 	s.Marked = *style.MarkedRow()
-	s.Cell = lipgloss.NewStyle().
-		Foreground(lipgloss.Color(style.CS().CellText))
+	s.Cell = lipgloss.NewStyle().Foreground(lipgloss.Color(style.CS().CellText))
 
 	tbl.SetStyles(s)
 

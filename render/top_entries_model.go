@@ -145,8 +145,8 @@ func (te *TopEntries) setEntries(entries heap.Interface, tm *table.Model, title 
 			EntryIcon(file),
 			file.Path,
 			filePath,
-			FmtSizeColor(file.Size, entrySizeWidth, colSize),
-			time.Unix(file.ModTime, 0).Format("Jan 02 15:04"),
+			FmtSizeColor(file.Size, entrySizeWidth),
+			Faint(time.Unix(file.ModTime, 0).Format("Jan 02 15:04")),
 		}
 	}
 

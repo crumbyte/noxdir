@@ -51,7 +51,7 @@ func TestFmtUsage(t *testing.T) {
 	}
 
 	for _, data := range tableData {
-		require.Equal(t, data.expected, render.FmtUsage(data.usage, 80, 8))
+		require.Equal(t, data.expected, render.FmtUsage(data.usage, 80))
 	}
 }
 

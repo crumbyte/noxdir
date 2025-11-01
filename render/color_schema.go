@@ -46,6 +46,9 @@ type StatusBarColors struct {
 }
 
 type SizeUnitColors struct {
+	B  string `json:"b"`
+	KB string `json:"kb"`
+	MB string `json:"mb"`
 	GB string `json:"gb"`
 	TB string `json:"tb"`
 	PB string `json:"pb"`
@@ -64,6 +67,7 @@ type ColorSchema struct {
 	ChartColors        ChartColors     `json:"chart"`
 	CellText           string          `json:"cellText"`
 	TableHeaderBorder  string          `json:"tableHeaderBorder"`
+	TableHeaderText    string          `json:"tableHeaderText"`
 	SelectedRowText    string          `json:"selectedRowText"`
 	SelectedRowBG      string          `json:"selectedRowBackground"`
 	MarkedRowText      string          `json:"markedRowText"`
@@ -114,6 +118,7 @@ func DefaultColorSchema() ColorSchema {
 			ColorProfile: 0,
 			StartColor:   "#833AB4",
 			EndColor:     "#FCB045",
+			ShowPercent:  true,
 		},
 		UsageProgressBar: PG{
 			ColorProfile: 3,
@@ -155,6 +160,7 @@ func DefaultColorSchema() ColorSchema {
 		},
 		CellText:           "",
 		TableHeaderBorder:  "240",
+		TableHeaderText:    "#FFBF69",
 		SelectedRowText:    "#262626",
 		SelectedRowBG:      "#EBBD34",
 		MarkedRowText:      "#262626",
@@ -174,6 +180,9 @@ func DefaultColorSchema() ColorSchema {
 		CmdInputText:       "#80ed99",
 		CmdBarBorder:       "240",
 		SizeUnit: SizeUnitColors{
+			B:  "#C4FFCE",
+			KB: "#A1E162",
+			MB: "#FFEB6A",
 			GB: "#f48c06",
 			TB: "#dc2f02",
 			PB: "#9d0208",

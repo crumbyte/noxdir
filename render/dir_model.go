@@ -120,7 +120,7 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		columns: Columns{
 			{Title: "", Width: 5, Fixed: true},
 			{Title: "", Hidden: func(_ int) bool { return true }},
-			{Title: "Name", SortKey: structure.SortPath, WidthRatio: 0.25},
+			{Title: "Name", SortKey: structure.SortPath, WidthRatio: 0.35},
 			{
 				Title:      "Size",
 				SortKey:    structure.SortSize,
@@ -130,13 +130,13 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 			{
 				Title:      "Total Dirs",
 				SortKey:    structure.SortTotalDirs,
-				WidthRatio: DefaultColWidthRatio,
+				WidthRatio: 0.07,
 				Hidden:     func(fw int) bool { return fw < 100 },
 			},
 			{
 				Title:      "Total Files",
 				SortKey:    structure.SortTotalFiles,
-				WidthRatio: DefaultColWidthRatio,
+				WidthRatio: 0.07,
 				Hidden:     func(fw int) bool { return fw < 100 },
 			},
 			{
@@ -539,8 +539,6 @@ func (dm *DirModel) updateTableData() {
 	}
 
 	nameCol, _ := dm.columns.Get(2)
-	sizeCol, _ := dm.columns.Get(3)
-	usageCol, _ := dm.columns.Get(7)
 	pgCol, _ := dm.columns.Get(8)
 
 	dm.dirsTable.SetColumns(dm.columns.TableColumns(dm.width, dm.sortState))
@@ -574,11 +572,11 @@ func (dm *DirModel) updateTableData() {
 				EntryIcon(child),
 				child.Name(),
 				WrapString(child.Name(), nameCol.Width),
-				FmtSizeColor(child.Size, entrySizeWidth, sizeCol.Width),
-				totalDirs,
-				totalFiles,
-				time.Unix(child.ModTime, 0).Format("02 Jan 2006"),
-				FmtUsage(parentUsage, 20, usageCol.Width),
+				FmtSizeColor(child.Size, entrySizeWidth),
+				Faint(totalDirs),
+				Faint(totalFiles),
+				Faint(time.Unix(child.ModTime, 0).Format("02 Jan 2006")),
+				FmtUsage(parentUsage, 20),
 				pgBar,
 			},
 		)
@@ -645,7 +643,7 @@ func (dm *DirModel) viewTopStatusBar() string {
 				BGColor: sbStyle.BG,
 			},
 			{Content: "TO FREE", BGColor: style.cs.StatusBar.Dirs.RowsCounter},
-			{Content: FmtSizeColor(selectedSize, 0, 0), BGColor: sbStyle.BG},
+			{Content: FmtSizeColor(selectedSize, 0), BGColor: sbStyle.BG},
 		}...,
 	)
 
@@ -690,7 +688,7 @@ func (dm *DirModel) viewBottomStatusBar() string {
 		[]*BarItem{
 			{Content: string(dm.mode), BGColor: sbStyle.Dirs.ModeBG},
 			{Content: "SIZE", BGColor: sbStyle.Dirs.SizeBG},
-			{Content: FmtSizeColor(dm.summaryInfo.size, 0, 0), BGColor: sbStyle.BG},
+			{Content: FmtSizeColor(dm.summaryInfo.size, 0), BGColor: sbStyle.BG},
 			{Content: "DIRS", BGColor: sbStyle.Dirs.DirsBG},
 			{Content: unitFmt(dm.summaryInfo.dirs), BGColor: sbStyle.BG},
 			{Content: "FILES", BGColor: sbStyle.Dirs.FilesBG},

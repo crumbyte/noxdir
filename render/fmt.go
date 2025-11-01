@@ -29,7 +29,7 @@ func FmtSize[T numeric](bytesSize T, width int) string {
 	return fmt.Sprintf("%s%*s", size, padding, suffix)
 }
 
-func FmtSizeColor[T numeric](bytesSize T, width, fullWidth int) string {
+func FmtSizeColor[T numeric](bytesSize T, width int) string {
 	size, suffix := fmtSize(bytesSize)
 	padding, sizeUnitStyle := 1, style.SizeUnit(suffix)
 
@@ -41,7 +41,7 @@ func FmtSizeColor[T numeric](bytesSize T, width, fullWidth int) string {
 		lipgloss.Left,
 		size,
 		strings.Repeat(" ", padding),
-		sizeUnitStyle.Render(suffix+strings.Repeat(" ", fullWidth)),
+		sizeUnitStyle.Render(suffix),
 	)
 }
 
@@ -82,7 +82,7 @@ func WrapString(data string, limit int) string {
 	return wrappedData
 }
 
-func FmtUsage(usage, threshold float64, fullWidth int) string {
+func FmtUsage(usage, threshold float64) string {
 	// minWidth defines a width of longest possible usage string value 100.00 %.
 	minWidth := 8
 	usagePercent := max(usage, 0) * 100
@@ -95,9 +95,8 @@ func FmtUsage(usage, threshold float64, fullWidth int) string {
 
 	usageStr := strconv.FormatFloat(usagePercent, 'f', 2, 64)
 	spacing := strings.Repeat(" ", max(minWidth-len(usageStr)-2, 0))
-	suffix := " %" + strings.Repeat(" ", max(fullWidth-minWidth, 0))
 
-	return s.Render(usageStr + spacing + suffix)
+	return s.Render(usageStr + spacing + " %")
 }
 
 func WrapPath(path string, limit int) string {
