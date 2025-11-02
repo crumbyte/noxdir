@@ -56,7 +56,7 @@ func (s *Style) TopTableHeader() *lipgloss.Style {
 		cs := lipgloss.NewStyle().
 			Inherit(*s.TableHeader()).
 			BorderTop(true).
-			BorderStyle(lipgloss.NormalBorder())
+			BorderStyle(lipgloss.ThickBorder())
 
 		s.cache["topTable"] = &cs
 
