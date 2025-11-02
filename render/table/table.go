@@ -324,6 +324,10 @@ func (m *Model) headersView() string {
 }
 
 func (m *Model) renderRow(r int) string {
+	if len(m.cols) == 0 {
+		return ""
+	}
+
 	cols := make([]string, 0, len(m.cols))
 
 	for i, value := range m.rows[r] {

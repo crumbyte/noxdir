@@ -22,6 +22,7 @@ const (
 type TopEntries struct {
 	filesTable   *table.Model
 	dirsTable    *table.Model
+	columns      Columns
 	height       int
 	width        int
 	showTopFiles bool
@@ -32,6 +33,13 @@ func NewTopEntries() *TopEntries {
 	te := &TopEntries{
 		filesTable: buildTable(),
 		dirsTable:  buildTable(),
+		columns: Columns{
+			{Title: "", Width: 5, Fixed: true},
+			{Title: "", Hidden: func(_ int) bool { return true }},
+			{Title: topDirsTitle, Full: true},
+			{Title: "Size", WidthRatio: DefaultColWidthRatio},
+			{Title: "Last Change", WidthRatio: DefaultColWidthRatio},
+		},
 	}
 
 	s := table.DefaultStyles()
@@ -101,27 +109,17 @@ func (te *TopEntries) Clear() {
 }
 
 func (te *TopEntries) setEntries(entries heap.Interface, tm *table.Model, title string) {
-	iconWidth := 5
+	nameCol, _ := te.columns.Get(2)
+	te.columns[2].Title = title
 
-	colSize := int(float64(te.width-iconWidth) * colWidthRatio)
-	nameWidth := te.width - (colSize * 2) - iconWidth
-
-	columns := []table.Column{
-		{Title: "", Width: iconWidth},
-		{Title: "", Width: 0},
-		{Title: title, Width: nameWidth},
-		{Title: "Size", Width: colSize},
-		{Title: "Last Change", Width: colSize},
-	}
-
-	tm.SetColumns(columns)
+	tm.SetColumns(te.columns.TableColumns(te.width, SortState{}))
 	tm.SetCursor(0)
 
 	if entries.Len() == 0 && len(tm.Rows()) == 0 {
 		return
 	}
 
-	if te.rerenderExistingRows(tm, nameWidth) {
+	if te.rerenderExistingRows(tm, nameCol.Width) {
 		return
 	}
 
@@ -134,7 +132,7 @@ func (te *TopEntries) setEntries(entries heap.Interface, tm *table.Model, title 
 			continue
 		}
 
-		filePath := WrapPath(file.Path, nameWidth)
+		filePath := WrapPath(file.Path, nameCol.Width)
 
 		filePath = filepath.Join(
 			filepath.Dir(filePath),
