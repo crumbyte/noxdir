@@ -380,8 +380,6 @@ instead of emojis (🟥, 🟩).
 
 - The scan process on macOS might be slow sometimes. If it is an issue, consider
   using `--exclude` argument.
-- In some cases, the volumes might duplicate on macOS and Linux. This issue will
-  be fixed in the next releases.
 
 ## 🧩 Planned Features
 
@@ -391,12 +389,6 @@ instead of emojis (🟥, 🟩).
   drives)
 
 ## 🙋 FAQ
-
-- **Q:** Why is caching not enabled by default?
-- **A:** The caching flow might work relatively slow in some cases (on Darwin, the decompression happens really slow),
-  but still much faster than regular scanning. This flow still needs to be polished. After that, the caching will become
-  a default behavior.
-  <br><br>
 - **Q:** Can I use this in scripts or headless environments?
 - **A:** Not yet — it's designed for interactive use.
   <br><br>
