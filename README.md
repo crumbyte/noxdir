@@ -385,8 +385,6 @@ instead of emojis (🟥, 🟩).
 
 - [ ] Real-time filesystem event monitoring and interface updates
 - [ ] Exportable reports in various formats (JSON, CSV, HTML)
-- [ ] Sort directories by usage, free space, etc. (already done for
-  drives)
 
 ## 🙋 FAQ
 - **Q:** Can I use this in scripts or headless environments?
