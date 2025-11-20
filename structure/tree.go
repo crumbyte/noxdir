@@ -15,10 +15,9 @@ import (
 )
 
 const (
-	workerTimeout    = time.Second * 2
-	workerReset      = time.Second
+	workerTimeout    = time.Second
 	childPathBufSize = 512
-	bfsQueueSize     = 64
+	bfsQueueSize     = 1024
 )
 
 // TreeOpt defines a custom type for configuring a *Tree instance.
@@ -244,16 +243,44 @@ func (t *Tree) PersistCache() (chan struct{}, error) {
 	return t.cache.SetAsync(t.root.Path, t.root)
 }
 
-func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
-	var wg sync.WaitGroup
+// scanQueue represents a queue for *Entry instances scheduled for traversal.
+type scanQueue struct {
+	entries []*Entry
+	mx      sync.RWMutex
+}
 
+func (sq *scanQueue) Push(val *Entry) {
+	if val == nil {
+		return
+	}
+
+	sq.mx.Lock()
+	defer sq.mx.Unlock()
+
+	sq.entries = append(sq.entries, val)
+}
+
+func (sq *scanQueue) Get() (*Entry, bool) {
+	sq.mx.Lock()
+	defer sq.mx.Unlock()
+
+	if len(sq.entries) == 0 {
+		return nil, false
+	}
+
+	entry := sq.entries[0]
+	sq.entries = sq.entries[1:]
+
+	return entry, true
+}
+
+func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 	drive.InoFilterInstance.Reset()
 
 	if t.root == nil || !t.root.IsDir {
 		return nil, nil
 	}
 
-	queue := make(chan *Entry, bfsQueueSize)
 	done, errChan := make(chan struct{}), make(chan error, 1)
 
 	if !skipCache && t.cachingEnabled() && t.cache.Has(t.root.Path) {
@@ -266,9 +293,12 @@ func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 		return done, errChan
 	}
 
+	var wg sync.WaitGroup
+
 	t.dirty = true
 
-	queue <- t.root
+	queue := scanQueue{entries: make([]*Entry, 0, bfsQueueSize)}
+	queue.Push(t.root)
 
 	worker := func() {
 		timeoutTimer := time.NewTimer(workerTimeout)
@@ -282,21 +312,22 @@ func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 
 		for {
 			select {
-			case entry, ok := <-queue:
+			case <-timeoutTimer.C:
+				return
+			default:
+				item, ok := queue.Get()
 				if !ok {
-					return
+					continue
 				}
 
 				t.handleEntry(
 					ba,
-					entry,
-					func(newDir *Entry) { go func() { queue <- newDir }() },
+					item,
+					func(newDir *Entry) { queue.Push(newDir) },
 					func(err error) { errChan <- err },
 				)
 
-				timeoutTimer.Reset(workerReset)
-			case <-timeoutTimer.C:
-				return
+				timeoutTimer.Reset(workerTimeout)
 			}
 		}
 	}
@@ -310,7 +341,6 @@ func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 		wg.Wait()
 
 		close(done)
-		close(queue)
 		close(errChan)
 	}()
 
