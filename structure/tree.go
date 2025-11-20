@@ -300,7 +300,7 @@ func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 	queue := scanQueue{entries: make([]*Entry, 0, bfsQueueSize)}
 	queue.Push(t.root)
 
-	worker := func(id int) {
+	worker := func() {
 		timeoutTimer := time.NewTimer(workerTimeout)
 		ba := arena.NewBytes(1024*1024, true)
 
@@ -332,9 +332,9 @@ func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 		}
 	}
 
-	for i := range runtime.NumCPU() * 2 {
+	for range runtime.NumCPU() * 2 {
 		wg.Add(1)
-		go worker(i)
+		go worker()
 	}
 
 	go func() {
