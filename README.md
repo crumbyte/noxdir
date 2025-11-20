@@ -39,6 +39,38 @@ brew install --cask noxdir-nightly
 pacman -S noxdir
 ```
 
+### NixOS / Nix
+
+NoxDir can be installed either directly from nixpkgs or used via flake:
+
+**From nixpkgs (unstable channel):**
+
+```bash
+nix-env -iA nixpkgs.noxdir
+```
+
+Or in your `configuration.nix`:
+
+```nix
+environment.systemPackages = with pkgs; [
+  noxdir
+];
+```
+
+**Using flake:**
+
+```bash
+nix run github:crumbyte/noxdir
+```
+
+Or add to your `flake.nix`:
+
+```nix
+{
+  inputs.noxdir.url = "github:crumbyte/noxdir";
+}
+```
+
 ### Other Linux distros
 
 ```bash
