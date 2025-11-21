@@ -273,7 +273,9 @@ The created configurations file already contains all available settings and has 
       "dirsOnly": null,
       "nameFilter": null,
       "chart": null,
-      "diff": null
+      "diff": null,
+      "toggleSelectAll": null,
+      "toggleSelection": null
     },
     "explore": null,
     "quit": null,

@@ -34,6 +34,7 @@ type DirsKeyMap struct {
 	Diff            key.Binding
 	Command         key.Binding
 	SortKeys        key.Binding
+	ToggleSelection key.Binding
 }
 
 type KeyMap struct {
@@ -81,7 +82,7 @@ func (km *KeyMap) DirBindings() [][]key.Binding {
 			{km.Dirs.TopFiles, km.Dirs.TopDirs, km.Dirs.NameFilter, km.Dirs.Chart},
 			{km.Dirs.ToggleSelectAll, km.Dirs.DirsOnly, km.Dirs.FilesOnly, km.Refresh},
 			{km.Dirs.Diff, km.Config, km.Refresh, km.Dirs.Delete},
-			{km.Dirs.Command, km.Dirs.SortKeys},
+			{km.Dirs.Command, km.Dirs.SortKeys, km.Dirs.ToggleSelection},
 		}...,
 	)
 }
@@ -137,6 +138,13 @@ func DefaultKeyMap(s *Style) KeyMap {
 			),
 		},
 		Dirs: DirsKeyMap{
+			ToggleSelection: key.NewBinding(
+				key.WithKeys("/"),
+				key.WithHelp(
+					s.BindKey().Render("/"),
+					s.Help().Render(" - toggle row selection"),
+				),
+			),
 			SortKeys: key.NewBinding(
 				key.WithKeys("1", "2", "3", "4"),
 				key.WithHelp(
@@ -317,6 +325,9 @@ func InitKeyMap(b *config.Bindings, s *Style) {
 		)
 		Bindings.Dirs.Chart = Bindings.override(
 			Bindings.Dirs.Chart, b.DirBindings.Chart,
+		)
+		Bindings.Dirs.ToggleSelection = Bindings.override(
+			Bindings.Dirs.ToggleSelection, b.DirBindings.ToggleSelection,
 		)
 	})
 }
