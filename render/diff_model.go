@@ -259,8 +259,8 @@ func (dm *DiffModel) viewStats() string {
 	remDirs, remFiles, remSize := structure.DiffStats(dm.diff.Removed)
 
 	statStyle := lipgloss.NewStyle().Bold(true).Underline(true)
-	addedStat := statStyle.Foreground(lipgloss.Color("#06923E"))
-	removedStat := statStyle.Foreground(lipgloss.Color("#FF303E"))
+	addedStat := statStyle.Foreground(lipgloss.Color("#FF303E"))
+	removedStat := statStyle.Foreground(lipgloss.Color("#06923E"))
 
 	addedStats := lipgloss.JoinHorizontal(
 		lipgloss.Center,
