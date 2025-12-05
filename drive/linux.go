@@ -4,6 +4,7 @@ package drive
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -245,7 +246,7 @@ func Explore(path string) error {
 		return nil
 	}
 
-	cmd := exec.Command("xdg-open", path)
+	cmd := exec.CommandContext(context.Background(), "xdg-open", path)
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("error starting open: %w", err)

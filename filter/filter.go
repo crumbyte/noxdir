@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/crumbyte/noxdir/structure"
@@ -74,6 +75,26 @@ func (edf *EmptyDirFilter) Filter(e *structure.Entry) bool {
 	return !e.IsDir || e.TotalFiles > 0
 }
 
+// NameFilterType represents a filter type that will be applied during the
+// filtering process.
+type NameFilterType int
+
+const (
+	// RegularNameFilter represents a default filter type where the filter value
+	// must be a substring of the original text.
+	RegularNameFilter NameFilterType = iota
+
+	// NegativeNameFilter represents a filter type with the behavior opposite to
+	// RegularNameFilter. It's enabled by the "\" backslash prefix at the beginning
+	// of the filter input.
+	NegativeNameFilter
+
+	// RegexNameFilter represents a regular expression filter type where the
+	// filter input will be treated as a valid regular expression. It's enabled
+	// by the ":" colon prefix at the beginning of the filter input.
+	RegexNameFilter
+)
+
 // NameFilter filters a single instance of the *structure.Entry by its path value.
 // If the entry's path value does not contain the user's input, it will not be
 // filtered/discarded.
@@ -86,13 +107,13 @@ type NameFilter struct {
 	enabled bool
 }
 
-func NewNameFilter(placeholder string, textColor string) *NameFilter {
+func NewNameFilter(textColor string) *NameFilter {
 	textStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(textColor))
 	ti := textinput.New()
 
-	ti.Placeholder = placeholder
+	ti.Placeholder = `Filter… Examples: "mp4" (match), "\mp4" (exclude), ":regex|:^.+?\.mp4" (regular expression)`
 	ti.Focus()
-	ti.Width = lipgloss.Width(placeholder)
+	ti.Width = lipgloss.Width(ti.Placeholder)
 	ti.Prompt = "\uE68F  "
 	ti.PromptStyle, ti.TextStyle = textStyle, textStyle
 
@@ -110,18 +131,31 @@ func (nf *NameFilter) Toggle() {
 // Filter filters an instance of *structure.Entry by checking if its path value
 // contains the current filter input.
 func (nf *NameFilter) Filter(e *structure.Entry) bool {
-	filterValue, positiveSearch := nf.input.Value(), true
+	filterValue, filtered := nf.input.Value(), false
 
-	if len(filterValue) > 1 && filterValue[0] == '\\' {
-		filterValue, positiveSearch = filterValue[1:], false
+	filterType := nf.resolveFilterType(filterValue)
+
+	switch filterType {
+	case RegularNameFilter:
+		filtered = strings.Contains(
+			strings.ToLower(e.Name()),
+			strings.ToLower(filterValue),
+		)
+	case NegativeNameFilter:
+		filtered = !strings.Contains(
+			strings.ToLower(e.Name()),
+			strings.ToLower(filterValue[1:]),
+		)
+	case RegexNameFilter:
+		regexFilter, err := regexp.Compile(filterValue[1:])
+		if err != nil {
+			return false
+		}
+
+		filtered = regexFilter.MatchString(e.Name())
 	}
 
-	contains := strings.Contains(
-		strings.ToLower(e.Name()),
-		strings.ToLower(filterValue),
-	)
-
-	return (positiveSearch && contains) || (!positiveSearch && !contains)
+	return filtered
 }
 
 func (nf *NameFilter) Update(msg tea.Msg) {
@@ -153,4 +187,21 @@ func (nf *NameFilter) View() string {
 		BorderTop(true)
 
 	return s.Render(nf.input.View())
+}
+
+func (nf *NameFilter) resolveFilterType(filterInput string) NameFilterType {
+	resolvedType := RegularNameFilter
+
+	if len(filterInput) < 1 {
+		return resolvedType
+	}
+
+	switch filterInput[0] {
+	case '\\':
+		resolvedType = NegativeNameFilter
+	case ':':
+		resolvedType = RegexNameFilter
+	}
+
+	return resolvedType
 }
