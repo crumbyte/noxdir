@@ -406,7 +406,7 @@ func resolveNavigation(s *config.Settings) (*render.Navigation, error) {
 		root = strings.TrimSuffix(root, string(os.PathSeparator))
 
 		if root, err = filepath.Abs(root); err != nil {
-			return nil, fmt.Errorf("resolve absolute root rpath: %s", err.Error())
+			return nil, fmt.Errorf("resolve absolute root path: %s", err.Error())
 		}
 
 		tree = structure.NewTree(

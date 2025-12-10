@@ -274,6 +274,12 @@ func (sq *scanQueue) Get() (*Entry, bool) {
 	return entry, true
 }
 
+func (t *Tree) TraverseNodeAsync(node *Entry) (chan struct{}, chan error) {
+	t.dirty, node.Child = true, nil
+
+	return t.Clone(node, WithPartialRoot()).TraverseAsync(true)
+}
+
 func (t *Tree) TraverseAsync(skipCache bool) (chan struct{}, chan error) {
 	drive.InoFilterInstance.Reset()
 
