@@ -138,20 +138,23 @@ func ReadDir(_ Allocator, path string) ([]FileInfo, error) {
 	fis := make([]FileInfo, 0, int(count))
 	slice := unsafe.Slice(arr, int(count))
 
-	for _, fi := range slice {
-		name := C.GoString(&fi.name[0])
+	for i := range slice {
+		name := C.GoString(&slice[i].name[0])
 
-		if pathExcluded(path, name) || !InoFilterInstance.Add(uint64(fi.ino)) {
+		if pathExcluded(&path, &name) || !InoFilterInstance.Add(uint64(slice[i].ino)) {
 			continue
 		}
 
 		fis = append(
 			fis,
 			FileInfo{
-				name:    C.GoString(&fi.name[0]),
-				isDir:   fi.isDir != 0,
-				size:    int64(fi.size),
-				modTime: time.Unix(int64(fi.modSec), int64(fi.modNSec)).Unix(),
+				name:  name,
+				isDir: slice[i].isDir != 0,
+				size:  int64(slice[i].size),
+				modTime: time.Unix(
+					int64(slice[i].modSec),
+					int64(slice[i].modNSec),
+				).Unix(),
 			},
 		)
 	}
@@ -204,7 +207,7 @@ func ReadDirFallback(a Allocator, path string) ([]FileInfo, error) {
 			nameBytes := (*[256]byte)(unsafe.Pointer(&dirent.Name[0]))
 			name := bytePtrToString(a, nameBytes[:])
 
-			if pathExcluded(path, name) {
+			if pathExcluded(&path, &name) {
 				offset += int(dirent.Reclen)
 
 				continue
@@ -225,15 +228,15 @@ func ReadDirFallback(a Allocator, path string) ([]FileInfo, error) {
 	return fis, nil
 }
 
-func pathExcluded(path, name string) bool {
-	fsMetaData := strings.HasPrefix(name, "\u2400") || strings.HasPrefix(name, ".HFS+")
+func pathExcluded(path, name *string) bool {
+	fsMetaData := strings.HasPrefix(*name, "\u2400") || strings.HasPrefix(*name, ".HFS+")
 
-	if name == "." || name == ".." || fsMetaData {
+	if *name == "." || *name == ".." || fsMetaData {
 		return true
 	}
 
-	if excludedChild, excluded := excludedPaths[path]; excluded {
-		_, childExcluded := excludedChild[name]
+	if excludedChild, excluded := excludedPaths[*path]; excluded {
+		_, childExcluded := excludedChild[*name]
 
 		return childExcluded
 	}
