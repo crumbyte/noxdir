@@ -29,6 +29,7 @@ var (
 	procGetLogicalDrives     = systemDLL.NewProc("GetLogicalDrives")
 	procGetVolumeInformation = systemDLL.NewProc("GetVolumeInformationA")
 	procShellExecute         = shellDLL.NewProc("ShellExecuteW")
+	procFindClose            = systemDLL.NewProc("FindClose")
 )
 
 type driveSpace struct {
@@ -69,30 +70,24 @@ func newHandleWrapper(h uintptr) *handleWrapper {
 		handle: syscall.Handle(h),
 	}
 
-	runtime.SetFinalizer(hw, (*handleWrapper).Close)
+	runtime.AddCleanup(hw, hw.Cleanup, hw.handle)
 
 	return hw
 }
 
-// Close closes the resource handle created by the FindFirstFileW. This function
-// will be set as a finalizer for the handleWrapper instance instead of closing
-// the handle explicitly. The handle closing heavily relies on the GC call since
-// a large number of open resources eventually leads to the "too many open files"
-// error. ~10000 is a limit per process.
-func (hw *handleWrapper) Close() error {
-	defer runtime.SetFinalizer(hw, nil)
-
-	if hw.handle != syscall.InvalidHandle {
-		return nil
+// Cleanup closes the resource handle created by the FindFirstFileW. This function
+// will be set as a cleanup for the handleWrapper instance instead of closing
+// the handle explicitly. Ignoring closing of the handle eventually will lead to
+// the "too many open files" error. ~10000 is a limit per process.
+func (hw *handleWrapper) Cleanup(h syscall.Handle) {
+	if h == syscall.InvalidHandle {
+		return
 	}
 
-	if err := syscall.CloseHandle(hw.handle); err != nil {
-		return fmt.Errorf("drive: CloseHandle: %w", err)
+	res, _, err := procFindClose.Call(uintptr(h))
+	if res == 0 {
+		panic(err)
 	}
-
-	hw.handle = syscall.InvalidHandle
-
-	return nil
 }
 
 func NewList() (*List, error) {
