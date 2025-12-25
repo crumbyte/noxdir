@@ -28,8 +28,8 @@ var (
 	procFindNextFile         = systemDLL.NewProc("FindNextFileW")
 	procGetLogicalDrives     = systemDLL.NewProc("GetLogicalDrives")
 	procGetVolumeInformation = systemDLL.NewProc("GetVolumeInformationA")
-	procShellExecute         = shellDLL.NewProc("ShellExecuteW")
 	procFindClose            = systemDLL.NewProc("FindClose")
+	procShellExecute         = shellDLL.NewProc("ShellExecuteW")
 )
 
 type driveSpace struct {
