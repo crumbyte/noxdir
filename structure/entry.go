@@ -123,10 +123,10 @@ func (e *Entry) Entries() iter.Seq[*Entry] {
 	}
 }
 
-// GetChild tries to find a child element by its name. The search will be done
-// only on the first level of the child entries. If such an entry was not found,
-// a nil value will be returned.
-func (e *Entry) GetChild(name string) *Entry {
+// GetChildByName tries to find a child element by its name. The search will be
+// done only on the first level of the child entries. If such an entry was not
+// found, a nil value will be returned.
+func (e *Entry) GetChildByName(name string) *Entry {
 	e.mx.RLock()
 	defer e.mx.RUnlock()
 
@@ -141,7 +141,7 @@ func (e *Entry) GetChild(name string) *Entry {
 	return nil
 }
 
-// FindChild tries to find a child element by its full path. Unlike the GetChild
+// FindChild tries to find a child element by its full path. Unlike the GetChildByName
 // method, which searches within the top level, it searches through the entire
 // root entry structure until it finds the path matching.
 func (e *Entry) FindChild(path string) *Entry {
@@ -187,6 +187,46 @@ func (e *Entry) AddChild(child *Entry) {
 	}
 
 	e.TotalFiles, e.LocalFiles = e.TotalFiles+1, e.LocalFiles+1
+}
+
+// RemoveChild removes the current *Entry instance child entry. It returns a
+// boolean value indicating if the child item was successfully removed. If the
+// child item was not found or an unexpected error occurred a boolean false
+// value will be returned.
+func (e *Entry) RemoveChild(child *Entry) bool {
+	e.mx.Lock()
+	defer e.mx.Unlock()
+
+	if len(e.Child) == 0 {
+		return false
+	}
+
+	offsetIdx := 0
+
+	for range e.Child {
+		if e.Child[offsetIdx].Path == child.Path {
+			break
+		}
+
+		offsetIdx++
+	}
+
+	if offsetIdx == len(e.Child) {
+		return false
+	}
+
+	e.TotalFiles -= child.TotalFiles
+	e.TotalDirs -= child.TotalDirs
+
+	if child.IsDir {
+		e.LocalDirs -= child.LocalDirs
+	} else {
+		e.LocalFiles -= child.LocalFiles
+	}
+
+	e.Child = append(e.Child[:offsetIdx], e.Child[offsetIdx+1:]...)
+
+	return true
 }
 
 func (e *Entry) HasChild() bool {

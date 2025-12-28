@@ -6,6 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/crumbyte/noxdir/structure"
 )
 
 type DeleteChoice int
@@ -25,16 +27,16 @@ type EntryDeleted struct {
 }
 
 type DeleteDialogModel struct {
-	nav     *Navigation
-	pathMap map[string]int64
-	choice  DeleteChoice
+	nav      *Navigation
+	toDelete []*structure.Entry
+	choice   DeleteChoice
 }
 
-func NewDeleteDialogModel(nav *Navigation, pathMap map[string]int64) *DeleteDialogModel {
+func NewDeleteDialogModel(nav *Navigation, toDelete []*structure.Entry) *DeleteDialogModel {
 	return &DeleteDialogModel{
-		choice:  CancelChoice,
-		pathMap: pathMap,
-		nav:     nav,
+		choice:   CancelChoice,
+		toDelete: toDelete,
+		nav:      nav,
 	}
 }
 
@@ -56,8 +58,8 @@ func (ddm *DeleteDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 		if ddm.choice == ConfirmChoice {
-			for path := range ddm.pathMap {
-				err = ddm.nav.Delete(path)
+			for _, entry := range ddm.toDelete {
+				err = ddm.nav.Delete(entry)
 			}
 
 			deleted = true
@@ -92,31 +94,33 @@ func (ddm *DeleteDialogModel) View() string {
 		Render("Confirm Deletion\n")
 
 	totalReclaimed := int64(0)
-	pathList := make([]string, 0, len(ddm.pathMap))
+	namesList := make([]string, 0, len(ddm.toDelete))
 
-	for path, size := range ddm.pathMap {
-		if len(path) > maxDeleteEntryLength {
-			path = path[:maxDeleteEntryLength] + "..."
+	for _, entry := range ddm.toDelete {
+		name := entry.Name()
+
+		if len(name) > maxDeleteEntryLength {
+			name = name[:maxDeleteEntryLength] + "..."
 		}
 
-		pathList = append(pathList, path)
+		namesList = append(namesList, name)
 
-		totalReclaimed += size
+		totalReclaimed += entry.Size
 	}
 
-	slices.Sort(pathList)
+	slices.Sort(namesList)
 
-	if len(pathList) >= maxEntriesDisplay {
-		pathList = pathList[:maxEntriesDisplay]
+	if len(namesList) >= maxEntriesDisplay {
+		namesList = namesList[:maxEntriesDisplay]
 
-		pathList = append(
-			pathList,
-			fmt.Sprintf("%d more...", len(ddm.pathMap)-maxEntriesDisplay),
+		namesList = append(
+			namesList,
+			fmt.Sprintf("%d more...", len(ddm.toDelete)-maxEntriesDisplay),
 		)
 	}
 
 	target := textStyle.Render(
-		lipgloss.JoinVertical(lipgloss.Center, pathList...),
+		lipgloss.JoinVertical(lipgloss.Center, namesList...),
 	)
 
 	buttons := lipgloss.JoinHorizontal(

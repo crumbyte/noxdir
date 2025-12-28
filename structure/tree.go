@@ -167,6 +167,10 @@ func (t *Tree) CalculateSize() {
 	calculate(t.root)
 }
 
+func (t *Tree) MarkDirty() {
+	t.dirty = true
+}
+
 // Traverse traverses the current root entry instance for all internal files, and
 // directories and builds the corresponding tree using a BFS approach. The total
 // traverse duration depends on the directory's structure depth.
