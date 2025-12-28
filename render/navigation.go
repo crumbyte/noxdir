@@ -232,7 +232,7 @@ func (n *Navigation) Down(path string, cursor int, ocl OnChangeLevel) (chan stru
 		n.unlock()
 	}()
 
-	entry := n.entry.GetChild(path)
+	entry := n.entry.GetChildByName(path)
 	if entry == nil || !entry.IsDir {
 		return nil, nil
 	}
@@ -322,7 +322,7 @@ func (n *Navigation) Explore(name string) error {
 
 		fullPath = d.Path
 	} else {
-		entry := n.entry.GetChild(name)
+		entry := n.entry.GetChildByName(name)
 		if entry == nil {
 			return nil
 		}
@@ -333,22 +333,21 @@ func (n *Navigation) Explore(name string) error {
 	return drive.Explore(fullPath)
 }
 
-// Delete deletes the file or directory, including all internal content, from the
-// file system by the provided base path value. The entry lookup will be done
-// within the current active *Entry instance, limiting the deletion scope.
+// Delete deletes the file or directory from the file system represented by the
+// provided instance of *Entry, including all internal content. The entry lookup
+// will be done within the current active *Entry instance, limiting the deletion
+// scope.
 //
 // If the entry was not found in the current active *Entry instance no error will
 // be returned.
-//
-// TODO: add soft delete
-func (n *Navigation) Delete(path string) error {
-	entry := n.entry.GetChild(path)
-	if entry == nil {
-		return nil
+func (n *Navigation) Delete(entry *structure.Entry) error {
+	if err := os.RemoveAll(entry.Path); err != nil {
+		return fmt.Errorf("delete: path: %s: %w", entry.Path, err)
 	}
 
-	if err := os.RemoveAll(entry.Path); err != nil {
-		return fmt.Errorf("delete: path: %s: %w", path, err)
+	if removed := n.entry.RemoveChild(entry); removed {
+		n.tree.MarkDirty()
+		n.tree.CalculateSize()
 	}
 
 	return nil

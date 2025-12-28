@@ -199,9 +199,7 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if msg.Deleted {
-			go func() {
-				teaProg.Send(EnqueueRefresh{Mode: READY})
-			}()
+			dm.updateTableData()
 		}
 	case UpdateDirState:
 		dm.mode = PENDING
@@ -476,25 +474,26 @@ func (dm *DirModel) handleDeletion(msg tea.KeyMsg) bool {
 	if key.Matches(msg, Bindings.Dirs.Delete) && dm.mode == READY {
 		dm.mode = DELETE
 
-		target := make(map[string]int64)
+		toDelete := make([]*structure.Entry, 0)
 
 		for _, r := range dm.dirsTable.MarkedRows() {
-			childEntry := dm.nav.Entry().GetChild(r[1])
+			childEntry := dm.nav.Entry().GetChildByName(r[1])
 
 			if childEntry != nil {
-				target[r[1]] = childEntry.Size
+				toDelete = append(toDelete, childEntry)
 			}
 		}
 
-		if len(target) == 0 {
-			childEntry := dm.nav.Entry().GetChild(dm.dirsTable.SelectedRow()[1])
+		if len(toDelete) == 0 {
+			childEntry := dm.nav.Entry().
+				GetChildByName(dm.dirsTable.SelectedRow()[1])
 
 			if childEntry != nil {
-				target[dm.dirsTable.SelectedRow()[1]] = childEntry.Size
+				toDelete = append(toDelete, childEntry)
 			}
 		}
 
-		dm.deleteDialog = NewDeleteDialogModel(dm.nav, target)
+		dm.deleteDialog = NewDeleteDialogModel(dm.nav, toDelete)
 
 		dm.updateTableData()
 
@@ -599,7 +598,7 @@ func (dm *DirModel) viewTopStatusBar() string {
 	)
 
 	for _, selected := range dm.dirsTable.MarkedRows() {
-		if entry := dm.nav.entry.GetChild(selected[1]); entry != nil {
+		if entry := dm.nav.entry.GetChildByName(selected[1]); entry != nil {
 			selectedSize += entry.Size
 		}
 	}
@@ -607,7 +606,7 @@ func (dm *DirModel) viewTopStatusBar() string {
 	if len(dm.dirsTable.SelectedRow()) != 0 {
 		fullEntryName = dm.dirsTable.SelectedRow()[1]
 
-		entry := dm.nav.entry.GetChild(fullEntryName)
+		entry := dm.nav.entry.GetChildByName(fullEntryName)
 		if entry != nil && selectedSize == 0 {
 			selectedSize = entry.Size
 			isDir = entry.IsDir

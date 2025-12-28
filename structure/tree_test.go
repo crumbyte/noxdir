@@ -207,7 +207,7 @@ func TestEntry_AddChild(t *testing.T) {
 
 		e.AddChild(childEntry)
 
-		require.NotNil(t, e.GetChild(tableData[i].name))
+		require.NotNil(t, e.GetChildByName(tableData[i].name))
 	}
 
 	require.Len(t, e.Child, 6)
@@ -215,6 +215,51 @@ func TestEntry_AddChild(t *testing.T) {
 	require.EqualValues(t, 3, e.LocalFiles)
 	require.EqualValues(t, 3, e.TotalFiles)
 	require.EqualValues(t, 3, e.TotalDirs)
+}
+
+func TestEntry_RemoveChild(t *testing.T) {
+	root := &structure.Entry{
+		Path: "root",
+		Child: []*structure.Entry{
+			{Path: "root_file_1"},
+			{Path: "root_file_2"},
+			{
+				Path: filepath.Join("root", "level1"),
+				Child: []*structure.Entry{
+					{Path: "level1_file_1"},
+					{Path: "level1_file_2"},
+					{
+						Path: filepath.Join("root", "level1", "level2"),
+						Child: []*structure.Entry{
+							{Path: "level2_file_1"},
+							{Path: "level2_file_2"},
+						},
+						IsDir: true,
+					},
+				},
+				IsDir: true,
+			},
+		},
+		IsDir: true,
+	}
+
+	tree := structure.NewTree(root)
+	tree.CalculateSize()
+
+	require.Equal(t, uint64(6), root.TotalFiles)
+	require.Equal(t, uint64(2), root.TotalDirs)
+
+	child := root.FindChild(filepath.Join("root", "level1", "level2"))
+	require.NotNil(t, child)
+
+	parent := root.GetChildByName("level1")
+	require.NotNil(t, parent)
+
+	require.True(t, parent.RemoveChild(child))
+	tree.CalculateSize()
+
+	require.Equal(t, uint64(4), root.TotalFiles)
+	require.Equal(t, uint64(1), root.TotalDirs)
 }
 
 func TestEntry_Diff(t *testing.T) {
@@ -292,14 +337,14 @@ func verifyEntryStructure(t *testing.T, e *structure.Entry, te *testEntry) {
 	require.Equal(t, te.name, e.Name())
 
 	for i := range te.files {
-		c := e.GetChild(te.files[i])
+		c := e.GetChildByName(te.files[i])
 
 		require.NotNil(t, c, "child %s not found", te.files[i])
 		require.Equal(t, te.files[i], c.Name())
 	}
 
 	for i := range te.dirs {
-		d := e.GetChild(te.dirs[i].name)
+		d := e.GetChildByName(te.dirs[i].name)
 
 		require.NotNil(t, d)
 		verifyEntryStructure(t, d, &te.dirs[i])
