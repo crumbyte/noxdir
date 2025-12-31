@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/crumbyte/noxdir/command/archive"
+	"github.com/crumbyte/noxdir/command/checksum"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -19,7 +20,11 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.SetHelpCommand(NewHelpCmd())
 	rootCmd.SetHelpFunc(func(_ *cobra.Command, _ []string) {})
 
-	rootCmd.AddCommand(archive.NewPackCmd(), archive.NewUnpackCmd())
+	rootCmd.AddCommand(
+		archive.NewPackCmd(),
+		archive.NewUnpackCmd(),
+		checksum.NewFileHashCmd(),
+	)
 
 	for _, cmd := range rootCmd.Commands() {
 		cmd.SetHelpFunc(func(cmd *cobra.Command, _ []string) {

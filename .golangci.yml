@@ -267,3 +267,4 @@ linters:
           - gosec
           - noctx
           - wrapcheck
+          - lll
