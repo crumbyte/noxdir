@@ -64,7 +64,7 @@ func NewModel(onStateChange func()) *Model {
 	ti.PromptStyle, ti.TextStyle = styles.InputTextStyle, styles.InputTextStyle
 	ti.Placeholder = "type the command..."
 
-	vp := viewport.New(30, 5)
+	vp := viewport.New(30, 12)
 	vp.Style = styles.OutputStyle
 	vp.VisibleLineCount()
 
@@ -208,7 +208,7 @@ func (m *Model) executeCmd() {
 	args = append(args, "--entries", strings.Join(m.entries, ","))
 	args = append(args, "--ctx-path", m.path)
 
-	m.messages = append(m.messages, input)
+	m.messages = append(m.messages, m.styles.InputTextStyle.Render("$ ", input))
 	m.input.Reset()
 
 	beforeExec := time.Now()
@@ -222,7 +222,7 @@ func (m *Model) executeCmd() {
 	}
 
 	took := m.styles.ExecTimeTextStyle.Render(
-		"took " + time.Since(beforeExec).String(),
+		"\ntook " + time.Since(beforeExec).String(),
 	)
 
 	output := outBuffer.String()
