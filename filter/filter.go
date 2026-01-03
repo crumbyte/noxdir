@@ -111,7 +111,7 @@ func NewNameFilter(textColor string) *NameFilter {
 	textStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(textColor))
 	ti := textinput.New()
 
-	ti.Placeholder = `Filter… Examples: "mp4" (match), "\mp4" (exclude), ":regex|:^.+?\.mp4" (regular expression)`
+	ti.Placeholder = `Filter… Examples: "mp4" (match), "\mp4" (exclude), ":regex" ":^.+?\.mp4" (regular expression)`
 	ti.Focus()
 	ti.Width = lipgloss.Width(ti.Placeholder)
 	ti.Prompt = "\uE68F  "

@@ -4,14 +4,16 @@ import (
 	"io"
 	"strings"
 
-	"github.com/crumbyte/noxdir/command/archive"
-	"github.com/crumbyte/noxdir/command/checksum"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func NewRootCmd() *cobra.Command {
+// CreateSubCommand defines a custom type for a function that creates a new
+// command instance. The produced command will be assigned as a sub-command to
+// the root command.
+type CreateSubCommand func(onStateChange func()) *cobra.Command
+
+func NewRootCmd(onStateChange func(), csc ...CreateSubCommand) *cobra.Command {
 	rootCmd := &cobra.Command{
 		DisableFlagParsing: true,
 		CompletionOptions:  cobra.CompletionOptions{DisableDefaultCmd: true},
@@ -20,11 +22,9 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.SetHelpCommand(NewHelpCmd())
 	rootCmd.SetHelpFunc(func(_ *cobra.Command, _ []string) {})
 
-	rootCmd.AddCommand(
-		archive.NewPackCmd(),
-		archive.NewUnpackCmd(),
-		checksum.NewFileHashCmd(),
-	)
+	for _, subCommand := range csc {
+		rootCmd.AddCommand(subCommand(onStateChange))
+	}
 
 	for _, cmd := range rootCmd.Commands() {
 		cmd.SetHelpFunc(func(cmd *cobra.Command, _ []string) {

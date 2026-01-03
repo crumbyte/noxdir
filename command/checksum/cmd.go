@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewFileHashCmd() *cobra.Command {
+func NewFileHashCmd(_ func()) *cobra.Command {
 	var (
 		entries    []string
 		hashType   string
