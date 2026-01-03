@@ -11,6 +11,9 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/crumbyte/noxdir/command/archive"
+	"github.com/crumbyte/noxdir/command/checksum"
 )
 
 type Styles struct {
@@ -213,7 +216,15 @@ func (m *Model) executeCmd() {
 
 	beforeExec := time.Now()
 
-	if err := Execute(NewRootCmd(), args, outBuffer); err != nil {
+	rootCmd := NewRootCmd(
+		m.onStateChange,
+		archive.NewPackCmd,
+		archive.NewUnpackCmd,
+		checksum.NewFileHashCmd,
+	)
+
+	err := Execute(rootCmd, args, outBuffer)
+	if err != nil {
 		m.messages = append(
 			m.messages, m.styles.ErrTextStyle.Render(err.Error()),
 		)
@@ -232,5 +243,4 @@ func (m *Model) executeCmd() {
 	}
 
 	m.messages = append(m.messages, output+took)
-	m.onStateChange()
 }

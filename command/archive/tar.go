@@ -294,6 +294,8 @@ func readFromArchive(tr *tar.Reader, outputPath string) error {
 		}
 
 		if _, err = io.Copy(file, tr); err != nil {
+			_ = file.Close()
+
 			return err
 		}
 
