@@ -219,7 +219,6 @@ func (m *Model) executeCmd() {
 	rootCmd := NewRootCmd(
 		m.onStateChange,
 		archive.NewPackCmd,
-		archive.NewUnpackCmd,
 		checksum.NewFileHashCmd,
 	)
 
