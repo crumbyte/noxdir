@@ -10,9 +10,14 @@ volumes and presents disk usage metrics through a responsive, keyboard-driven
 terminal UI. Designed to help you quickly locate space hogs and streamline your
 cleanup workflow. Supports: **Windows**, **macOS**, and **Linux**.
 
-![full-preview!](/img/full-preview.png "full preview")
+[//]: # (![full-preview!]&#40;/img/full-preview.png "full preview"&#41;)
 
-![two panes!](/img/two-panes.png "two panes")
+[//]: # ()
+[//]: # (![two panes!]&#40;/img/two-panes.png "two panes"&#41;)
+
+![full-preview!](/img/preview.png "full preview")
+![full-preview!](/img/linux-preview.png "full preview")
+![full-preview!](/img/win-cmd.png "full preview")
 
 ## 📦 Installation
 
@@ -210,35 +215,6 @@ Flags:
   -v, --version              Print the application version and exit.
 ```
 
-## ⚙️ How It Works
-
-It identifies all available partitions for Windows, or volumes in the case of
-macOS and Linux. It'll immediately show the capacity info for all drives,
-including file system type, total capacity, free space, and usage data. All
-drives will be sorted (by default) by the free space left.
-
-Press `Enter` to explore a particular drive and check what files or directories
-occupy the most space. Wait while the scan is finished, and the status will
-update in the status bar.
-Now you have the full view of the files and directories, including the space
-usage info by each entry. Use `ctrl+q`
-to immediately see the biggest files on the drive, or `ctrl+e` to
-see the biggest directories. Use `ctrl+f` to filter entries by their names or
-`,` and `.` to show only files or directories.
-
-## 🔍 Viewing Changes (Delta Mode)
-
-NoxDir can display file system changes since your last session. It highlights added or deleted files and directories, as
-well as changes in disk space usage.
-
-To view changes in the current directory, press the `+` key (toggle diff). NoxDir will compare the current state of the
-directory with its cached version and display the difference:
-
-![diff!](/img/diff.png "diff")
-
-The diff is calculated by comparing the current directory state against its cached version. If no cache exists from the
-previous session, no differences will be shown.
-
 ## 🔧 Configuration File
 
 On first launch, the application automatically generates a simple configuration file. This file allows you to define
@@ -320,16 +296,16 @@ Cache file locations:
 
 To clear all cached data, use the `--clear-cache` flag.
 
-## 📟 Commands
-NoxDir provides a set of commands you can run on one or multiple selected entries.
+## 🔍 Viewing Changes (Delta Mode)
 
-1. Open the command bar. Press the `:` key inside NoxDir to bring up the command bar.
-2. Explore available commands. Type: `help` to list all currently available commands. For details on a specific command,
-   use the `-h` flag. Example: `pack -h`.
-3. Run a command. Select the entries you want, then type a command in the command bar. In the example below, four
-   selected items are packed into an archive named `archive` with no compression: `pack -o archive`
-4. Press `esc` to close the command bar.
-![cmd!](/img/cmd.png "cmd")
+NoxDir can display file system changes since your last session. It highlights added or deleted files and directories, as
+well as changes in disk space usage. The diff is calculated by comparing the current directory state against its cached version. If no cache exists from the
+previous session, no differences will be shown.
+
+To view changes in the current directory, press the `+` key (toggle diff). NoxDir will compare the current state of the
+directory with its cached version and display the difference:
+
+![diff!](/img/diff.png "diff")
 
 ## ⌨️ Key Bindings
 
@@ -410,16 +386,6 @@ Example:
 In this example, the status bar border is disabled, and the usage progress bar is rendered using ANSI characters (█, ░)
 instead of emojis (🟥, 🟩).
 
-## ⚠️ Known Issues
-
-- The scan process on macOS might be slow sometimes. If it is an issue, consider
-  using `--exclude` argument.
-
-## 🧩 Planned Features
-
-- [ ] Real-time filesystem event monitoring and interface updates
-- [ ] Exportable reports in various formats (JSON, CSV, HTML)
-
 ## 🙋 FAQ
 - **Q:** Can I use this in scripts or headless environments?
 - **A:** Not yet — it's designed for interactive use.
@@ -432,15 +398,12 @@ instead of emojis (🟥, 🟩).
   formatting, and there are no multiple panes like in the screenshots.
 - **A:** Visual presentation depends on terminal capabilities and font
   configuration. For optimal experience, a terminal with Unicode and glyph
-  support is recommended. The screenshots were made in `WezTerm` using `MesloLGM Nerd Font` font.
+  support is recommended. The screenshots were made in `WezTerm` using `MesloLGM Nerd Font` font. If your font does not support glyphs consider using `--siimple-color` flag.
+  <br><br>
+- **Q:** The scanning process is too slow.
+- **A:** Consider using caching, exclusion, or running the application only for specific directories. The caching can be enabled with the flag `-c, --use-cache` or in the configuration file. With caching enabled, you choose which directories must be re-scanned with the `r` key. Exclusion flag `-x, --exclude` allows providing a list of directories that must be skipped during scanning, e.g., `.node_modules`. Also, predefined root `-r, --root` will start the application from the specified directory instead of scanning the entire file system.
 
-## 🧪 Contributing
+<p style="text-align: center;">
+MIT © <a href="https://github.com/crumbyte">crumbyte</a>
+</p>
 
-Pull requests are welcome! If you’d like to add features or report bugs, please
-open an issue first to discuss.
-
-## 📝 License
-
-MIT © [crumbyte](https://github.com/crumbyte)
-
----
