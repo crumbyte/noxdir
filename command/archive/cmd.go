@@ -12,13 +12,14 @@ func NewPackCmd(onStateChange func()) *cobra.Command {
 		compression string
 		output      string
 		ctxPath     string
+		extract     bool
 
 		packCmd = &cobra.Command{
 			Short: "archive dirs/files",
 			Use:   "pack",
 			RunE: func(_ *cobra.Command, _ []string) error {
 				return packRun(
-					entries, compression, output, ctxPath, onStateChange,
+					entries, compression, output, ctxPath, extract, onStateChange,
 				)
 			},
 		}
@@ -26,6 +27,7 @@ func NewPackCmd(onStateChange func()) *cobra.Command {
 
 	packCmd.PersistentFlags().StringSliceVarP(&entries, "entries", "e", nil, "")
 	packCmd.PersistentFlags().StringVarP(&compression, "compression", "c", "", "zst,gz")
+	packCmd.PersistentFlags().BoolVarP(&extract, "extract", "x", false, "extract from archive")
 	packCmd.PersistentFlags().StringVarP(&output, "output", "o", ".", "")
 	packCmd.PersistentFlags().StringVarP(&ctxPath, "ctx-path", "", "", "")
 
@@ -39,64 +41,26 @@ func NewPackCmd(onStateChange func()) *cobra.Command {
 	return packCmd
 }
 
-func NewUnpackCmd(onStateChange func()) *cobra.Command {
-	var (
-		entries     []string
-		compression string
-		output      string
-		ctxPath     string
+func packRun(entries []string, compression, output, ctxPath string, extract bool, onStateChange func()) error {
+	output = filepath.Join(ctxPath, filepath.Base(filepath.Clean(output)))
 
-		unpackCmd = &cobra.Command{
-			Short: "unarchive dirs/files",
-			Use:   "unpack",
-			RunE: func(_ *cobra.Command, _ []string) error {
-				return unpackRun(entries, compression, output, ctxPath, onStateChange)
-			},
-		}
+	for i := range entries {
+		entries[i] = filepath.Join(ctxPath, filepath.Base(entries[i]))
+	}
+
+	archiver := NewTar(
+		DefaultBufferSize,
+		NoCompression.FromString(compression),
 	)
 
-	unpackCmd.PersistentFlags().StringSliceVarP(&entries, "entries", "e", nil, "")
-	unpackCmd.PersistentFlags().StringVarP(&compression, "compression", "c", "", "zst,gz")
-	unpackCmd.PersistentFlags().StringVarP(&output, "output", "o", ".", "")
-	unpackCmd.PersistentFlags().StringVarP(&ctxPath, "ctx-path", "", "", "")
+	var err error
 
-	unpackCmd.Flag("entries").Hidden = true
-	unpackCmd.Flag("ctx-path").Hidden = true
-
-	return unpackCmd
-}
-
-func packRun(entries []string, compression, output, ctxPath string, onStateChange func()) error {
-	output = filepath.Join(ctxPath, filepath.Base(filepath.Clean(output)))
-
-	for i := range entries {
-		entries[i] = filepath.Join(ctxPath, filepath.Base(entries[i]))
+	if extract {
+		err = archiver.UnpackFromFile(entries[0], output)
+	} else {
+		err = archiver.PackToFile(entries, output)
 	}
 
-	err := NewTar(
-		DefaultBufferSize,
-		NoCompression.FromString(compression),
-	).PackToFile(entries, output)
-	if err != nil {
-		return err
-	}
-
-	onStateChange()
-
-	return nil
-}
-
-func unpackRun(entries []string, compression, output, ctxPath string, onStateChange func()) error {
-	output = filepath.Join(ctxPath, filepath.Base(filepath.Clean(output)))
-
-	for i := range entries {
-		entries[i] = filepath.Join(ctxPath, filepath.Base(entries[i]))
-	}
-
-	err := NewTar(
-		DefaultBufferSize,
-		NoCompression.FromString(compression),
-	).UnpackFromFile(entries[0], output)
 	if err != nil {
 		return err
 	}
