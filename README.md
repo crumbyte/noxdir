@@ -402,8 +402,3 @@ instead of emojis (🟥, 🟩).
   <br><br>
 - **Q:** The scanning process is too slow.
 - **A:** Consider using caching, exclusion, or running the application only for specific directories. The caching can be enabled with the flag `-c, --use-cache` or in the configuration file. With caching enabled, you choose which directories must be re-scanned with the `r` key. Exclusion flag `-x, --exclude` allows providing a list of directories that must be skipped during scanning, e.g., `.node_modules`. Also, predefined root `-r, --root` will start the application from the specified directory instead of scanning the entire file system.
-
-<p style="text-align: center;">
-MIT © <a href="https://github.com/crumbyte">crumbyte</a>
-</p>
-

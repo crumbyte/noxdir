@@ -199,6 +199,8 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if msg.Deleted {
+			dm.dirsTable.ResetMarked()
+
 			dm.updateTableData()
 		}
 	case UpdateDirState:
