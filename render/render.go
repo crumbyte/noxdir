@@ -121,6 +121,7 @@ func (vm *ViewModel) levelDown() {
 		sr[1],
 		cursor,
 		func(_ *structure.Entry, _ State) {
+			vm.dirModel.dirsTable.GotoTop()
 			vm.dirModel.dirsTable.ResetMarked()
 			vm.dirModel.filters.Reset()
 			vm.dirModel.updateTableData()
