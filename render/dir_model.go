@@ -158,7 +158,7 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 			func() { go teaProg.Send(EnqueueRefresh{Mode: CMD}) },
 		),
 		errPopup: NewPopupModel(
-			ErrorTitle, time.Second*10, PopupDefaultErrorStyle(),
+			ErrorTitle, time.Second*10, teaProg, PopupDefaultErrorStyle(),
 		),
 		summaryInfo: &summaryInfo{},
 		sortState:   SortState{Key: structure.SortSize, Desc: true},
@@ -189,6 +189,10 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	dm.nav.SetCursor(dm.dirsTable.Cursor())
 
 	switch msg := msg.(type) {
+	case PopupMsgTick:
+		dm.updateTableData()
+
+		return dm, cmd
 	case EntryDeleted:
 		dm.mode, dm.deleteDialog = READY, nil
 

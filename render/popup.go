@@ -10,6 +10,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+type PopupMsgTick struct{}
+
 const (
 	InfoTitle  = "Info"
 	ErrorTitle = "Error"
@@ -44,6 +46,7 @@ type PopupModel struct {
 	duration      time.Duration
 	ttl           time.Time
 	styles        *PopupStyles
+	program       *tea.Program
 	title         string
 	queueLimit    int
 	hideCountdown bool
@@ -53,7 +56,7 @@ type PopupModel struct {
 // NewPopupModel creates a new *PopupModel instance with the provided title and
 // visibility duration. The *PopupStyles are optional, and if the value is empty,
 // the DefaultPopupStyle will be used.
-func NewPopupModel(title string, d time.Duration, ps *PopupStyles) *PopupModel {
+func NewPopupModel(title string, d time.Duration, p *tea.Program, ps *PopupStyles) *PopupModel {
 	if len(title) == 0 {
 		title = InfoTitle
 	}
@@ -66,6 +69,7 @@ func NewPopupModel(title string, d time.Duration, ps *PopupStyles) *PopupModel {
 		title:        title,
 		duration:     d,
 		styles:       ps,
+		program:      p,
 		messageQueue: make([]string, 0, queueLimit),
 		queueLimit:   queueLimit,
 	}
@@ -183,6 +187,8 @@ func (pm *PopupModel) Show(message string) {
 		pm.messageQueue = append(pm.messageQueue, message)
 	}
 
+	defer pm.condTickCmd()
+
 	pm.visible, pm.ttl = true, time.Now().Add(pm.duration)
 }
 
@@ -211,4 +217,28 @@ func (pm *PopupModel) nextMessage() (string, bool) {
 	}
 
 	return pm.messageQueue[0], true
+}
+
+func (pm *PopupModel) condTickCmd() {
+	if pm.program == nil || !pm.visible {
+		return
+	}
+
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				pm.program.Send(PopupMsgTick{})
+
+				pm.Update(nil)
+
+				if !pm.Visible() {
+					return
+				}
+			}
+		}
+	}()
 }
