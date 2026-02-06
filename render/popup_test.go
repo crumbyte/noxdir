@@ -11,7 +11,7 @@ import (
 )
 
 func TestPopupModel_Show_AddsMessage(t *testing.T) {
-	pm := render.NewPopupModel("Test", time.Second, nil)
+	pm := render.NewPopupModel("Test", time.Second, nil, nil)
 
 	pm.Show("msg1")
 
@@ -20,7 +20,7 @@ func TestPopupModel_Show_AddsMessage(t *testing.T) {
 }
 
 func TestPopupModel_Show_ReplacesWhenFull(t *testing.T) {
-	pm := render.NewPopupModel("Test", time.Second, nil)
+	pm := render.NewPopupModel("Test", time.Second, nil, nil)
 
 	for i := 1; i <= 5; i++ {
 		pm.Show("msg" + string(rune('0'+i)))
@@ -35,7 +35,7 @@ func TestPopupModel_Show_ReplacesWhenFull(t *testing.T) {
 }
 
 func TestPopupModel_Update_RemovesMessagesOnTTL(t *testing.T) {
-	pm := render.NewPopupModel("Test", time.Millisecond*50, nil)
+	pm := render.NewPopupModel("Test", time.Millisecond*50, nil, nil)
 
 	pm.Show("msg1")
 	pm.Show("msg2")
@@ -51,7 +51,7 @@ func TestPopupModel_Update_RemovesMessagesOnTTL(t *testing.T) {
 }
 
 func TestPopupModel_View_ReturnsEmptyWhenNotVisible(t *testing.T) {
-	pm := render.NewPopupModel("Test", time.Second, nil)
+	pm := render.NewPopupModel("Test", time.Second, nil, nil)
 
 	assert.Empty(t, pm.View())
 
@@ -72,7 +72,7 @@ func TestPopupModel_View_ShowsCountdown(t *testing.T) {
 		lipgloss.NewStyle(),
 	)
 
-	pm := render.NewPopupModel("Test", time.Second, style)
+	pm := render.NewPopupModel("Test", time.Second, nil, style)
 	pm.Show("hello")
 
 	view := pm.View()
