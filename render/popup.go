@@ -228,16 +228,13 @@ func (pm *PopupModel) condTickCmd() {
 		ticker := time.NewTicker(time.Second)
 		defer ticker.Stop()
 
-		for {
-			select {
-			case <-ticker.C:
-				pm.program.Send(PopupMsgTick{})
+		for range ticker.C {
+			pm.program.Send(PopupMsgTick{})
 
-				pm.Update(nil)
+			pm.Update(nil)
 
-				if !pm.Visible() {
-					return
-				}
+			if !pm.Visible() {
+				return
 			}
 		}
 	}()
