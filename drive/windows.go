@@ -309,6 +309,8 @@ func ReadDir(alloc Allocator, path string) ([]FileInfo, error) {
 		}
 	}
 
+	runtime.KeepAlive(hw)
+
 	return fis, nil
 }
 

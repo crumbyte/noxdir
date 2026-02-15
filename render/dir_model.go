@@ -619,16 +619,18 @@ func (dm *DirModel) viewTopStatusBar() string {
 		}
 	}
 
-	barItems := []*BarItem{
-		{Content: "ENTRY", BGColor: sbStyle.VersionBG},
-		{Content: "NAME", BGColor: sbStyle.Dirs.PathBG},
-		{
+	barItems := make([]*BarItem, 0, 8)
+
+	barItems = append(barItems,
+		&BarItem{Content: "ENTRY", BGColor: sbStyle.VersionBG},
+		&BarItem{Content: "NAME", BGColor: sbStyle.Dirs.PathBG},
+		&BarItem{
 			Content: fullEntryName,
 			BGColor: sbStyle.BG,
 			Wrapper: WrapPath,
 			Width:   -1,
 		},
-	}
+	)
 
 	entryType := "DIR"
 	if !isDir {
@@ -637,16 +639,15 @@ func (dm *DirModel) viewTopStatusBar() string {
 
 	barItems = append(
 		barItems,
-		[]*BarItem{
-			{Content: entryType, BGColor: sbStyle.Dirs.ModeBG},
-			{Content: "PICKED", BGColor: sbStyle.Dirs.SizeBG},
-			{
-				Content: unitFmt(max(uint64(len(dm.dirsTable.MarkedRows())), 1)),
-				BGColor: sbStyle.BG,
-			},
-			{Content: "TO FREE", BGColor: style.cs.StatusBar.Dirs.RowsCounter},
-			{Content: FmtSizeColor(selectedSize, 0), BGColor: sbStyle.BG},
-		}...,
+
+		&BarItem{Content: entryType, BGColor: sbStyle.Dirs.ModeBG},
+		&BarItem{Content: "PICKED", BGColor: sbStyle.Dirs.SizeBG},
+		&BarItem{
+			Content: unitFmt(max(uint64(len(dm.dirsTable.MarkedRows())), 1)),
+			BGColor: sbStyle.BG,
+		},
+		&BarItem{Content: "TO FREE", BGColor: style.cs.StatusBar.Dirs.RowsCounter},
+		&BarItem{Content: FmtSizeColor(selectedSize, 0), BGColor: sbStyle.BG},
 	)
 
 	dm.topStatusBar.Add(barItems)

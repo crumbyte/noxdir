@@ -18,17 +18,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/checkout@v6
         with:
-          go-version: stable
+          go-version: 'stable'
       - name: Set up linter
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.7.1
+          version: v2.9.0
       - name: Unit test
         run: make test
       - name: Build
