@@ -70,7 +70,7 @@ func newHandleWrapper(h uintptr) *handleWrapper {
 		handle: syscall.Handle(h),
 	}
 
-	runtime.AddCleanup(hw, hw.Cleanup, hw.handle)
+	runtime.AddCleanup(hw, Cleanup, hw.handle)
 
 	return hw
 }
@@ -79,7 +79,7 @@ func newHandleWrapper(h uintptr) *handleWrapper {
 // will be set as a cleanup for the handleWrapper instance instead of closing
 // the handle explicitly. Ignoring closing of the handle eventually will lead to
 // the "too many open files" error. ~10000 is a limit per process.
-func (hw *handleWrapper) Cleanup(h syscall.Handle) {
+func Cleanup(h syscall.Handle) {
 	if h == syscall.InvalidHandle {
 		return
 	}
