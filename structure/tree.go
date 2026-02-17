@@ -147,14 +147,19 @@ func (t *Tree) CalculateSize() {
 		}
 
 		e.TotalDirs, e.Size, e.TotalFiles = 0, 0, 0
+		e.LocalDirs, e.LocalFiles = 0, 0
 
-		for _, child := range e.Child {
+		childHeader := e.Child
+
+		for _, child := range childHeader {
 			e.Size += calculate(child)
 
 			if child.IsDir {
 				e.TotalDirs++
+				e.LocalDirs++
 			} else {
 				e.TotalFiles++
+				e.LocalFiles++
 			}
 
 			e.TotalDirs += child.TotalDirs

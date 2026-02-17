@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"sync"
 
 	"github.com/crumbyte/noxdir/drive"
 )
@@ -33,8 +32,6 @@ type Entry struct {
 	// directories. If the current Entry instance represents a file, this
 	// property will always be nil.
 	Child []*Entry
-
-	mx sync.RWMutex
 
 	// ModTime contains the last modification time of the entry.
 	ModTime int64
@@ -127,9 +124,6 @@ func (e *Entry) Entries() iter.Seq[*Entry] {
 // done only on the first level of the child entries. If such an entry was not
 // found, a nil value will be returned.
 func (e *Entry) GetChildByName(name string) *Entry {
-	e.mx.RLock()
-	defer e.mx.RUnlock()
-
 	path := filepath.Join(e.Path, name)
 
 	for _, child := range e.Child {
@@ -145,9 +139,6 @@ func (e *Entry) GetChildByName(name string) *Entry {
 // method, which searches within the top level, it searches through the entire
 // root entry structure until it finds the path matching.
 func (e *Entry) FindChild(path string) *Entry {
-	e.mx.RLock()
-	defer e.mx.RUnlock()
-
 	queue := []*Entry{e}
 
 	for len(queue) > 0 {
@@ -171,22 +162,11 @@ func (e *Entry) FindChild(path string) *Entry {
 // AddChild adds the provided [*Entry] instance to a list of child entries. The
 // counters will be updated respectively depending on the type of child entry.
 func (e *Entry) AddChild(child *Entry) {
-	e.mx.Lock()
-	defer e.mx.Unlock()
-
 	if e.Child == nil {
 		e.Child = make([]*Entry, 0, 10)
 	}
 
 	e.Child = append(e.Child, child)
-
-	if child.IsDir {
-		e.TotalDirs, e.LocalDirs = e.TotalDirs+1, e.LocalDirs+1
-
-		return
-	}
-
-	e.TotalFiles, e.LocalFiles = e.TotalFiles+1, e.LocalFiles+1
 }
 
 // RemoveChild removes the current *Entry instance child entry. It returns a
@@ -194,9 +174,6 @@ func (e *Entry) AddChild(child *Entry) {
 // child item was not found or an unexpected error occurred a boolean false
 // value will be returned.
 func (e *Entry) RemoveChild(child *Entry) bool {
-	e.mx.Lock()
-	defer e.mx.Unlock()
-
 	if len(e.Child) == 0 {
 		return false
 	}

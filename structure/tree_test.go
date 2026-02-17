@@ -179,6 +179,7 @@ func TestTree_TraverseAsync(t *testing.T) {
 
 func TestEntry_AddChild(t *testing.T) {
 	e := structure.NewDirEntry("root", 0)
+	tree := structure.NewTree(e)
 
 	require.False(t, e.HasChild())
 
@@ -209,6 +210,8 @@ func TestEntry_AddChild(t *testing.T) {
 
 		require.NotNil(t, e.GetChildByName(tableData[i].name))
 	}
+
+	tree.CalculateSize()
 
 	require.Len(t, e.Child, 6)
 	require.EqualValues(t, 3, e.LocalDirs)

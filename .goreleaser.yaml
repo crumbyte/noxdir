@@ -87,7 +87,7 @@ archives:
 
 homebrew_casks:
   - name: noxdir
-    binary: noxdir
+    binary: [ noxdir ]
     manpages:
       - man/noxdir.1
     completions:
@@ -110,7 +110,7 @@ homebrew_casks:
       branch: main
       token: "{{ .Env.GH_PAT }}"
   - name: noxdir-nightly
-    binary: noxdir
+    binary: [ noxdir ]
     manpages:
       - man/noxdir.1
     completions:
