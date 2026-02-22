@@ -182,7 +182,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 
 	rows := make([]table.Row, 0, len(sortedDrives))
 
-	for i, d := range sortedDrives {
+	for _, d := range sortedDrives {
 		pgBar := diskFillProgress.ViewAs(d.UsedPercent / 100)
 		r := table.Row{
 			Cols: []string{
@@ -201,10 +201,6 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 					pgBar,
 				),
 			},
-		}
-
-		if i%2 != 0 {
-			r.Unselectable = true
 		}
 
 		if !drivesList.MountsLayout {
