@@ -105,12 +105,12 @@ func (vm *ViewModel) levelDown() {
 		sr = vm.driveModel.drivesTable.SelectedRow()
 	}
 
-	if len(sr) < 2 {
+	if sr != nil && len(sr.Cols) < 2 {
 		return
 	}
 
 	done, errChan := vm.nav.Down(
-		sr[1],
+		sr.Cols[1],
 		cursor,
 		func(_ *structure.Entry, _ State) {
 			vm.dirModel.dirsTable.GotoTop()

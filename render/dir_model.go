@@ -412,11 +412,11 @@ func (dm *DirModel) viewChart() string {
 
 func (dm *DirModel) handleExploreKey() bool {
 	sr := dm.dirsTable.SelectedRow()
-	if len(sr) < 2 {
+	if sr != nil && len(sr.Cols) < 2 {
 		return true
 	}
 
-	return dm.nav.Explore(sr[1]) != nil
+	return dm.nav.Explore(sr.Cols[1]) != nil
 }
 
 func (dm *DirModel) handleFilter(msg tea.KeyMsg) bool {
@@ -445,11 +445,11 @@ func (dm *DirModel) handleCmd(msg tea.KeyMsg) bool {
 		var entries []string
 
 		for _, r := range dm.dirsTable.MarkedRows() {
-			entries = append(entries, r[1])
+			entries = append(entries, r.Cols[1])
 		}
 
 		if len(entries) == 0 {
-			entries = append(entries, dm.dirsTable.SelectedRow()[1])
+			entries = append(entries, dm.dirsTable.SelectedRow().Cols[1])
 		}
 
 		dm.cmd.SetPathContext(dm.nav.entry.Path, entries)
@@ -483,7 +483,7 @@ func (dm *DirModel) handleDeletion(msg tea.KeyMsg) bool {
 		toDelete := make([]*structure.Entry, 0)
 
 		for _, r := range dm.dirsTable.MarkedRows() {
-			childEntry := dm.nav.Entry().GetChildByName(r[1])
+			childEntry := dm.nav.Entry().GetChildByName(r.Cols[1])
 
 			if childEntry != nil {
 				toDelete = append(toDelete, childEntry)
@@ -492,7 +492,7 @@ func (dm *DirModel) handleDeletion(msg tea.KeyMsg) bool {
 
 		if len(toDelete) == 0 {
 			childEntry := dm.nav.Entry().
-				GetChildByName(dm.dirsTable.SelectedRow()[1])
+				GetChildByName(dm.dirsTable.SelectedRow().Cols[1])
 
 			if childEntry != nil {
 				toDelete = append(toDelete, childEntry)
@@ -571,15 +571,17 @@ func (dm *DirModel) updateTableData() {
 		rows = append(
 			rows,
 			table.Row{
-				EntryIcon(child),
-				child.Name(),
-				WrapString(child.Name(), nameCol.Width),
-				FmtSizeColor(child.Size, entrySizeWidth),
-				Faint(totalDirs),
-				Faint(totalFiles),
-				Faint(time.Unix(child.ModTime, 0).Format("02 Jan 2006")),
-				FmtUsage(parentUsage, 20),
-				pgBar,
+				Cols: []string{
+					EntryIcon(child),
+					child.Name(),
+					WrapString(child.Name(), nameCol.Width),
+					FmtSizeColor(child.Size, entrySizeWidth),
+					Faint(totalDirs),
+					Faint(totalFiles),
+					Faint(time.Unix(child.ModTime, 0).Format("02 Jan 2006")),
+					FmtUsage(parentUsage, 20),
+					pgBar,
+				},
 			},
 		)
 	}
@@ -604,13 +606,13 @@ func (dm *DirModel) viewTopStatusBar() string {
 	)
 
 	for _, selected := range dm.dirsTable.MarkedRows() {
-		if entry := dm.nav.entry.GetChildByName(selected[1]); entry != nil {
+		if entry := dm.nav.entry.GetChildByName(selected.Cols[1]); entry != nil {
 			selectedSize += entry.Size
 		}
 	}
 
-	if len(dm.dirsTable.SelectedRow()) != 0 {
-		fullEntryName = dm.dirsTable.SelectedRow()[1]
+	if dm.dirsTable.SelectedRow() != nil {
+		fullEntryName = dm.dirsTable.SelectedRow().Cols[1]
 
 		entry := dm.nav.entry.GetChildByName(fullEntryName)
 		if entry != nil && selectedSize == 0 {

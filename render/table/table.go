@@ -29,7 +29,10 @@ type Model struct {
 	end      int
 }
 
-type Row []string
+type Row struct {
+	Cols         []string
+	Unselectable bool
+}
 
 type Column struct {
 	Title string
@@ -164,12 +167,12 @@ func (m *Model) UpdateViewport() {
 	)
 }
 
-func (m *Model) SelectedRow() Row {
+func (m *Model) SelectedRow() *Row {
 	if m.cursor < 0 || m.cursor >= len(m.rows) {
 		return nil
 	}
 
-	return m.rows[m.cursor]
+	return &m.rows[m.cursor]
 }
 
 func (m *Model) Rows() []Row {
@@ -225,7 +228,9 @@ func (m *Model) Cursor() int {
 }
 
 func (m *Model) SetCursor(n int) {
-	m.cursor = clamp(n, 0, len(m.rows)-1)
+	m.cursor = 0
+	m.cursor, _ = m.nextCursor(n, false)
+
 	m.UpdateViewport()
 }
 
@@ -235,7 +240,7 @@ func (m *Model) MarkSelected() {
 	if _, ok := m.marked[cursor]; ok {
 		delete(m.marked, cursor)
 	} else {
-		m.marked[clamp(m.cursor, 0, len(m.rows)-1)] = struct{}{}
+		m.marked[cursor] = struct{}{}
 	}
 
 	m.UpdateViewport()
@@ -260,7 +265,7 @@ func (m *Model) ResetMarked() {
 }
 
 func (m *Model) MoveUp(n int) {
-	m.cursor = clamp(m.cursor-n, 0, len(m.rows)-1)
+	m.cursor, n = m.nextCursor(n, true)
 
 	switch {
 	case m.start == 0:
@@ -279,7 +284,7 @@ func (m *Model) MoveUp(n int) {
 }
 
 func (m *Model) MoveDown(n int) {
-	m.cursor = clamp(m.cursor+n, 0, len(m.rows)-1)
+	m.cursor, n = m.nextCursor(n, false)
 	m.UpdateViewport()
 
 	switch {
@@ -330,7 +335,7 @@ func (m *Model) renderRow(r int) string {
 
 	cols := make([]string, 0, len(m.cols))
 
-	for i, value := range m.rows[r] {
+	for i, value := range m.rows[r].Cols {
 		if m.cols[i].Width <= 0 {
 			continue
 		}
@@ -374,4 +379,26 @@ func (m *Model) renderRow(r int) string {
 
 func clamp(v, low, high int) int {
 	return min(max(v, low), high)
+}
+
+func (m *Model) nextCursor(n int, up bool) (int, int) {
+	maxAttempts := len(m.rows) - 1 - m.cursor
+	offsetMod := 1
+
+	if up {
+		maxAttempts = m.cursor
+		offsetMod = -1
+	}
+
+	for i := 0; i <= maxAttempts; i++ {
+		cursor := clamp(m.cursor+(n*offsetMod), 0, len(m.rows)-1)
+
+		if row := m.rows[cursor]; !row.Unselectable {
+			return cursor, n
+		}
+
+		n++
+	}
+
+	return m.cursor, 0
 }
