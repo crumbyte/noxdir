@@ -179,11 +179,11 @@ func (dm *DiffModel) Run(width, height int) {
 
 func (dm *DiffModel) handleExploreKey() bool {
 	sr := dm.table.SelectedRow()
-	if len(sr) < 2 {
+	if sr != nil && len(sr.Cols) < 2 {
 		return true
 	}
 
-	return drive.Explore(sr[2]) != nil
+	return drive.Explore(sr.Cols[2]) != nil
 }
 
 func (dm *DiffModel) updateTableData() {
@@ -222,11 +222,13 @@ func (dm *DiffModel) updateTableData() {
 		rows = append(
 			rows,
 			table.Row{
-				addedIcon,
-				EntryIcon(child),
-				child.Path,
-				WrapString(child.Path, nameWidth),
-				FmtSize(child.Size, entrySizeWidth),
+				Cols: []string{
+					addedIcon,
+					EntryIcon(child),
+					child.Path,
+					WrapString(child.Path, nameWidth),
+					FmtSize(child.Size, entrySizeWidth),
+				},
 			},
 		)
 	}
@@ -235,11 +237,13 @@ func (dm *DiffModel) updateTableData() {
 		rows = append(
 			rows,
 			table.Row{
-				removedIcon,
-				EntryIcon(child),
-				child.Path,
-				WrapString(child.Path, nameWidth),
-				FmtSize(child.Size, entrySizeWidth),
+				Cols: []string{
+					removedIcon,
+					EntryIcon(child),
+					child.Path,
+					WrapString(child.Path, nameWidth),
+					FmtSize(child.Size, entrySizeWidth),
+				},
 			},
 		)
 	}

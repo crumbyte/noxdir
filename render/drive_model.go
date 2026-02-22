@@ -121,11 +121,11 @@ func (dm *DriveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return dm, nil
 		case key.Matches(msg, Bindings.Explore):
 			sr := dm.drivesTable.SelectedRow()
-			if len(sr) < 2 {
+			if len(sr.Cols) < 2 {
 				return dm, nil
 			}
 
-			if err := dm.nav.Explore(sr[1]); err != nil {
+			if err := dm.nav.Explore(sr.Cols[1]); err != nil {
 				return dm, nil
 			}
 		}
@@ -182,23 +182,29 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 
 	rows := make([]table.Row, 0, len(sortedDrives))
 
-	for _, d := range sortedDrives {
+	for i, d := range sortedDrives {
 		pgBar := diskFillProgress.ViewAs(d.UsedPercent / 100)
 		r := table.Row{
-			"⛃",
-			d.Path,
-			WrapString(d.Path, pathCol.Width),
-			d.Volume,
-			Faint(d.FSName),
-			FmtSize(d.TotalBytes, driveSizeWidth),
-			FmtSize(d.UsedBytes, driveSizeWidth),
-			FmtSize(d.FreeBytes, driveSizeWidth),
-			FmtUsage(d.UsedPercent/100, 80),
-			lipgloss.JoinHorizontal(
-				lipgloss.Top,
-				strings.Repeat(" ", max(0, pgCol.Width-lipgloss.Width(pgBar))),
-				pgBar,
-			),
+			Cols: []string{
+				"⛃",
+				d.Path,
+				WrapString(d.Path, pathCol.Width),
+				d.Volume,
+				Faint(d.FSName),
+				FmtSize(d.TotalBytes, driveSizeWidth),
+				FmtSize(d.UsedBytes, driveSizeWidth),
+				FmtSize(d.FreeBytes, driveSizeWidth),
+				FmtUsage(d.UsedPercent/100, 80),
+				lipgloss.JoinHorizontal(
+					lipgloss.Top,
+					strings.Repeat(" ", max(0, pgCol.Width-lipgloss.Width(pgBar))),
+					pgBar,
+				),
+			},
+		}
+
+		if i%2 != 0 {
+			r.Unselectable = true
 		}
 
 		if !drivesList.MountsLayout {
@@ -211,15 +217,19 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 		// all the corresponding mounts will be rendered according to the
 		// specified sorting rule.
 		if d.IsDev != 0 {
-			r[1], r[2], r[3], r[4] = "", d.Device, "", "-"
+			r.Unselectable = true
+
+			r.Cols[1], r.Cols[2], r.Cols[3], r.Cols[4] = "", d.Device, "", "-"
 		} else {
 			r = table.Row{
-				"⤷",
-				d.Path,
-				"",
-				WrapString(d.Path, volumeCol.Width),
-				d.FSName,
-				"-", "-", "-", "-", "",
+				Cols: []string{
+					"⤷",
+					d.Path,
+					"",
+					WrapString(d.Path, volumeCol.Width),
+					d.FSName,
+					"-", "-", "-", "-", "",
+				},
 			}
 		}
 
@@ -240,8 +250,8 @@ func (dm *DriveModel) drivesSummary() string {
 	driveTitle := "No Drives Selected"
 	sbStyle := style.CS().StatusBar
 
-	if len(dm.drivesTable.Rows()) != 0 && dm.drivesTable.SelectedRow()[1] != "" {
-		driveTitle = dm.drivesTable.SelectedRow()[1]
+	if len(dm.drivesTable.Rows()) != 0 && dm.drivesTable.SelectedRow().Cols[1] != "" {
+		driveTitle = dm.drivesTable.SelectedRow().Cols[1]
 	}
 
 	barItems := []*BarItem{

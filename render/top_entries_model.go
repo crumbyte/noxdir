@@ -140,11 +140,13 @@ func (te *TopEntries) setEntries(entries heap.Interface, tm *table.Model, title 
 		)
 
 		rows[i] = table.Row{
-			EntryIcon(file),
-			file.Path,
-			filePath,
-			FmtSizeColor(file.Size, entrySizeWidth),
-			Faint(time.Unix(file.ModTime, 0).Format("Jan 02 15:04")),
+			Cols: []string{
+				EntryIcon(file),
+				file.Path,
+				filePath,
+				FmtSizeColor(file.Size, entrySizeWidth),
+				Faint(time.Unix(file.ModTime, 0).Format("Jan 02 15:04")),
+			},
 		}
 	}
 
@@ -160,18 +162,26 @@ func (te *TopEntries) rerenderExistingRows(tm *table.Model, nameWidth int) bool 
 	rows := make([]table.Row, topRowsNumber)
 
 	for i, r := range tm.Rows() {
-		if len(r) < 2 {
+		if len(r.Cols) < 2 {
 			continue
 		}
 
-		filePath := WrapPath(r[1], nameWidth)
+		filePath := WrapPath(r.Cols[1], nameWidth)
 
 		filePath = filepath.Join(
 			filepath.Dir(filePath),
 			style.TopFiles().Render(filepath.Base(filePath)),
 		)
 
-		rows[i] = table.Row{r[0], r[1], filePath, r[3], r[4]}
+		rows[i] = table.Row{
+			Cols: []string{
+				r.Cols[0],
+				r.Cols[1],
+				filePath,
+				r.Cols[3],
+				r.Cols[4],
+			},
+		}
 	}
 
 	tm.SetRows(rows)
