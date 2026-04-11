@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 var sizeUnits = []string{
@@ -99,22 +99,25 @@ func FmtUsage(usage, threshold float64) string {
 	return s.Render(usageStr + spacing + " %")
 }
 
-func WrapPath(path string, limit int) string {
-	if len(path) <= limit || limit < 0 {
-		return path
+// PrefixWrapString wraps the string from the start, up to the specified limit.
+// The limit defines max content length. If the limit was exceeded the string
+// will be trimmed from the beginning and prefixed with "...".
+func PrefixWrapString(data string, limit int) string {
+	if len(data) <= limit || limit < 0 {
+		return data
 	}
 
 	prefix := "..."
 
-	truncateLength := len(path) - limit
+	truncateLength := len(data) - limit
 
 	pathSeparatorIdx := strings.IndexByte(
-		path[truncateLength:], os.PathSeparator,
+		data[truncateLength:], os.PathSeparator,
 	)
 
 	if pathSeparatorIdx == -1 {
-		return prefix + path[truncateLength:]
+		return prefix + data[truncateLength:]
 	}
 
-	return prefix + path[truncateLength:][pathSeparatorIdx:]
+	return prefix + data[truncateLength:][pathSeparatorIdx:]
 }

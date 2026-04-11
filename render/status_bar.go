@@ -3,7 +3,7 @@ package render
 import (
 	"math"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 const (
@@ -161,10 +161,7 @@ func newBarBlockStyle(bi *BarItem) lipgloss.Style {
 	if bi.Border != 0 {
 		s = s.Border(
 			lipgloss.Border{Right: string(bi.Border)},
-			false,
-			true,
-			false,
-			false,
+			false, true, false, false,
 		).BorderForeground(lipgloss.Color(bi.BGColor))
 	}
 

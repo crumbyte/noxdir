@@ -42,7 +42,9 @@ func TestFmtUsage(t *testing.T) {
 		usage    float64
 		expected string
 	}{
-		{1, "100.00 %"},
+		{1, "\x1b[38;2;220;47;2m100.00 %\x1b[m"},
+		{0.9, "\x1b[38;2;220;47;2m90.00  %\x1b[m"},
+		{0.81, "\x1b[38;2;220;47;2m81.00  %\x1b[m"},
 		{0.2, "20.00  %"},
 		{0.155, "15.50  %"},
 		{0.01, "1.00   %"},
@@ -78,6 +80,8 @@ func TestWrapPath(t *testing.T) {
 	}
 
 	for _, data := range tableData {
-		require.Equal(t, data.expected, render.WrapPath(data.path, data.limit))
+		require.Equal(
+			t, data.expected, render.PrefixWrapString(data.path, data.limit),
+		)
 	}
 }

@@ -6,15 +6,15 @@ import (
 	"regexp"
 	"strings"
 
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/mattn/go-runewidth"
 )
 
-var ansiEscapeRegexp = regexp.MustCompile(`\x1B\[0m`)
+var ansiEscapeRegexp = regexp.MustCompile(`\x1B\[0?m`)
 
 type Model struct {
 	KeyMap   KeyMap
@@ -99,6 +99,10 @@ func DefaultStyles() Styles {
 	}
 }
 
+func (m *Model) Styles() Styles {
+	return m.styles
+}
+
 func (m *Model) SetStyles(s Styles) {
 	m.styles = s
 	m.UpdateViewport()
@@ -145,8 +149,8 @@ func (m *Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return *m, nil
 }
 
-func (m *Model) View() string {
-	return m.headersView() + "\n" + m.viewport.View()
+func (m *Model) View() tea.View {
+	return tea.NewView(m.headersView() + "\n" + m.viewport.View())
 }
 
 func (m *Model) UpdateViewport() {

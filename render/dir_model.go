@@ -13,15 +13,15 @@ import (
 	"github.com/crumbyte/noxdir/render/table"
 	"github.com/crumbyte/noxdir/structure"
 
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 const (
 	entrySizeWidth      = 10
 	topFilesTableHeight = 16
-	colWidthRatio       = 0.13
+	dirsTableRatio      = 0.7
 )
 
 // Mode defines a custom type that represents the current view mode. Depending
@@ -81,10 +81,10 @@ type DirModel struct {
 	columns         Columns
 	mode            Mode
 	dirsTable       *table.Model
+	previewTable    *table.Model
 	topEntries      *TopEntries
 	deleteDialog    *DeleteDialogModel
 	diff            *DiffModel
-	usagePG         *PG
 	nav             *Navigation
 	scanPG          *PG
 	filters         filter.FiltersList
@@ -94,10 +94,11 @@ type DirModel struct {
 	bottomStatusBar *StatusBar
 	summaryInfo     *summaryInfo
 	sortState       SortState
+	view            tea.View
 	height          int
 	width           int
 	fullHelp        bool
-	showCart        bool
+	showChart       bool
 }
 
 func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
@@ -110,30 +111,27 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		filters...,
 	)
 
-	usagePG := style.CS().UsageProgressBar
-	usagePG.EmptyChar = " "
-
 	dm := &DirModel{
 		columns: Columns{
 			{Title: "", Width: 5, Fixed: true},
 			{Title: "", Hidden: func(_ int) bool { return true }},
-			{Title: "Name", SortKey: structure.SortPath, WidthRatio: 0.35},
+			{Title: "Name", SortKey: structure.SortPath, Full: true},
 			{
 				Title:      "Size",
 				SortKey:    structure.SortSize,
-				MinWidth:   12,
+				MinWidth:   15,
 				WidthRatio: DefaultColWidthRatio,
 			},
 			{
 				Title:      "Total Dirs",
 				SortKey:    structure.SortTotalDirs,
-				WidthRatio: 0.07,
+				WidthRatio: DefaultColWidthRatio,
 				Hidden:     func(fw int) bool { return fw < 100 },
 			},
 			{
 				Title:      "Total Files",
 				SortKey:    structure.SortTotalFiles,
-				WidthRatio: 0.07,
+				WidthRatio: DefaultColWidthRatio,
 				Hidden:     func(fw int) bool { return fw < 100 },
 			},
 			{
@@ -144,12 +142,12 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 			{
 				Title:      "Parent Usage",
 				WidthRatio: DefaultColWidthRatio,
-				MinWidth:   12,
+				MinWidth:   15,
 			},
-			{Title: "", Full: true},
 		},
 		filters:         filter.NewFiltersList(defaultFilters...),
 		dirsTable:       buildTable(),
+		previewTable:    buildTable(),
 		topEntries:      NewTopEntries(),
 		diff:            NewDiffModel(nav),
 		topStatusBar:    NewStatusBar(),
@@ -165,8 +163,12 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 		mode:        PENDING,
 		nav:         nav,
 		scanPG:      &style.CS().ScanProgressBar,
-		usagePG:     &usagePG,
 	}
+
+	s := dm.dirsTable.Styles()
+	s.Selected = lipgloss.NewStyle()
+
+	dm.previewTable.SetStyles(s)
 
 	cmdDefaultStyle := command.DefaultStyles
 
@@ -228,13 +230,8 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		dm.topEntries.UpdateTopEntries()
 	case tea.WindowSizeMsg:
-		dm.updateSize(msg.Width, msg.Height)
-
-		dm.diff.Update(msg)
-		dm.filters.Update(msg)
-		dm.topEntries.Update(msg)
-		dm.cmd.Update(msg)
-	case tea.KeyMsg:
+		dm.updateTableSize(msg)
+	case tea.KeyPressMsg:
 		if dm.nav.OnDrives() || dm.handleKeyBindings(msg) {
 			return dm, nil
 		}
@@ -253,10 +250,12 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	t, _ := dm.dirsTable.Update(msg)
 	dm.dirsTable = &t
 
+	dm.updatePreviewTable()
+
 	return dm, tea.Batch(cmd)
 }
 
-func (dm *DirModel) View() string {
+func (dm *DirModel) View() tea.View {
 	h := lipgloss.Height
 
 	tsb := dm.viewTopStatusBar()
@@ -287,7 +286,7 @@ func (dm *DirModel) View() string {
 			continue
 		}
 
-		rendered := v.View()
+		rendered := v.View().Content
 
 		if len(rendered) > 0 {
 			dirsTableHeight -= h(rendered)
@@ -296,63 +295,85 @@ func (dm *DirModel) View() string {
 		}
 	}
 
-	if cmdInput := dm.cmd.View(); cmdInput != "" {
-		rows = append(rows, cmdInput)
+	if cmdInput := dm.cmd.View(); len(cmdInput.Content) != 0 {
+		rows = append(rows, cmdInput.Content)
 
-		dirsTableHeight -= h(cmdInput)
+		dirsTableHeight -= h(cmdInput.Content)
 	}
 
-	if topContent := dm.topEntries.View(); len(topContent) != 0 {
-		dirsTableHeight -= h(topContent)
-		rows = append(rows, topContent)
+	if topContent := dm.topEntries.View(); len(topContent.Content) != 0 {
+		dirsTableHeight -= h(topContent.Content)
+		rows = append(rows, topContent.Content)
 	}
 
 	dm.dirsTable.SetHeight(dirsTableHeight)
+	dm.previewTable.SetHeight(dirsTableHeight)
 
-	rows = append(rows, dm.dirsTable.View(), pgBar)
+	tablesLayout := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		style.DirTable(dm.dirTableWidth()).Render(dm.dirsTable.View().Content),
+		style.TableSeparator(dirsTableHeight).Render(),
+		style.DirTable(dm.previewTableWidth()).Render(dm.previewTable.View().Content),
+	)
+
+	rows = append(rows, tablesLayout, pgBar)
 	slices.Reverse(rows)
 
 	bg := lipgloss.JoinVertical(lipgloss.Top, rows...)
 
-	if dm.showCart {
+	return dm.renderOverlay(&bg, h(bg)-h(keyBindings)-h(bsb))
+}
+
+func (dm *DirModel) renderOverlay(layout *string, layoutHeight int) tea.View {
+	if dm.showChart {
 		chart := dm.viewChart()
 
-		bg = Overlay(
+		*layout = Overlay(
 			dm.width,
-			bg,
+			*layout,
 			chart,
-			h(bg)-h(keyBindings)-h(bsb)-h(chart),
+			layoutHeight-lipgloss.Height(chart),
 			dm.width-lipgloss.Width(chart),
 		)
 	}
 
-	if popupMessage := dm.errPopup.View(); len(popupMessage) != 0 {
-		bg = Overlay(
+	if errPopup := dm.errPopup.View(); len(errPopup.Content) != 0 {
+		*layout = Overlay(
 			dm.width,
-			bg,
-			popupMessage,
+			*layout,
+			errPopup.Content,
 			0,
-			dm.width-lipgloss.Width(popupMessage),
+			dm.width-lipgloss.Width(errPopup.Content),
 		)
 	}
 
 	if dm.mode == DIFF {
-		return OverlayCenter(dm.width, dm.height, bg, dm.diff.View())
+		dm.view.SetContent(OverlayCenter(
+			dm.width, dm.height, *layout, dm.diff.View().Content,
+		))
+
+		return dm.view
 	}
 
 	if dm.mode == DELETE {
-		return OverlayCenter(dm.width, dm.height, bg, dm.deleteDialog.View())
+		dm.view.SetContent(OverlayCenter(
+			dm.width, dm.height, *layout, dm.deleteDialog.View().Content,
+		))
+
+		return dm.view
 	}
 
-	return bg
+	dm.view.SetContent(*layout)
+
+	return dm.view
 }
 
-func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
+func (dm *DirModel) handleKeyBindings(msg tea.KeyPressMsg) bool {
 	if dm.mode == PENDING {
 		return false
 	}
 
-	handlers := []func(tea.KeyMsg) bool{
+	handlers := []func(tea.KeyPressMsg) bool{
 		dm.handleFilter, dm.handleDiff, dm.handleDeletion, dm.handleCmd,
 	}
 
@@ -368,8 +389,7 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 
 		return true
 	case key.Matches(msg, Bindings.Dirs.Chart):
-		dm.showCart = !dm.showCart
-		dm.updateTableData()
+		dm.showChart = !dm.showChart
 	case key.Matches(msg, Bindings.Help):
 		dm.fullHelp = !dm.fullHelp
 	case key.Matches(msg, Bindings.Explore):
@@ -384,7 +404,6 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyMsg) bool {
 		dm.updateTableData()
 	case key.Matches(msg, Bindings.Dirs.ToggleSelectAll):
 		dm.dirsTable.ToggleMarkAll()
-		dm.updateTableData()
 	}
 
 	dm.topEntries.Update(msg)
@@ -419,7 +438,7 @@ func (dm *DirModel) handleExploreKey() bool {
 	return dm.nav.Explore(sr.Cols[1]) != nil
 }
 
-func (dm *DirModel) handleFilter(msg tea.KeyMsg) bool {
+func (dm *DirModel) handleFilter(msg tea.KeyPressMsg) bool {
 	if key.Matches(msg, Bindings.Dirs.NameFilter) {
 		if dm.mode == READY {
 			dm.mode = INPUT
@@ -440,7 +459,7 @@ func (dm *DirModel) handleFilter(msg tea.KeyMsg) bool {
 	return false
 }
 
-func (dm *DirModel) handleCmd(msg tea.KeyMsg) bool {
+func (dm *DirModel) handleCmd(msg tea.KeyPressMsg) bool {
 	if key.Matches(msg, Bindings.Dirs.Command) && dm.mode == READY {
 		var entries []string
 
@@ -476,7 +495,7 @@ func (dm *DirModel) handleCmd(msg tea.KeyMsg) bool {
 	return false
 }
 
-func (dm *DirModel) handleDeletion(msg tea.KeyMsg) bool {
+func (dm *DirModel) handleDeletion(msg tea.KeyPressMsg) bool {
 	if key.Matches(msg, Bindings.Dirs.Delete) && dm.mode == READY {
 		dm.mode = DELETE
 
@@ -516,7 +535,7 @@ func (dm *DirModel) handleDeletion(msg tea.KeyMsg) bool {
 	return false
 }
 
-func (dm *DirModel) handleDiff(msg tea.KeyMsg) bool {
+func (dm *DirModel) handleDiff(msg tea.KeyPressMsg) bool {
 	isDiffKey := key.Matches(msg, Bindings.Dirs.Diff)
 
 	switch {
@@ -525,7 +544,6 @@ func (dm *DirModel) handleDiff(msg tea.KeyMsg) bool {
 		dm.diff.Run(dm.width, dm.height)
 	case isDiffKey && dm.mode == DIFF:
 		dm.mode = READY
-		dm.updateTableData()
 	case dm.mode == DIFF:
 		dm.diff.Update(msg)
 	default:
@@ -540,15 +558,16 @@ func (dm *DirModel) updateTableData() {
 		return
 	}
 
-	nameCol, _ := dm.columns.Get(2)
-	pgCol, _ := dm.columns.Get(8)
+	dm.dirsTable.SetColumns(
+		dm.columns.TableColumns(dm.dirTableWidth(), dm.sortState),
+	)
 
-	dm.dirsTable.SetColumns(dm.columns.TableColumns(dm.width, dm.sortState))
-	fillProgress := dm.usagePG.New(pgCol.Width)
+	nameCol := dm.dirsTable.Columns()[2]
 
 	dm.summaryInfo.clear()
 
 	rows := make([]table.Row, 0, len(dm.nav.Entry().Child))
+
 	dm.nav.Entry().SortedChild(dm.sortState.Key, dm.sortState.Desc)
 
 	for _, child := range dm.nav.Entry().Child {
@@ -556,7 +575,7 @@ func (dm *DirModel) updateTableData() {
 			continue
 		}
 
-		totalDirs, totalFiles := "", ""
+		totalDirs, totalFiles := "-", "-"
 
 		dm.summaryInfo.add(child)
 
@@ -566,7 +585,6 @@ func (dm *DirModel) updateTableData() {
 		}
 
 		parentUsage := float64(child.Size) / float64(dm.nav.ParentSize())
-		pgBar := fillProgress.ViewAs(parentUsage)
 
 		rows = append(
 			rows,
@@ -580,7 +598,6 @@ func (dm *DirModel) updateTableData() {
 					Faint(totalFiles),
 					Faint(time.Unix(child.ModTime, 0).Format("02 Jan 2006")),
 					FmtUsage(parentUsage, 20),
-					pgBar,
 				},
 			},
 		)
@@ -590,6 +607,58 @@ func (dm *DirModel) updateTableData() {
 	dm.dirsTable.SetCursor(dm.nav.cursor)
 }
 
+func (dm *DirModel) updatePreviewTable() {
+	if dm.nav.Entry() == nil || dm.dirsTable.SelectedRow() == nil {
+		return
+	}
+
+	parent := dm.nav.Entry().GetChildByName(dm.dirsTable.SelectedRow().Cols[1])
+	if parent == nil {
+		return
+	}
+
+	cols := Columns{
+		{Title: "", Width: 5, Fixed: true},
+		{Title: "Preview", Full: true},
+		{Title: "", Width: 15, Fixed: true},
+	}
+
+	dm.previewTable.SetColumns(
+		cols.TableColumns(dm.previewTableWidth(), SortState{}),
+	)
+
+	nameCol := dm.previewTable.Columns()[1]
+
+	rows := make([]table.Row, 0, dm.height)
+
+	if len(parent.Child) == 0 {
+		rows = append(rows, table.Row{Cols: []string{"", "No Preview", ""}})
+
+		dm.previewTable.SetRows(rows)
+
+		return
+	}
+
+	parent.SortedChild("", true)
+
+	for i := range min(dm.height, len(parent.Child)) {
+		child := parent.Child[i]
+
+		rows = append(
+			rows,
+			table.Row{
+				Cols: []string{
+					EntryIcon(child),
+					WrapString(child.Name(), nameCol.Width),
+					FmtSizeColor(child.Size, entrySizeWidth),
+				},
+			},
+		)
+	}
+
+	dm.previewTable.SetRows(rows)
+}
+
 func (dm *DirModel) viewTopStatusBar() string {
 	if dm.topStatusBar == nil {
 		return ""
@@ -597,7 +666,7 @@ func (dm *DirModel) viewTopStatusBar() string {
 
 	dm.topStatusBar.Clear()
 
-	sbStyle := style.CS().StatusBar
+	statusBarStyle := style.CS().StatusBar
 
 	var (
 		fullEntryName string
@@ -624,12 +693,11 @@ func (dm *DirModel) viewTopStatusBar() string {
 	barItems := make([]*BarItem, 0, 8)
 
 	barItems = append(barItems,
-		&BarItem{Content: "ENTRY", BGColor: sbStyle.VersionBG},
-		&BarItem{Content: "NAME", BGColor: sbStyle.Dirs.PathBG},
+		&BarItem{Content: "NAME", BGColor: statusBarStyle.Dirs.PathBG},
 		&BarItem{
 			Content: fullEntryName,
-			BGColor: sbStyle.BG,
-			Wrapper: WrapPath,
+			BGColor: statusBarStyle.BG,
+			Wrapper: PrefixWrapString,
 			Width:   -1,
 		},
 	)
@@ -641,15 +709,14 @@ func (dm *DirModel) viewTopStatusBar() string {
 
 	barItems = append(
 		barItems,
-
-		&BarItem{Content: entryType, BGColor: sbStyle.Dirs.ModeBG},
-		&BarItem{Content: "PICKED", BGColor: sbStyle.Dirs.SizeBG},
+		&BarItem{Content: entryType, BGColor: statusBarStyle.Dirs.ModeBG},
+		&BarItem{Content: "PICKED", BGColor: statusBarStyle.Dirs.SizeBG},
 		&BarItem{
 			Content: unitFmt(max(uint64(len(dm.dirsTable.MarkedRows())), 1)),
-			BGColor: sbStyle.BG,
+			BGColor: statusBarStyle.BG,
 		},
 		&BarItem{Content: "TO FREE", BGColor: style.cs.StatusBar.Dirs.RowsCounter},
-		&BarItem{Content: FmtSizeColor(selectedSize, 0), BGColor: sbStyle.BG},
+		&BarItem{Content: FmtSizeColor(selectedSize, 0), BGColor: statusBarStyle.BG},
 	)
 
 	dm.topStatusBar.Add(barItems)
@@ -666,15 +733,15 @@ func (dm *DirModel) viewBottomStatusBar() string {
 
 	dm.bottomStatusBar.Clear()
 
-	sbStyle := style.CS().StatusBar
+	statusBarStyle := style.CS().StatusBar
 
 	barItems := []*BarItem{
-		{Content: Version, BGColor: sbStyle.VersionBG},
-		{Content: "PATH", BGColor: sbStyle.Dirs.PathBG},
+		{Content: Version, BGColor: statusBarStyle.VersionBG},
+		{Content: "PATH", BGColor: statusBarStyle.Dirs.PathBG},
 		{
 			Content: dm.nav.Entry().Path,
-			BGColor: sbStyle.BG,
-			Wrapper: WrapPath,
+			BGColor: statusBarStyle.BG,
+			Wrapper: PrefixWrapString,
 			Width:   -1,
 		},
 	}
@@ -691,13 +758,13 @@ func (dm *DirModel) viewBottomStatusBar() string {
 	barItems = append(
 		barItems,
 		[]*BarItem{
-			{Content: string(dm.mode), BGColor: sbStyle.Dirs.ModeBG},
-			{Content: "SIZE", BGColor: sbStyle.Dirs.SizeBG},
-			{Content: FmtSizeColor(dm.summaryInfo.size, 0), BGColor: sbStyle.BG},
-			{Content: "DIRS", BGColor: sbStyle.Dirs.DirsBG},
-			{Content: unitFmt(dm.summaryInfo.dirs), BGColor: sbStyle.BG},
-			{Content: "FILES", BGColor: sbStyle.Dirs.FilesBG},
-			{Content: unitFmt(dm.summaryInfo.files), BGColor: sbStyle.BG},
+			{Content: string(dm.mode), BGColor: statusBarStyle.Dirs.ModeBG},
+			{Content: "SIZE", BGColor: statusBarStyle.Dirs.SizeBG},
+			{Content: FmtSizeColor(dm.summaryInfo.size, 0), BGColor: statusBarStyle.BG},
+			{Content: "DIRS", BGColor: statusBarStyle.Dirs.DirsBG},
+			{Content: unitFmt(dm.summaryInfo.dirs), BGColor: statusBarStyle.BG},
+			{Content: "FILES", BGColor: statusBarStyle.Dirs.FilesBG},
+			{Content: unitFmt(dm.summaryInfo.files), BGColor: statusBarStyle.BG},
 			{Content: fmt.Sprintf(
 				"%d:%d",
 				dm.dirsTable.Cursor()+1,
@@ -713,19 +780,43 @@ func (dm *DirModel) viewBottomStatusBar() string {
 	)
 }
 
-func (dm *DirModel) updateSize(width, height int) {
-	dm.width, dm.height = width, height
-
-	dm.dirsTable.SetWidth(width)
+// updateTableSize accepts the [tea.WindowSizeMsg] message and updates the
+// directory entries table according to new width and height values. The
+// message will be propagated to all nested models respectively.
+func (dm *DirModel) updateTableSize(msg tea.WindowSizeMsg) {
+	dm.width, dm.height = msg.Width, msg.Height
 
 	dm.updateTableData()
+
+	dm.diff.Update(msg)
+	dm.filters.Update(msg)
+	dm.topEntries.Update(msg)
+	dm.cmd.Update(msg)
+}
+
+// dirTableWidth returns the directory entries table width with respect to the
+// terminal window width.
+func (dm *DirModel) dirTableWidth() int {
+	return int(float64(dm.width) * dirsTableRatio)
+}
+
+// previewTableWidth returns the entry preview table width with respect to the
+// directory entries table width.
+func (dm *DirModel) previewTableWidth() int {
+	return dm.width - dm.dirTableWidth()
 }
 
 func (dm *DirModel) viewProgress() string {
+	// prevents showing 100% progress. Since the scanning progress might be
+	// slowed down with a deep folder structure, but most heavy objects are
+	// scanned already, we end up with 100% before the scan actually completes.
 	completed := 0.99
+	scannedSize := float64(dm.nav.Entry().Size)
 
 	if dm.nav.currentDrive != nil {
-		completed = float64(dm.nav.Entry().Size)/float64(dm.nav.currentDrive.UsedBytes) - 0.01
+		driveUsedSize := float64(dm.nav.currentDrive.UsedBytes)
+
+		completed = scannedSize/driveUsedSize - 0.01
 	}
 
 	return style.StatusBar().Margin(1, 0, 1, 0).Render(
@@ -733,16 +824,21 @@ func (dm *DirModel) viewProgress() string {
 	)
 }
 
-func (dm *DirModel) sortEntries(sortKey drive.SortKey) {
+// sortEntries sorts directory entries based on the provided [drive.SortKey].
+// It updates the current sort state and re-renders the directory entries
+// according to the new sort key value and order.
+func (dm *DirModel) sortEntries(sk drive.SortKey) {
 	if dm.nav.OnDrives() {
 		return
 	}
 
-	if dm.sortState.Key == sortKey {
+	defer dm.updateTableData()
+
+	if dm.sortState.Key == sk {
 		dm.sortState.Desc = !dm.sortState.Desc
-	} else {
-		dm.sortState = SortState{Key: sortKey}
+
+		return
 	}
 
-	dm.updateTableData()
+	dm.sortState = SortState{Key: sk}
 }

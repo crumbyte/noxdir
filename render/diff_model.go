@@ -9,9 +9,9 @@ import (
 	"github.com/crumbyte/noxdir/render/table"
 	"github.com/crumbyte/noxdir/structure"
 
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type (
@@ -88,7 +88,7 @@ func (dm *DiffModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return dm, nil
 }
 
-func (dm *DiffModel) View() string {
+func (dm *DiffModel) View() tea.View {
 	hasDiff := dm.diff != nil && !dm.diff.Empty()
 
 	rows := make([]string, 0, 3)
@@ -109,7 +109,7 @@ func (dm *DiffModel) View() string {
 		total := dm.viewStats()
 		dm.table.SetHeight(dm.height - lipgloss.Height(total))
 
-		rows = append(rows, dm.table.View(), total)
+		rows = append(rows, dm.table.View().Content, total)
 	}
 
 	if dm.ready && !hasDiff {
@@ -128,9 +128,11 @@ func (dm *DiffModel) View() string {
 		)
 	}
 
-	return style.DialogBox().Render(
-		lipgloss.NewStyle().Padding(0, 1, 0, 1).Render(
-			lipgloss.JoinVertical(lipgloss.Top, rows...),
+	return tea.NewView(
+		style.DialogBox().Render(
+			lipgloss.NewStyle().Padding(0, 1, 0, 1).Render(
+				lipgloss.JoinVertical(lipgloss.Top, rows...),
+			),
 		),
 	)
 }

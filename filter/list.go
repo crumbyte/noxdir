@@ -3,7 +3,7 @@ package filter
 import (
 	"github.com/crumbyte/noxdir/structure"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 // ID defines a custom type for the filter identifier.
@@ -38,7 +38,7 @@ type Updater interface {
 // Viewer defines an interface for filters that can be rendered or require the
 // user's input to interact.
 type Viewer interface {
-	View() string
+	View() tea.View
 }
 
 // FiltersList aggregates a list of multiple filters.

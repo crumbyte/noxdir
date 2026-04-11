@@ -7,13 +7,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-
 	"github.com/crumbyte/noxdir/command/archive"
 	"github.com/crumbyte/noxdir/command/checksum"
+
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type Styles struct {
@@ -59,33 +59,36 @@ type Model struct {
 }
 
 func NewModel(onStateChange func()) *Model {
-	styles := DefaultStyles
-
 	ti := textinput.New()
 	ti.Focus()
 	ti.Prompt = "$ "
-	ti.PromptStyle, ti.TextStyle = styles.InputTextStyle, styles.InputTextStyle
 	ti.Placeholder = "type the command..."
 
-	vp := viewport.New(30, 12)
-	vp.Style = styles.OutputStyle
+	vp := viewport.New(viewport.WithWidth(30), viewport.WithHeight(12))
 	vp.VisibleLineCount()
 
-	return &Model{
-		styles:        styles,
+	m := &Model{
+		styles:        DefaultStyles,
 		input:         ti,
 		viewport:      vp,
 		onStateChange: onStateChange,
 		history:       NewHistory(50),
 		enabled:       false,
 	}
+
+	m.SetStyles(DefaultStyles)
+
+	return m
 }
 
 func (m *Model) SetStyles(s Styles) {
 	m.styles = s
 
-	m.input.PromptStyle = m.styles.InputTextStyle
-	m.input.TextStyle = m.styles.InputTextStyle
+	tiStyle := textinput.DefaultStyles(true)
+	tiStyle.Focused.Prompt = m.styles.InputTextStyle
+	tiStyle.Focused.Text = m.styles.InputTextStyle
+
+	m.input.SetStyles(tiStyle)
 
 	m.viewport.Style = m.styles.OutputStyle
 }
@@ -110,12 +113,13 @@ func (m *Model) Enabled() bool {
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.input.Width, m.viewport.Width = msg.Width, msg.Width
+		m.input.SetWidth(msg.Width)
+		m.viewport.SetWidth(msg.Width)
 
 		m.updateViewportMessages()
 
 		return m, nil
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		if !m.enabled {
 			return m, nil
 		}
@@ -153,9 +157,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *Model) View() string {
+func (m *Model) View() tea.View {
 	if !m.enabled {
-		return ""
+		return tea.View{}
 	}
 
 	var viewportContent string
@@ -164,10 +168,12 @@ func (m *Model) View() string {
 		viewportContent = m.viewport.View()
 	}
 
-	return fmt.Sprintf(
-		"%s\n%s",
-		viewportContent,
-		m.styles.InputBarStyle.Render(m.input.View()),
+	return tea.NewView(
+		fmt.Sprintf(
+			"%s\n%s",
+			viewportContent,
+			m.styles.InputBarStyle.Render(m.input.View()),
+		),
 	)
 }
 
@@ -177,7 +183,7 @@ func (m *Model) updateViewportMessages() {
 	}
 
 	m.viewport.SetContent(
-		lipgloss.NewStyle().Width(m.viewport.Width).Render(
+		lipgloss.NewStyle().Width(m.viewport.Width()).Render(
 			strings.Join(m.messages, "\n"),
 		),
 	)

@@ -17,7 +17,7 @@ import (
 	"github.com/crumbyte/noxdir/render"
 	"github.com/crumbyte/noxdir/structure"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
 )
 
@@ -301,11 +301,7 @@ func runApp(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	teaProg := tea.NewProgram(
-		vm,
-		tea.WithAltScreen(),
-		tea.WithoutCatchPanics(),
-	)
+	teaProg := tea.NewProgram(vm, tea.WithoutCatchPanics())
 
 	defer func() {
 		if r := recover(); r != nil {

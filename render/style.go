@@ -2,9 +2,11 @@ package render
 
 import (
 	"fmt"
+	"image/color"
 	"sync"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/compat"
 )
 
 var (
@@ -32,13 +34,57 @@ func (s *Style) CS() *ColorSchema {
 	return &s.cs
 }
 
+func (s *Style) DirTable(width int) *lipgloss.Style {
+	return new(
+		lipgloss.NewStyle().
+			Align(lipgloss.Left).
+			Width(width),
+	)
+}
+
+func (s *Style) TableSeparator(height int) *lipgloss.Style {
+	return new(
+		lipgloss.NewStyle().
+			Margin(0, 1, 0, 1).
+			Inherit(*style.PreviewTable()).
+			Height(height),
+	)
+}
+
+func (s *Style) TableBorder() *lipgloss.Style {
+	cv, ok := s.cache["tableBorder"]
+	if !ok {
+		cs := lipgloss.NewStyle().
+			BorderStyle(lipgloss.ThickBorder()).
+			BorderForeground(lipgloss.Color(s.cs.TableHeaderBorder))
+
+		s.cache["tableBorder"] = &cs
+
+		return &cs
+	}
+
+	return cv
+}
+
+func (s *Style) PreviewTable() *lipgloss.Style {
+	cv, ok := s.cache["previewTable"]
+	if !ok {
+		cs := lipgloss.NewStyle().Inherit(*s.TableBorder()).BorderLeft(true)
+
+		s.cache["previewTable"] = &cs
+
+		return &cs
+	}
+
+	return cv
+}
+
 func (s *Style) TableHeader() *lipgloss.Style {
 	cv, ok := s.cache["tableHeader"]
 	if !ok {
 		cs := lipgloss.NewStyle().
+			Inherit(*s.TableBorder()).
 			Bold(true).
-			BorderStyle(lipgloss.ThickBorder()).
-			BorderForeground(lipgloss.Color(s.cs.TableHeaderBorder)).
 			Foreground(lipgloss.Color(s.cs.TableHeaderText)).
 			BorderBottom(true)
 
@@ -102,8 +148,17 @@ func (s *Style) StatusBar() *lipgloss.Style {
 	cv, ok := s.cache["statusBar"]
 	if !ok {
 		cs := lipgloss.NewStyle().
-			Foreground(lipgloss.AdaptiveColor{Light: "#343433", Dark: s.cs.StatusBar.Text}).
-			Background(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: s.cs.StatusBar.BG})
+			Foreground(
+				compat.AdaptiveColor{
+					Light: lipgloss.Color("#343433"),
+					Dark:  lipgloss.Color(s.cs.StatusBar.Text),
+				},
+			).Background(
+			compat.AdaptiveColor{
+				Light: lipgloss.Color("#D9DCCF"),
+				Dark:  lipgloss.Color(s.cs.StatusBar.BG),
+			},
+		)
 
 		s.cache["statusBar"] = &cs
 
@@ -218,15 +273,15 @@ func (s *Style) ActiveButton() *lipgloss.Style {
 	return cv
 }
 
-func (s *Style) BarBlock(bgColor lipgloss.Color) lipgloss.Style {
+func (s *Style) BarBlock(bgColor color.Color) lipgloss.Style {
 	return lipgloss.NewStyle().
 		Foreground(lipgloss.Color(s.cs.StatusBar.BlockText)).
 		Background(bgColor).
 		Padding(0, 1)
 }
 
-func (s *Style) ChartColors() []lipgloss.Color {
-	return []lipgloss.Color{
+func (s *Style) ChartColors() []color.Color {
+	return []color.Color{
 		lipgloss.Color(s.cs.ChartColors.Sector1),
 		lipgloss.Color(s.cs.ChartColors.Sector2),
 		lipgloss.Color(s.cs.ChartColors.Sector3),
@@ -252,8 +307,9 @@ func (s *Style) SizeUnit(unit string) *lipgloss.Style {
 			"PB": s.cs.SizeUnit.PB,
 			"EB": s.cs.SizeUnit.EB,
 		}
-		color := sizeUnitColorsMap[unit]
-		cs := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+		cs := lipgloss.NewStyle().Foreground(
+			lipgloss.Color(sizeUnitColorsMap[unit]),
+		)
 		s.cache[ck] = &cs
 
 		return &cs

@@ -235,7 +235,7 @@ linters:
         - error
         - empty
         - stdlib
-        - github.com\/charmbracelet\/bubbletea\.Model
+        - charm.land\/bubbletea\/v2.Model
 
   exclusions:
     warn-unused: false
