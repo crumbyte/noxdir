@@ -76,6 +76,6 @@ func TestPopupModel_View_ShowsCountdown(t *testing.T) {
 	pm.Show("hello")
 
 	view := pm.View()
-	assert.Contains(t, view, "hello")
-	assert.Contains(t, view, "close in")
+	assert.Contains(t, view.Content, "hello")
+	assert.Contains(t, view.Content, "close in")
 }
