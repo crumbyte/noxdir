@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"slices"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-
 	"github.com/crumbyte/noxdir/structure"
+
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type DeleteChoice int
@@ -77,7 +77,7 @@ func (ddm *DeleteDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return ddm, nil
 }
 
-func (ddm *DeleteDialogModel) View() string {
+func (ddm *DeleteDialogModel) View() tea.View {
 	cancelBtn, confirmBtn := style.ActiveButton(), style.ConfirmButton()
 
 	if ddm.choice == ConfirmChoice {
@@ -134,13 +134,13 @@ func (ddm *DeleteDialogModel) View() string {
 		MarginTop(1).
 		Render(FmtSize(totalReclaimed, 0), "to be reclaimed")
 
-	return style.DialogBox().BorderForeground(
-		lipgloss.Color("#FF303E"),
-	).Render(
-		lipgloss.JoinVertical(
-			lipgloss.Center,
-			lipgloss.JoinVertical(lipgloss.Top, confirm, target, reclaimed),
-			buttons,
+	return tea.NewView(
+		style.DialogBox().BorderForeground(lipgloss.Color("#FF303E")).Render(
+			lipgloss.JoinVertical(
+				lipgloss.Center,
+				lipgloss.JoinVertical(lipgloss.Top, confirm, target, reclaimed),
+				buttons,
+			),
 		),
 	)
 }

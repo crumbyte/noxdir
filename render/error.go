@@ -2,10 +2,9 @@ package render
 
 import (
 	"bytes"
-	"os"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/table"
 )
 
 var (
@@ -26,8 +25,7 @@ And that's it! 😎👌🔥`
 // to the standard output. The report will contain the error message, the stack
 // trace, and the info on how to report an issue.
 func ReportError(err error, stackTrace []byte) string {
-	re := lipgloss.NewRenderer(os.Stdout)
-	bs := re.NewStyle().Padding(0, 1)
+	bs := lipgloss.NewStyle().Padding(0, 1)
 
 	errorHeaderStyle := bs.Foreground(lipgloss.Color("#f2133c")).Bold(true)
 	errorMsgStyle := bs.Foreground(lipgloss.Color("#f6bd60")).Bold(true)
@@ -47,7 +45,7 @@ func ReportError(err error, stackTrace []byte) string {
 
 	return table.New().
 		Border(lipgloss.NormalBorder()).
-		BorderStyle(re.NewStyle().Foreground(lipgloss.Color("238"))).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
 		Headers(errorHeaderStyle.Render(headerMessage)).
 		Width(max(defaultWidth, lipgloss.Width(stackTraceCell)) + padding).
 		Rows(data...).

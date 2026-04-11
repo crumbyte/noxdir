@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type PopupMsgTick struct{}
@@ -136,11 +136,11 @@ func (pm *PopupModel) Update(_ tea.Msg) (tea.Model, tea.Cmd) {
 	return pm, nil
 }
 
-func (pm *PopupModel) View() string {
+func (pm *PopupModel) View() tea.View {
 	nextMessage, ok := pm.nextMessage()
 
 	if !pm.visible || !ok {
-		return ""
+		return tea.View{}
 	}
 
 	messages := []string{nextMessage}
@@ -153,9 +153,13 @@ func (pm *PopupModel) View() string {
 		)
 	}
 
-	return pm.styles.Box.Align(lipgloss.Center).Render(
-		pm.styles.Title.Render(pm.title),
-		lipgloss.JoinVertical(lipgloss.Center, messages...),
+	return tea.NewView(
+		pm.styles.Box.
+			Align(lipgloss.Center).
+			Render(
+				pm.styles.Title.Render(pm.title),
+				lipgloss.JoinVertical(lipgloss.Center, messages...),
+			),
 	)
 }
 

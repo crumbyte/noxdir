@@ -7,14 +7,15 @@ import (
 	"github.com/crumbyte/noxdir/render/table"
 	"github.com/crumbyte/noxdir/structure"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+
+	"charm.land/lipgloss/v2"
 )
 
 const (
-	Version = "v1.0.0"
+	Version = "1.2.0"
 
 	updateTickerInterval = time.Millisecond * 500
 )
@@ -44,7 +45,7 @@ func NewViewModel(n *Navigation, driveModel *DriveModel, dirMode *DirModel) *Vie
 }
 
 func (vm *ViewModel) Init() tea.Cmd {
-	return tea.Batch(tea.DisableMouse, tea.SetWindowTitle("NoxDir"))
+	return nil
 }
 
 func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -88,12 +89,20 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return vm, tea.Batch(cmd)
 }
 
-func (vm *ViewModel) View() string {
+func (vm *ViewModel) View() tea.View {
+	var v tea.View
+
 	if vm.nav.OnDrives() {
-		return vm.driveModel.View()
+		v = vm.driveModel.View()
+	} else {
+		v = vm.dirModel.View()
 	}
 
-	return vm.dirModel.View()
+	v.AltScreen = true
+	v.WindowTitle = "NoxDir " + Version
+	v.MouseMode = tea.MouseModeNone
+
+	return v
 }
 
 func (vm *ViewModel) levelDown() {
@@ -215,7 +224,7 @@ func (vm *ViewModel) refresh(mode Mode) {
 }
 
 func SetTeaProgram(tp *tea.Program) {
-	*teaProg = *tp
+	teaProg = tp
 }
 
 func buildTable() *table.Model {

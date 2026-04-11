@@ -1,11 +1,12 @@
 package render
 
 import (
+	"image/color"
 	"math"
 	"sort"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 const (
@@ -17,9 +18,16 @@ const (
 	chartLabelWidth = 50
 )
 
-var defaultChartColors = []lipgloss.Color{
-	"#ffbe0b", "#fb5607", "#ff006e", "#8338ec", "#3a86ff",
-	"#00f5d4", "#fef9ef", "#ff85a1", "#b5838d",
+var defaultChartColors = []color.Color{
+	lipgloss.Color("#ffbe0b"),
+	lipgloss.Color("#fb5607"),
+	lipgloss.Color("#ff006e"),
+	lipgloss.Color("#8338ec"),
+	lipgloss.Color("#3a86ff"),
+	lipgloss.Color("#00f5d4"),
+	lipgloss.Color("#fef9ef"),
+	lipgloss.Color("#ff85a1"),
+	lipgloss.Color("#b5838d"),
 }
 
 // SectorInfo contains the initial sector info. All other data of the sector will
@@ -31,7 +39,7 @@ type SectorInfo struct {
 }
 
 type chartSector struct {
-	color      lipgloss.Color
+	color      color.Color
 	label      string
 	size       int64
 	usage      float64
@@ -44,22 +52,22 @@ type chartSector struct {
 // aspect ratio fix, which is responsible for adjusting the circle form depending
 // on the ratio of the terminal's font width and height.
 type Chart struct {
-	colors         []lipgloss.Color
+	colors         []color.Color
 	width          int
 	height         int
 	radius         int
 	aspectRatioFix float64
 }
 
-func NewChart(width, height, radius int, aspectRationFix float64, colors []lipgloss.Color) *Chart {
+func NewChart(width, height, radius int, aspectRationFix float64, c []color.Color) *Chart {
 	// the number of colors must not be lower than the number of maxSectors
 	// plus one "merged" sector.
-	if len(colors) < maxSectors+1 {
-		colors = defaultChartColors
+	if len(c) < maxSectors+1 {
+		c = defaultChartColors
 	}
 
 	return &Chart{
-		colors:         colors,
+		colors:         c,
 		width:          width,
 		height:         height,
 		radius:         radius,

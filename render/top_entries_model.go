@@ -8,9 +8,9 @@ import (
 	"github.com/crumbyte/noxdir/render/table"
 	"github.com/crumbyte/noxdir/structure"
 
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 const (
@@ -79,9 +79,9 @@ func (te *TopEntries) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return te, nil
 }
 
-func (te *TopEntries) View() string {
+func (te *TopEntries) View() tea.View {
 	if !te.showTopDirs && !te.showTopFiles {
-		return ""
+		return tea.View{}
 	}
 
 	topTable := te.filesTable
@@ -132,7 +132,7 @@ func (te *TopEntries) setEntries(entries heap.Interface, tm *table.Model, title 
 			continue
 		}
 
-		filePath := WrapPath(file.Path, nameCol.Width)
+		filePath := PrefixWrapString(file.Path, nameCol.Width)
 
 		filePath = filepath.Join(
 			filepath.Dir(filePath),
@@ -166,7 +166,7 @@ func (te *TopEntries) rerenderExistingRows(tm *table.Model, nameWidth int) bool 
 			continue
 		}
 
-		filePath := WrapPath(r.Cols[1], nameWidth)
+		filePath := PrefixWrapString(r.Cols[1], nameWidth)
 
 		filePath = filepath.Join(
 			filepath.Dir(filePath),

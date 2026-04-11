@@ -6,10 +6,9 @@ import (
 
 	"github.com/crumbyte/noxdir/structure"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/lipgloss"
-
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 const (
@@ -108,14 +107,20 @@ type NameFilter struct {
 }
 
 func NewNameFilter(textColor string) *NameFilter {
-	textStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(textColor))
 	ti := textinput.New()
+
+	textStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(textColor))
+
+	tiStyle := textinput.DefaultStyles(true)
+	tiStyle.Focused.Prompt = textStyle
+	tiStyle.Focused.Text = textStyle
+
+	ti.SetStyles(tiStyle)
 
 	ti.Placeholder = `Filter… Examples: "mp4" (match), "\mp4" (exclude), ":regex" ":^.+?\.mp4" (regular expression)`
 	ti.Focus()
-	ti.Width = lipgloss.Width(ti.Placeholder)
+	ti.SetWidth(lipgloss.Width(ti.Placeholder))
 	ti.Prompt = "\uE68F  "
-	ti.PromptStyle, ti.TextStyle = textStyle, textStyle
 
 	return &NameFilter{input: ti, enabled: false}
 }
@@ -161,7 +166,7 @@ func (nf *NameFilter) Filter(e *structure.Entry) bool {
 func (nf *NameFilter) Update(msg tea.Msg) {
 	resizeMsg, ok := msg.(tea.WindowSizeMsg)
 	if ok {
-		nf.input.Width = resizeMsg.Width
+		nf.input.SetWidth(resizeMsg.Width)
 	}
 
 	if !nf.enabled {
@@ -176,9 +181,9 @@ func (nf *NameFilter) Reset() {
 	nf.input.Reset()
 }
 
-func (nf *NameFilter) View() string {
+func (nf *NameFilter) View() tea.View {
 	if !nf.enabled {
-		return ""
+		return tea.View{}
 	}
 
 	s := lipgloss.NewStyle().
@@ -186,7 +191,7 @@ func (nf *NameFilter) View() string {
 		BorderForeground(lipgloss.Color("240")).
 		BorderTop(true)
 
-	return s.Render(nf.input.View())
+	return tea.NewView(s.Render(nf.input.View()))
 }
 
 func (nf *NameFilter) resolveFilterType(filterInput string) NameFilterType {

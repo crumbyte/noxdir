@@ -7,9 +7,9 @@ import (
 	"github.com/crumbyte/noxdir/drive"
 	"github.com/crumbyte/noxdir/render/table"
 
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 const driveSizeWidth = 10
@@ -23,6 +23,7 @@ type DriveModel struct {
 	usagePG     *PG
 	statusBar   *StatusBar
 	sortState   SortState
+	view        tea.View
 	height      int
 	width       int
 	fullHelp    bool
@@ -143,7 +144,7 @@ func (dm *DriveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return dm, nil
 }
 
-func (dm *DriveModel) View() string {
+func (dm *DriveModel) View() tea.View {
 	h := lipgloss.Height
 	summary := dm.drivesSummary()
 	keyBindings := dm.drivesTable.Help.ShortHelpView(
@@ -158,13 +159,14 @@ func (dm *DriveModel) View() string {
 
 	dm.drivesTable.SetHeight(dm.height - h(keyBindings) - h(summary)*2)
 
-	return lipgloss.JoinVertical(
-		lipgloss.Top,
-		summary,
-		dm.drivesTable.View(),
-		summary,
-		keyBindings,
+	dm.view.SetContent(
+		lipgloss.JoinVertical(
+			lipgloss.Top,
+			summary, dm.drivesTable.View().Content, summary, keyBindings,
+		),
 	)
+
+	return dm.view
 }
 
 func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {

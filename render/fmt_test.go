@@ -78,6 +78,8 @@ func TestWrapPath(t *testing.T) {
 	}
 
 	for _, data := range tableData {
-		require.Equal(t, data.expected, render.WrapPath(data.path, data.limit))
+		require.Equal(
+			t, data.expected, render.PrefixWrapString(data.path, data.limit),
+		)
 	}
 }
