@@ -3,8 +3,8 @@ package render
 import (
 	"unicode/utf8"
 
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/bubbles/progress"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
 )
 

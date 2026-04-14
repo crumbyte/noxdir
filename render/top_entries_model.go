@@ -67,7 +67,7 @@ func (te *TopEntries) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		te.width = msg.Width
 
 		te.UpdateTopEntries()
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch {
 		case key.Matches(msg, Bindings.Dirs.TopDirs):
 			te.showTopDirs = !te.showTopDirs && !te.showTopFiles

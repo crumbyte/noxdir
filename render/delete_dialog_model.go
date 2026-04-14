@@ -45,7 +45,7 @@ func (ddm *DeleteDialogModel) Init() tea.Cmd {
 }
 
 func (ddm *DeleteDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	keyMsg, ok := msg.(tea.KeyMsg)
+	keyMsg, ok := msg.(tea.KeyPressMsg)
 	if !ok {
 		return ddm, nil
 	}

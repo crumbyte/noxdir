@@ -58,7 +58,7 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return vm, tea.Batch(cmd, dirModelCMD)
 	case EnqueueRefresh:
 		vm.refresh(msg.Mode)
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		if vm.dirModel.mode == INPUT || vm.dirModel.mode == CMD {
 			break
 		}

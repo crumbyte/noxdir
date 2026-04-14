@@ -76,7 +76,7 @@ func (dm *DiffModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		runtime.GC()
 		dm.updateTableData()
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		if key.Matches(msg, Bindings.Explore) {
 			dm.handleExploreKey()
 		}

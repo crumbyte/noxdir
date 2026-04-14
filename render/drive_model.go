@@ -112,7 +112,7 @@ func (dm *DriveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		dm.updateTableData(dm.sortState.Key, dm.sortState.Desc)
 
 		return dm, nil
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch {
 		case key.Matches(msg, Bindings.Help):
 			dm.fullHelp = !dm.fullHelp
