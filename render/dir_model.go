@@ -736,7 +736,6 @@ func (dm *DirModel) viewBottomStatusBar() string {
 	statusBarStyle := style.CS().StatusBar
 
 	barItems := []*BarItem{
-		{Content: Version, BGColor: statusBarStyle.VersionBG},
 		{Content: "PATH", BGColor: statusBarStyle.Dirs.PathBG},
 		{
 			Content: dm.nav.Entry().Path,
