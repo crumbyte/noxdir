@@ -73,13 +73,11 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, Bindings.Quit):
 			return vm, tea.Quit
 		case key.Matches(msg, Bindings.Drive.LevelDown):
-			if vm.dirModel.mode == READY || vm.nav.OnDrives() {
-				vm.levelDown()
-			}
+			vm.levelDown()
 		case key.Matches(msg, Bindings.Dirs.LevelUp):
-			if vm.dirModel.mode == READY || vm.nav.OnDrives() {
-				vm.levelUp()
-			}
+			vm.levelUp()
+		case key.Matches(msg, Bindings.Dirs.ToDrives):
+			vm.toDrives()
 		}
 	}
 
@@ -106,6 +104,10 @@ func (vm *ViewModel) View() tea.View {
 }
 
 func (vm *ViewModel) levelDown() {
+	if vm.dirModel.mode != READY && !vm.nav.OnDrives() {
+		return
+	}
+
 	sr := vm.dirModel.dirsTable.SelectedRow()
 	cursor := vm.dirModel.dirsTable.Cursor()
 
@@ -161,6 +163,10 @@ func (vm *ViewModel) levelDown() {
 }
 
 func (vm *ViewModel) levelUp() {
+	if vm.dirModel.mode != READY || vm.nav.OnDrives() {
+		return
+	}
+
 	vm.nav.Up(func(_ *structure.Entry, _ State) {
 		if vm.nav.OnDrives() {
 			vm.driveModel.drivesTable.ResetMarked()
@@ -173,6 +179,22 @@ func (vm *ViewModel) levelUp() {
 		vm.dirModel.dirsTable.ResetMarked()
 		vm.dirModel.filters.Reset()
 		vm.dirModel.updateTableData()
+	})
+}
+
+func (vm *ViewModel) toDrives() {
+	if vm.dirModel.mode != READY || vm.nav.OnDrives() {
+		return
+	}
+
+	vm.nav.ToDrives(func(_ *structure.Entry, _ State) {
+		if !vm.nav.OnDrives() {
+			return
+		}
+
+		vm.driveModel.drivesTable.ResetMarked()
+		vm.driveModel.resetSort()
+		vm.driveModel.updateTableData(drive.TotalUsedP, true)
 	})
 }
 
