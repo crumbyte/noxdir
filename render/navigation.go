@@ -46,6 +46,10 @@ func (e *entryStack) push(si *stackItem) {
 	*e = append(*e, si)
 }
 
+func (e *entryStack) reset() {
+	*e = (*e)[:0]
+}
+
 func (e *entryStack) pop() *stackItem {
 	if len(*e) == 0 {
 		return nil
@@ -241,6 +245,24 @@ func (n *Navigation) Down(path string, cursor int, ocl OnChangeLevel) (chan stru
 	n.entry, n.cursor = entry, 0
 
 	return nil, nil
+}
+
+// ToDrives resets the navigation state back to Drives and clears the navigation
+// stack. The OnChangeLevel handler will be called in the same way as for a
+// regular level change.
+func (n *Navigation) ToDrives(ocl OnChangeLevel) {
+	if n.OnDrives() || !n.lock() {
+		return
+	}
+
+	defer n.unlock()
+
+	n.entryStack.reset()
+	n.state, n.cursor = Drives, 0
+
+	ocl(n.entry, n.state)
+
+	_, _ = n.tree.PersistCache()
 }
 
 // RefreshDrives refreshes the list of the available drives and their memory

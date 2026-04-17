@@ -35,6 +35,7 @@ type DirsKeyMap struct {
 	Command         key.Binding
 	SortKeys        key.Binding
 	ToggleSelection key.Binding
+	ToDrives        key.Binding
 }
 
 type KeyMap struct {
@@ -78,11 +79,11 @@ func (km *KeyMap) DirBindings() [][]key.Binding {
 	return append(
 		km.NavigateBindings(),
 		[][]key.Binding{
-			{km.Dirs.LevelDown, km.Dirs.LevelUp, km.Explore, km.Quit},
+			{km.Dirs.LevelDown, km.Dirs.LevelUp, km.Explore, km.Dirs.ToDrives},
 			{km.Dirs.TopFiles, km.Dirs.TopDirs, km.Dirs.NameFilter, km.Dirs.Chart},
 			{km.Dirs.ToggleSelectAll, km.Dirs.DirsOnly, km.Dirs.FilesOnly, km.Refresh},
 			{km.Dirs.Diff, km.Config, km.Refresh, km.Dirs.Delete},
-			{km.Dirs.Command, km.Dirs.SortKeys, km.Dirs.ToggleSelection},
+			{km.Dirs.Command, km.Dirs.SortKeys, km.Dirs.ToggleSelection, km.Quit},
 		}...,
 	)
 }
@@ -236,6 +237,13 @@ func DefaultKeyMap(s *Style) KeyMap {
 					s.Help().Render(" - command"),
 				),
 			),
+			ToDrives: key.NewBinding(
+				key.WithKeys("B"),
+				key.WithHelp(
+					s.BindKey().Render("B"),
+					s.Help().Render(" - go to drives"),
+				),
+			),
 		},
 		Explore: key.NewBinding(
 			key.WithKeys("e"),
@@ -328,6 +336,9 @@ func InitKeyMap(b *config.Bindings, s *Style) {
 		)
 		Bindings.Dirs.ToggleSelection = Bindings.override(
 			Bindings.Dirs.ToggleSelection, b.DirBindings.ToggleSelection,
+		)
+		Bindings.Dirs.ToDrives = Bindings.override(
+			Bindings.Dirs.ToDrives, b.DirBindings.ToDrives,
 		)
 	})
 }

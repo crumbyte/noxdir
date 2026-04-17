@@ -137,7 +137,7 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 			{
 				Title:      "Last Change",
 				WidthRatio: DefaultColWidthRatio,
-				Hidden:     func(fw int) bool { return fw < 150 },
+				Hidden:     func(fw int) bool { return fw < 125 },
 			},
 			{
 				Title:      "Parent Usage",

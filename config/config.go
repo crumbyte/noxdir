@@ -31,6 +31,7 @@ type DirBindings struct {
 	Chart           []string `json:"chart"`
 	Diff            []string `json:"diff"`
 	ToggleSelection []string `json:"toggleSelection"`
+	ToDrives        []string `json:"toDrives"`
 }
 
 type Bindings struct {
