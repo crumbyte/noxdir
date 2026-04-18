@@ -453,6 +453,12 @@ func (dm *DirModel) handleFilter(msg tea.KeyPressMsg) bool {
 		dm.filters.Update(msg)
 		dm.updateTableData()
 
+		if f, ok := dm.filters[filter.NameFilterID]; ok {
+			if !f.Enabled() {
+				dm.mode = READY
+			}
+		}
+
 		return true
 	}
 
@@ -605,6 +611,8 @@ func (dm *DirModel) updateTableData() {
 
 	dm.dirsTable.SetRows(rows)
 	dm.dirsTable.SetCursor(dm.nav.cursor)
+
+	dm.updatePreviewTable()
 }
 
 func (dm *DirModel) updatePreviewTable() {

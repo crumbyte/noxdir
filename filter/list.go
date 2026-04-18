@@ -27,6 +27,10 @@ type EntryFilter interface {
 	// Filter contains the filtering logic and returns a bool value on whether
 	// the *Entry instance passed the filtration.
 	Filter(e *structure.Entry) bool
+
+	// Enabled checks whether the filter instance is enabled and returns a
+	// corresponding bool value.
+	Enabled() bool
 }
 
 // Updater defines an interface for filters that require their state to be updated

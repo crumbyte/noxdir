@@ -31,6 +31,10 @@ func (df *DirsFilter) Toggle() {
 	df.enabled = !df.enabled
 }
 
+func (df *DirsFilter) Enabled() bool {
+	return df.enabled
+}
+
 func (df *DirsFilter) Filter(e *structure.Entry) bool {
 	return !df.enabled || e.IsDir
 }
@@ -44,27 +48,37 @@ type FilesFilter struct {
 	enabled bool
 }
 
-func (df *FilesFilter) ID() ID {
+func (ff *FilesFilter) ID() ID {
 	return FilesOnlyFilterID
 }
 
-func (df *FilesFilter) Toggle() {
-	df.enabled = !df.enabled
+func (ff *FilesFilter) Toggle() {
+	ff.enabled = !ff.enabled
 }
 
-func (df *FilesFilter) Reset() {
-	df.enabled = false
+func (ff *FilesFilter) Enabled() bool {
+	return ff.enabled
 }
 
-func (df *FilesFilter) Filter(e *structure.Entry) bool {
-	return !df.enabled || !e.IsDir
+func (ff *FilesFilter) Reset() {
+	ff.enabled = false
+}
+
+func (ff *FilesFilter) Filter(e *structure.Entry) bool {
+	return !ff.enabled || !e.IsDir
 }
 
 // EmptyDirFilter filters empty directories. It checks the total number of files,
 // including those in subdirectories, and discards it if it does not have any.
 //
 // The filter does not affect file *Entry instances.
-type EmptyDirFilter struct{}
+type EmptyDirFilter struct {
+	enabled bool
+}
+
+func NewEmptyDirFilter(enabled bool) *EmptyDirFilter {
+	return &EmptyDirFilter{enabled: enabled}
+}
 
 func (edf *EmptyDirFilter) ID() ID {
 	return EmptyDirFilterID
@@ -72,6 +86,10 @@ func (edf *EmptyDirFilter) ID() ID {
 
 func (edf *EmptyDirFilter) Filter(e *structure.Entry) bool {
 	return !e.IsDir || e.TotalFiles > 0
+}
+
+func (edf *EmptyDirFilter) Enabled() bool {
+	return edf.enabled
 }
 
 // NameFilterType represents a filter type that will be applied during the
@@ -133,6 +151,10 @@ func (nf *NameFilter) Toggle() {
 	nf.enabled = !nf.enabled
 }
 
+func (nf *NameFilter) Enabled() bool {
+	return nf.enabled
+}
+
 // Filter filters an instance of *structure.Entry by checking if its path value
 // contains the current filter input.
 func (nf *NameFilter) Filter(e *structure.Entry) bool {
@@ -164,9 +186,13 @@ func (nf *NameFilter) Filter(e *structure.Entry) bool {
 }
 
 func (nf *NameFilter) Update(msg tea.Msg) {
-	resizeMsg, ok := msg.(tea.WindowSizeMsg)
-	if ok {
-		nf.input.SetWidth(resizeMsg.Width)
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		nf.input.SetWidth(msg.Width)
+	case tea.KeyPressMsg:
+		if msg.String() == "esc" {
+			nf.enabled = false
+		}
 	}
 
 	if !nf.enabled {
