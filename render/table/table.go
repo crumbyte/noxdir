@@ -199,6 +199,14 @@ func (m *Model) Columns() []Column {
 	return m.cols
 }
 
+func (m *Model) Column(idx int) (Column, bool) {
+	if idx < 0 || idx >= len(m.cols) {
+		return Column{}, false
+	}
+
+	return m.cols[idx], true
+}
+
 func (m *Model) SetRows(r []Row) {
 	m.rows = r
 	m.UpdateViewport()

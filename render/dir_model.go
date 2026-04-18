@@ -568,7 +568,10 @@ func (dm *DirModel) updateTableData() {
 		dm.columns.TableColumns(dm.dirTableWidth(), dm.sortState),
 	)
 
-	nameCol := dm.dirsTable.Columns()[2]
+	nameCol, ok := dm.dirsTable.Column(2)
+	if !ok {
+		return
+	}
 
 	dm.summaryInfo.clear()
 
@@ -635,7 +638,10 @@ func (dm *DirModel) updatePreviewTable() {
 		cols.TableColumns(dm.previewTableWidth(), SortState{}),
 	)
 
-	nameCol := dm.previewTable.Columns()[1]
+	nameCol, ok := dm.previewTable.Column(1)
+	if !ok {
+		return
+	}
 
 	rows := make([]table.Row, 0, dm.height)
 
