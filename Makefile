@@ -1,4 +1,4 @@
-.PHONY: help lint test tidy
+.PHONY: help lint test tidy clear-cache
 
 BINARY_DIR=./bin
 BINARY_NAME=noxdir
@@ -18,3 +18,6 @@ tidy: ## Upgrade dependencies and format code
 
 build: ## Produce a binary
 	go build -ldflags "-s -w" -o ${BINARY_DIR}/${BINARY_NAME}
+
+clear-cache:
+	go clean -cache && go clean -testcache && go clean -fuzzcache && go clean -modcache

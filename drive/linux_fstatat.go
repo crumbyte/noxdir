@@ -22,10 +22,10 @@ func fstatat(alloc Allocator, dirFD int, path string, stat *unix.Stat_t, flags i
 
 	_, _, e1 := syscall.Syscall6(
 		SysNewFstatat,
-		uintptr(dirFD),
+		uintptr(dirFD), //nolint:gosec
 		uintptr(unsafe.Pointer(_p0)),
 		uintptr(unsafe.Pointer(stat)),
-		uintptr(flags),
+		uintptr(flags), //nolint:gosec
 		0,
 		0,
 	)
