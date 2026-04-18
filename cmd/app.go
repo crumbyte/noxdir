@@ -332,10 +332,8 @@ func initViewModel(s *config.Settings) (*render.ViewModel, error) {
 		return nil, err
 	}
 
-	var dirModelFilters []filter.EntryFilter
-
-	if s.NoEmptyDirs {
-		dirModelFilters = append(dirModelFilters, &filter.EmptyDirFilter{})
+	dirModelFilters := []filter.EntryFilter{
+		filter.NewEmptyDirFilter(s.NoEmptyDirs),
 	}
 
 	vm := render.NewViewModel(
