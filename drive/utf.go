@@ -63,6 +63,7 @@ func decodeWTF16(s []uint16, buf []byte) {
 			if ar > utf8.MaxRune {
 				ar = utf8.RuneError
 			}
+			//nolint:gosec
 			buf = append(buf, t3|byte(ar>>12), tx|byte(ar>>6)&maskx, tx|byte(ar)&maskx)
 
 			continue

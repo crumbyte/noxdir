@@ -242,9 +242,9 @@ func addToArchive(tw *tar.Writer, path string) error {
 			return err
 		}
 
-		file, err := os.Open(entry)
+		file, err := os.OpenInRoot(filepath.Dir(entry), filepath.Base(entry))
 		if err != nil {
-			return err
+			return fmt.Errorf("archive: open root: %s: %s, %w", filepath.Dir(entry), filepath.Base(entry), err)
 		}
 
 		_, err = io.Copy(tw, file)

@@ -101,7 +101,7 @@ func ResolveConfigPath(configDir string) (string, error) {
 
 	fullPath := filepath.Join(configPath, configDir)
 
-	if err = os.MkdirAll(fullPath, 0750); err != nil {
+	if err = os.MkdirAll(filepath.Clean(fullPath), 0750); err != nil {
 		return "", fmt.Errorf("create config path: %w", err)
 	}
 
