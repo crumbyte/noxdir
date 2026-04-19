@@ -188,8 +188,6 @@ func (dm *DirModel) Init() tea.Cmd {
 func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	dm.nav.SetCursor(dm.dirsTable.Cursor())
-
 	switch msg := msg.(type) {
 	case PopupMsgTick:
 		dm.updateTableData()
@@ -249,6 +247,8 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	t, _ := dm.dirsTable.Update(msg)
 	dm.dirsTable = &t
+
+	dm.nav.SetCursor(dm.dirsTable.Cursor())
 
 	dm.updatePreviewTable()
 
@@ -322,6 +322,10 @@ func (dm *DirModel) View() tea.View {
 	bg := lipgloss.JoinVertical(lipgloss.Top, rows...)
 
 	return dm.renderOverlay(&bg, h(bg)-h(keyBindings)-h(bsb))
+}
+
+func (dm *DirModel) Clear() {
+	dm.dirsTable.SetRows(nil)
 }
 
 func (dm *DirModel) renderOverlay(layout *string, layoutHeight int) tea.View {
