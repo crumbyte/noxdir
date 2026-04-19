@@ -212,7 +212,9 @@ func (n *Navigation) Down(path string, cursor int, ocl OnChangeLevel) (chan stru
 		return nil, nil
 	}
 
-	// handle the scenario when the drive was selected
+	defer n.unlock()
+
+	// handle the scenario when the drive was selected.
 	if n.OnDrives() {
 		n.state = Dirs
 
@@ -223,26 +225,27 @@ func (n *Navigation) Down(path string, cursor int, ocl OnChangeLevel) (chan stru
 		doneChan, errChan := n.tree.TraverseAsync(false)
 
 		go func() {
+			n.cursor = 0
 			<-doneChan
-			n.unlock()
 		}()
 
 		return doneChan, errChan
 	}
 
-	// in other cases, it's just a lookup for a child directory
-	defer func() {
-		ocl(n.entry, n.state)
-		n.unlock()
-	}()
-
 	entry := n.entry.GetChildByName(path)
+
+	// if the provided path is not a valid directory, the current entry
+	// stays the same, but the cursor must be updated.
 	if entry == nil || !entry.IsDir {
+		n.cursor = cursor
+
 		return nil, nil
 	}
 
 	n.entryStack.push(&stackItem{entry: n.entry, cursor: cursor})
 	n.entry, n.cursor = entry, 0
+
+	ocl(n.entry, n.state)
 
 	return nil, nil
 }

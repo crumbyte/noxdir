@@ -112,6 +112,7 @@ func (vm *ViewModel) levelDown() {
 	cursor := vm.dirModel.dirsTable.Cursor()
 
 	if vm.nav.OnDrives() {
+		vm.dirModel.Clear()
 		vm.driveModel.drivesTable.ResetMarked()
 		sr = vm.driveModel.drivesTable.SelectedRow()
 	}
@@ -124,9 +125,8 @@ func (vm *ViewModel) levelDown() {
 		sr.Cols[1],
 		cursor,
 		func(_ *structure.Entry, _ State) {
-			vm.dirModel.dirsTable.GotoTop()
-			vm.dirModel.dirsTable.ResetMarked()
 			vm.dirModel.filters.Reset()
+			vm.dirModel.dirsTable.ResetMarked()
 			vm.dirModel.updateTableData()
 		},
 	)
