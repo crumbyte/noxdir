@@ -93,10 +93,8 @@ drive and scanning all folders within, a root directory can be provided.
 In this case, the scanning will be performed exclusively for the specified
 directory, drastically reducing the scanning time.
 
-Providing an invalid path results in a blank application output. In this 
-case, a "backspace" still can be used to return to the drives list.
-Also, all trailing slash characters will be removed from the provided
-path.
+Providing an invalid path results in a blank application output. All trailing
+slash characters will be removed from the provided path.
 
 Example: --root="C:\Program Files (x86)"`)
 

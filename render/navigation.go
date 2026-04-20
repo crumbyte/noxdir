@@ -175,6 +175,12 @@ func (n *Navigation) Up(ocl OnChangeLevel) {
 	defer n.unlock()
 
 	if n.entryStack.len() == 0 {
+		// prevent returning to the drives list, if the app started with a root
+		// flag.
+		if n.tree.IsPartialRoot() {
+			return
+		}
+
 		_, _ = n.tree.PersistCache()
 
 		n.state, n.cursor = Drives, 0
@@ -221,6 +227,7 @@ func (n *Navigation) Down(path string, cursor int, ocl OnChangeLevel) (chan stru
 		n.entry = structure.NewDirEntry(path, 0)
 		n.currentDrive = n.drives.DriveInfo(path)
 		n.tree.SetRoot(n.entry)
+		n.tree.SetPartialRoot(false)
 
 		doneChan, errChan := n.tree.TraverseAsync(false)
 

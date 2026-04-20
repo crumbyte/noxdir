@@ -169,10 +169,8 @@ Flags:
                               In this case, the scanning will be performed exclusively for the specified
                               directory, drastically reducing the scanning time.
 
-                              Providing an invalid path results in a blank application output. In this
-                              case, a "backspace" still can be used to return to the drives list.
-                              Also, all trailing slash characters will be removed from the provided
-                              path.
+                              Providing an invalid path results in a blank application output. All 
+                              trailing slash characters will be removed from the provided path.
 
                               Example: --root="C:\Program Files (x86)"
       --simple-color          Use a simplified color schema without emojis and glyphs.
@@ -225,45 +223,7 @@ The configuration file is created at:
 * Windows: `%LOCALAPPDATA%\.noxdir\settings.json` (e.g., `C:\Users\{user}\AppData\Local\.noxdir\settings.json`)
 * Linux/macOS: `~/.noxdir/settings.json`
 
-The created configurations file already contains all available settings and has the following structure:
-
-```json
-{
-  "colorSchema": "",
-  "exclude": null,
-  "noEmptyDirs": false,
-  "noHidden": false,
-  "simpleColor": false,
-  "useCache": false,
-  "bindings": {
-    "driveBindings": {
-      "levelDown": []
-    },
-    "dirBindings": {
-      "levelUp": null,
-      "levelDown": null,
-      "delete": null,
-      "topFiles": null,
-      "topDirs": null,
-      "filesOnly": null,
-      "dirsOnly": null,
-      "nameFilter": null,
-      "chart": null,
-      "diff": null,
-      "toggleSelectAll": null,
-      "toggleSelection": null
-    },
-    "explore": null,
-    "quit": null,
-    "refresh": null,
-    "help": null,
-    "diff": null,
-    "config": null
-  }
-}
-```
-
-Values follow the same format and behavior as CLI flags. For example:
+The created configurations file already contains all available settings. Values follow the same format and behavior as CLI flags. For example:
 
 ```json
 {
@@ -276,7 +236,7 @@ Values follow the same format and behavior as CLI flags. For example:
 }
 ```
 
-👉 If you cannot find the configuration file you can open it right from the application using `%` key binding.
+To quickly the configuration file you can open it right from the application using `%` key binding.
 
 ## 🗂️ Caching for Faster Scanning
 

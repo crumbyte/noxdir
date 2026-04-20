@@ -124,6 +124,18 @@ func (t *Tree) SetRoot(root *Entry) {
 	t.root = root
 }
 
+// SetPartialRoot allows setting a partial root state value. It can be used in
+// cases when the tree's root has been replaced.
+func (t *Tree) SetPartialRoot(value bool) {
+	t.partialRoot = value
+}
+
+// IsPartialRoot checks whether the Tree instance was created with a partial
+// root, e.g., a specific root directory instead of the drive/volume root.
+func (t *Tree) IsPartialRoot() bool {
+	return t.partialRoot
+}
+
 // CalculateSize calculates the total number of directories and files, including
 // ones within child entries, and the total tail of the current entry instance.
 // This function call will recursively calculate the sizes of child entries. The
