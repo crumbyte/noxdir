@@ -227,6 +227,7 @@ func (n *Navigation) Down(path string, cursor int, ocl OnChangeLevel) (chan stru
 		n.entry = structure.NewDirEntry(path, 0)
 		n.currentDrive = n.drives.DriveInfo(path)
 		n.tree.SetRoot(n.entry)
+		n.tree.SetPartialRoot(false)
 
 		doneChan, errChan := n.tree.TraverseAsync(false)
 

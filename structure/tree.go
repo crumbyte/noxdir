@@ -124,6 +124,12 @@ func (t *Tree) SetRoot(root *Entry) {
 	t.root = root
 }
 
+// SetPartialRoot allows setting a partial root state value. It can be used in
+// cases when the tree's root has been replaced.
+func (t *Tree) SetPartialRoot(value bool) {
+	t.partialRoot = value
+}
+
 // IsPartialRoot checks whether the Tree instance was created with a partial
 // root, e.g., a specific root directory instead of the drive/volume root.
 func (t *Tree) IsPartialRoot() bool {
