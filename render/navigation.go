@@ -175,6 +175,12 @@ func (n *Navigation) Up(ocl OnChangeLevel) {
 	defer n.unlock()
 
 	if n.entryStack.len() == 0 {
+		// prevent returning to the drives list, if the app started with a root
+		// flag.
+		if n.tree.IsPartialRoot() {
+			return
+		}
+
 		_, _ = n.tree.PersistCache()
 
 		n.state, n.cursor = Drives, 0

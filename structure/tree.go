@@ -124,6 +124,12 @@ func (t *Tree) SetRoot(root *Entry) {
 	t.root = root
 }
 
+// IsPartialRoot checks whether the Tree instance was created with a partial
+// root, e.g., a specific root directory instead of the drive/volume root.
+func (t *Tree) IsPartialRoot() bool {
+	return t.partialRoot
+}
+
 // CalculateSize calculates the total number of directories and files, including
 // ones within child entries, and the total tail of the current entry instance.
 // This function call will recursively calculate the sizes of child entries. The
