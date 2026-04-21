@@ -144,7 +144,6 @@ scoops:
       name: scoop-bucket
       branch: main
       token: "{{ .Env.GH_PAT }}"
-      token_type: "github"
   - name: noxdir-nightly
     homepage: "https://github.com/crumbyte/noxdir"
     description: "Nightly build of the terminal utility for visualizing file system usage."
@@ -155,7 +154,6 @@ scoops:
       name: scoop-bucket
       branch: main
       token: "{{ .Env.GH_PAT }}"
-      token_type: "github"
 
 changelog:
   sort: asc
