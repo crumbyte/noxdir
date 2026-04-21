@@ -175,7 +175,6 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 	pgCol, _ := dm.columns.Get(9)
 
 	dm.drivesTable.SetColumns(dm.columns.TableColumns(dm.width, dm.sortState))
-	dm.drivesTable.SetCursor(0)
 
 	diskFillProgress := dm.usagePG.New(pgCol.Width)
 
@@ -235,7 +234,6 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 	}
 
 	dm.drivesTable.SetRows(rows)
-	dm.drivesTable.SetCursor(0)
 }
 
 func (dm *DriveModel) drivesSummary() string {

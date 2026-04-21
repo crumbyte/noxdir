@@ -276,6 +276,17 @@ func (m *Model) ResetMarked() {
 	m.marked = make(map[int]struct{})
 }
 
+func (m *Model) MoveCursor(n int) {
+	switch {
+	case n < m.cursor:
+		m.MoveUp(m.cursor - n)
+	case n > m.cursor:
+		m.MoveDown(n - m.cursor)
+	default:
+		return
+	}
+}
+
 func (m *Model) MoveUp(n int) {
 	m.cursor, n = m.nextCursor(n, true)
 
