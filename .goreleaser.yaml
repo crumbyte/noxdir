@@ -133,6 +133,30 @@ homebrew_casks:
       branch: main
       token: "{{ .Env.GH_PAT }}"
 
+scoops:
+  - name: noxdir
+    homepage: "https://github.com/crumbyte/noxdir"
+    description: "Terminal utility for visualizing file system usage."
+    license: MIT
+    skip_upload: auto
+    repository:
+      owner: crumbyte
+      name: scoop-bucket
+      branch: main
+      token: "{{ .Env.GH_PAT }}"
+      token_type: "github"
+  - name: noxdir-nightly
+    homepage: "https://github.com/crumbyte/noxdir"
+    description: "Nightly build of the terminal utility for visualizing file system usage."
+    license: MIT
+    skip_upload: '{{ not (contains .Tag "nightly") }}'
+    repository:
+      owner: crumbyte
+      name: scoop-bucket
+      branch: main
+      token: "{{ .Env.GH_PAT }}"
+      token_type: "github"
+
 changelog:
   sort: asc
   filters:
