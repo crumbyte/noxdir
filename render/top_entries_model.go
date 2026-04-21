@@ -113,7 +113,6 @@ func (te *TopEntries) setEntries(entries heap.Interface, tm *table.Model, title 
 	te.columns[2].Title = title
 
 	tm.SetColumns(te.columns.TableColumns(te.width, SortState{}))
-	tm.SetCursor(0)
 
 	if entries.Len() == 0 && len(tm.Rows()) == 0 {
 		return
@@ -151,7 +150,6 @@ func (te *TopEntries) setEntries(entries heap.Interface, tm *table.Model, title 
 	}
 
 	tm.SetRows(rows)
-	tm.SetCursor(0)
 }
 
 func (te *TopEntries) rerenderExistingRows(tm *table.Model, nameWidth int) bool {
@@ -185,7 +183,6 @@ func (te *TopEntries) rerenderExistingRows(tm *table.Model, nameWidth int) bool 
 	}
 
 	tm.SetRows(rows)
-	tm.SetCursor(0)
 
 	return true
 }

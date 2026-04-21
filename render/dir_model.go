@@ -617,7 +617,7 @@ func (dm *DirModel) updateTableData() {
 	}
 
 	dm.dirsTable.SetRows(rows)
-	dm.dirsTable.SetCursor(dm.nav.cursor)
+	dm.dirsTable.MoveCursor(dm.nav.cursor)
 
 	dm.updatePreviewTable()
 }
