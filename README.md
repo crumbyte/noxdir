@@ -12,9 +12,7 @@ cleanup workflow. Supports: **Windows**, **macOS**, and **Linux**.
 
 ![full-preview!](/img/preview.png "full preview")
 
-<video controls>
-  <source src="/img/video-preview.mp4" type="video/mp4">
-</video>
+https://github.com/user-attachments/assets/f85c6dc8-96b6-472e-bd88-fd5fbd04e81a
 
 ## 📦 Installation
 
@@ -40,7 +38,7 @@ brew install --cask noxdir-nightly
 <details>
 <summary>Linux</summary>
 
-### Arch based Linux distros
+### Arch-based Linux distros
 
 ```bash
 pacman -S noxdir
@@ -110,6 +108,7 @@ scoop install noxdir-nightly
 
 <details>
 <summary>Pre-compiled binaries</summary>
+<br>
 
 Obtain the latest optimized binary from
 the [Releases](https://github.com/crumbyte/noxdir/releases) page. The
