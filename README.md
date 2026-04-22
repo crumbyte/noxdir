@@ -10,41 +10,41 @@ volumes and presents disk usage metrics through a responsive, keyboard-driven
 terminal UI. Designed to help you quickly locate space hogs and streamline your
 cleanup workflow. Supports: **Windows**, **macOS**, and **Linux**.
 
-[//]: # (![full-preview!]&#40;/img/full-preview.png "full preview"&#41;)
-
-[//]: # ()
-[//]: # (![two panes!]&#40;/img/two-panes.png "two panes"&#41;)
-
 ![full-preview!](/img/preview.png "full preview")
-![full-preview!](/img/linux-preview.png "full preview")
-![full-preview!](/img/win-cmd.png "full preview")
+
+https://github.com/user-attachments/assets/f85c6dc8-96b6-472e-bd88-fd5fbd04e81a
 
 ## 📦 Installation
 
-### 🍺 Homebrew
+<details>
+<summary>MacOS</summary>
+
+### Homebrew
 
 Stable release:
-
 ```bash
 brew tap crumbyte/noxdir
 brew install --cask noxdir
 ```
 
 Nightly release:
-
 ```bash
 brew tap crumbyte/noxdir
 brew uninstall --cask noxdir # If the stable version was installed previously
 brew install --cask noxdir-nightly
 ```
+</details>
 
-### Arch based Linux distros
+<details>
+<summary>Linux</summary>
+
+### Arch-based Linux distros
 
 ```bash
 pacman -S noxdir
 ```
 
-### NixOS / Nix
+**NixOS / Nix**
 
 NoxDir can be installed either directly from nixpkgs or used via flake:
 
@@ -83,22 +83,50 @@ curl -s https://crumbyte.github.io/noxdir/scripts/install.sh | bash
 ```
 
 ```bash
-curl -s https://crumbyte.github.io/noxdir/scripts/install.sh | bash -s -- v0.6.0
+curl -s https://crumbyte.github.io/noxdir/scripts/install.sh | bash -s -- v1.2.0
+```
+</details>
+
+<details>
+<summary>Windows</summary>
+
+### Scoop
+
+Stable release:
+```bash
+scoop bucket add crumbyte https://github.com/crumbyte/scoop-bucket
+scoop install noxdir
 ```
 
-### Pre-compiled Binaries
+Nightly release:
+```bash
+scoop bucket add crumbyte https://github.com/crumbyte/scoop-bucket
+scoop uninstall noxdir # If the stable version was installed previously
+scoop install noxdir-nightly
+```
+</details>
+
+<details>
+<summary>Pre-compiled binaries</summary>
+<br>
 
 Obtain the latest optimized binary from
 the [Releases](https://github.com/crumbyte/noxdir/releases) page. The
 application is self-contained and requires no installation process.
 
-### Go install (Go 1.24+)
+</details>
+
+<details>
+<summary>Install Go package (Go 1.26)</summary>
 
 ```bash
 go install github.com/crumbyte/noxdir@latest
 ```
 
-### Build from source (Go 1.24+)
+</details>
+
+<details>
+<summary>Build from source (Go 1.26)</summary>
 
 ```bash
 git clone https://github.com/crumbyte/noxdir.git
@@ -107,6 +135,7 @@ make build
 
 ./bin/noxdir
 ```
+</details>
 
 ## 🛠 Usage
 

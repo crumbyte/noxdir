@@ -234,6 +234,7 @@ func (dm *DriveModel) updateTableData(key drive.SortKey, sortDesc bool) {
 	}
 
 	dm.drivesTable.SetRows(rows)
+	dm.drivesTable.SetCursor(0)
 }
 
 func (dm *DriveModel) drivesSummary() string {
