@@ -26,7 +26,7 @@ type (
 	EnqueueRefresh struct{ Mode Mode }
 )
 
-var teaProg = new(tea.Program)
+var teaProg *tea.Program
 
 type ViewModel struct {
 	driveModel *DriveModel

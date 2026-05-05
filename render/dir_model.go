@@ -156,7 +156,7 @@ func NewDirModel(nav *Navigation, filters ...filter.EntryFilter) *DirModel {
 			func() { go teaProg.Send(EnqueueRefresh{Mode: CMD}) },
 		),
 		errPopup: NewPopupModel(
-			ErrorTitle, time.Second*10, teaProg, PopupDefaultErrorStyle(),
+			ErrorTitle, time.Second*10, PopupDefaultErrorStyle(),
 		),
 		summaryInfo: &summaryInfo{},
 		sortState:   SortState{Key: structure.SortSize, Desc: true},
