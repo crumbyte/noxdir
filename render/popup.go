@@ -189,7 +189,6 @@ func (pm *PopupModel) Show(message string) {
 		pm.messageQueue = append(pm.messageQueue, message)
 	}
 
-	// TODO: concurrent?
 	defer pm.condTickCmd()
 
 	pm.visible, pm.ttl = true, time.Now().Add(pm.duration)

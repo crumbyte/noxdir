@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+
 func TestPopupModel_Show_AddsMessage(t *testing.T) {
 	pm := render.NewPopupModel("Test", time.Second, nil)
 
