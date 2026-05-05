@@ -10,6 +10,10 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
+type DeleteHandler interface {
+	Delete(entry *structure.Entry) error
+}
+
 type DeleteChoice int
 
 const (
@@ -27,16 +31,16 @@ type EntryDeleted struct {
 }
 
 type DeleteDialogModel struct {
-	nav      *Navigation
-	toDelete []*structure.Entry
-	choice   DeleteChoice
+	deleteHandler DeleteHandler
+	toDelete      []*structure.Entry
+	choice        DeleteChoice
 }
 
-func NewDeleteDialogModel(nav *Navigation, toDelete []*structure.Entry) *DeleteDialogModel {
+func NewDeleteDialogModel(dh DeleteHandler, toDelete []*structure.Entry) *DeleteDialogModel {
 	return &DeleteDialogModel{
-		choice:   CancelChoice,
-		toDelete: toDelete,
-		nav:      nav,
+		deleteHandler: dh,
+		choice:        CancelChoice,
+		toDelete:      toDelete,
 	}
 }
 
@@ -59,7 +63,7 @@ func (ddm *DeleteDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if ddm.choice == ConfirmChoice {
 			for _, entry := range ddm.toDelete {
-				err = ddm.nav.Delete(entry)
+				err = ddm.deleteHandler.Delete(entry)
 			}
 
 			deleted = true

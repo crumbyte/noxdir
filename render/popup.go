@@ -46,7 +46,6 @@ type PopupModel struct {
 	duration      time.Duration
 	ttl           time.Time
 	styles        *PopupStyles
-	program       *tea.Program
 	title         string
 	queueLimit    int
 	hideCountdown bool
@@ -56,7 +55,7 @@ type PopupModel struct {
 // NewPopupModel creates a new *PopupModel instance with the provided title and
 // visibility duration. The *PopupStyles are optional, and if the value is empty,
 // the DefaultPopupStyle will be used.
-func NewPopupModel(title string, d time.Duration, p *tea.Program, ps *PopupStyles) *PopupModel {
+func NewPopupModel(title string, d time.Duration, ps *PopupStyles) *PopupModel {
 	if len(title) == 0 {
 		title = InfoTitle
 	}
@@ -69,7 +68,6 @@ func NewPopupModel(title string, d time.Duration, p *tea.Program, ps *PopupStyle
 		title:        title,
 		duration:     d,
 		styles:       ps,
-		program:      p,
 		messageQueue: make([]string, 0, queueLimit),
 		queueLimit:   queueLimit,
 	}
@@ -191,6 +189,7 @@ func (pm *PopupModel) Show(message string) {
 		pm.messageQueue = append(pm.messageQueue, message)
 	}
 
+	// TODO: concurrent?
 	defer pm.condTickCmd()
 
 	pm.visible, pm.ttl = true, time.Now().Add(pm.duration)
@@ -224,7 +223,7 @@ func (pm *PopupModel) nextMessage() (string, bool) {
 }
 
 func (pm *PopupModel) condTickCmd() {
-	if pm.program == nil || !pm.visible {
+	if teaProg == nil || !pm.visible {
 		return
 	}
 
@@ -233,7 +232,7 @@ func (pm *PopupModel) condTickCmd() {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			pm.program.Send(PopupMsgTick{})
+			teaProg.Send(PopupMsgTick{})
 
 			pm.Update(nil)
 
