@@ -37,6 +37,7 @@ void get_fstat_at(const int fd, const struct dirent *de, FileInfoC *fi) {
 
     fi->isDir = S_ISDIR(st.st_mode);
     fi->size = st.st_size;
+    fi->blocks = st.st_blocks;
     fi->dev = st.st_dev;
     fi->ino = st.st_ino;
     fi->modSec = st.st_mtimespec.tv_sec;
