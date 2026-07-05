@@ -11,6 +11,7 @@ typedef struct {
     int64_t  dev;
     int      isDir;
     int64_t  size;
+    int64_t  blocks;
     int64_t  modSec;
     int64_t  modNSec;
 } FileInfoC;

@@ -22,6 +22,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+const defaultBlockSize = 512
+
 var excludedFlags uint32 = unix.MNT_RDONLY | unix.MNT_SNAPSHOT | unix.MNT_ROOTFS | unix.MNT_AUTOMOUNTED
 
 var excludedMounts = []string{
@@ -106,7 +108,7 @@ func NewFileInfo(name string, data *unix.Stat_t) FileInfo {
 	return FileInfo{
 		name:    name,
 		isDir:   data.Mode&unix.S_IFMT == unix.S_IFDIR,
-		size:    data.Size,
+		size:    min(data.Blocks*defaultBlockSize, data.Size),
 		modTime: time.Unix(int64(data.Mtim.Sec), int64(data.Mtim.Nsec)).Unix(),
 	}
 }
@@ -150,7 +152,10 @@ func ReadDir(_ Allocator, path string) ([]FileInfo, error) {
 			FileInfo{
 				name:  name,
 				isDir: slice[i].isDir != 0,
-				size:  int64(slice[i].size),
+				size: min(
+					int64(slice[i].blocks)*defaultBlockSize,
+					int64(slice[i].size),
+				),
 				modTime: time.Unix(
 					int64(slice[i].modSec),
 					int64(slice[i].modNSec),
