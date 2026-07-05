@@ -4,6 +4,7 @@ package drive
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os/exec"
 	"runtime"
@@ -15,7 +16,11 @@ import (
 	winapi "golang.org/x/sys/windows"
 )
 
-const windowDisplayMode = uintptr(1)
+const (
+	windowDisplayMode = uintptr(1)
+	invalidFileSize   = 0xFFFFFFFF
+	sparseFileFlag    = 512
+)
 
 var (
 	systemDLL = winapi.NewLazySystemDLL("kernel32.dll")
@@ -23,13 +28,14 @@ var (
 )
 
 var (
-	procGetDiskFreeSpaceEx   = systemDLL.NewProc("GetDiskFreeSpaceExW")
-	procFindFirstFile        = systemDLL.NewProc("FindFirstFileW")
-	procFindNextFile         = systemDLL.NewProc("FindNextFileW")
-	procGetLogicalDrives     = systemDLL.NewProc("GetLogicalDrives")
-	procGetVolumeInformation = systemDLL.NewProc("GetVolumeInformationA")
-	procFindClose            = systemDLL.NewProc("FindClose")
-	procShellExecute         = shellDLL.NewProc("ShellExecuteW")
+	procGetDiskFreeSpaceEx    = systemDLL.NewProc("GetDiskFreeSpaceExW")
+	procFindFirstFile         = systemDLL.NewProc("FindFirstFileW")
+	procFindNextFile          = systemDLL.NewProc("FindNextFileW")
+	procGetLogicalDrives      = systemDLL.NewProc("GetLogicalDrives")
+	procGetVolumeInformation  = systemDLL.NewProc("GetVolumeInformationA")
+	procFindClose             = systemDLL.NewProc("FindClose")
+	procGetCompressedFileSize = systemDLL.NewProc("GetCompressedFileSizeW")
+	procShellExecute          = shellDLL.NewProc("ShellExecuteW")
 )
 
 type driveSpace struct {
@@ -52,13 +58,17 @@ type win32finddata1 struct {
 	AlternateFileName [14]uint16
 }
 
-func NewFileInfo(alloc Allocator, data *win32finddata1) FileInfo {
+func NewFileInfo(alloc Allocator, data *win32finddata1) (FileInfo, error) {
+	if err := detectSparseFileSize(data); err != nil {
+		return FileInfo{}, err
+	}
+
 	return FileInfo{
 		name:    UTF16ToString(alloc, data.FileName[:]),
 		isDir:   data.FileAttributes&16 != 0,
 		size:    int64(data.FileSizeHigh)<<32 + int64(data.FileSizeLow),
 		modTime: time.Unix(0, data.LastWriteTime.Nanoseconds()).Unix(),
-	}
+	}, nil
 }
 
 type handleWrapper struct {
@@ -225,6 +235,34 @@ func spaceUsage(path string) (driveSpace, error) {
 	return ds, nil
 }
 
+// detectSparseFileSize calculates the file's size by multiplying the number of
+// occupied blocks/clusters by the drive's file system-configured block size.
+// Therefore, if the FS block size is 64 KB, the 1-byte file size will be 64 KB.
+//
+// The function receives an already filled instance of *win32finddata1 and checks
+// for the sparse flag in the file's attributes. If the flag exists, it will get
+// the block-based size and override the corresponding high/low file size fields.
+func detectSparseFileSize(data *win32finddata1) error {
+	if data.FileAttributes&sparseFileFlag == 0 {
+		return nil
+	}
+
+	lowSize, _, err := procGetCompressedFileSize.Call(
+		uintptr(unsafe.Pointer(&data.FileName[0])),
+		uintptr(unsafe.Pointer(&data.FileSizeHigh)),
+	)
+
+	if lowSize == invalidFileSize {
+		if errno, ok := errors.AsType[syscall.Errno](err); ok && errno != 0 {
+			return fmt.Errorf("drive: GetCompressedFileSize: %w", err)
+		}
+	}
+
+	data.FileSizeLow = *(*uint32)(unsafe.Pointer(&lowSize))
+
+	return nil
+}
+
 // ExploreFallback explores the directory using Windows API. If the provided path is a
 // valid directory path, it will open it in the file explorer in a new window.
 // Otherwise, an error will be returned.
@@ -296,7 +334,12 @@ func ReadDir(alloc Allocator, path string) ([]FileInfo, error) {
 
 		//nolint:staticcheck // the alternative is even worse
 		if !(name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0))) {
-			fis = append(fis, NewFileInfo(alloc, &data))
+			fi, fiErr := NewFileInfo(alloc, &data)
+			if fiErr != nil {
+				return nil, fmt.Errorf("drive: NewFileInfo: %w", fiErr)
+			}
+
+			fis = append(fis, fi)
 		}
 
 		result, _, _ := syscall.SyscallN(
