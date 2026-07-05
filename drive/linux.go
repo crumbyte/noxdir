@@ -19,7 +19,10 @@ import (
 
 const NTFSSbMagic = 0x5346544e
 
-const mountInfoPath = "/proc/self/mounts"
+const (
+	mountInfoPath    = "/proc/self/mounts"
+	defaultBlockSize = 512
+)
 
 var excludedFSTypes = map[int64]struct{}{
 	unix.CGROUP_SUPER_MAGIC:    {},
@@ -93,7 +96,7 @@ func NewFileInfo(name string, data *unix.Stat_t) FileInfo {
 	return FileInfo{
 		name:    name,
 		isDir:   data.Mode&unix.S_IFMT == unix.S_IFDIR,
-		size:    data.Size,
+		size:    min(data.Blocks*defaultBlockSize, data.Size),
 		modTime: time.Unix(int64(data.Mtim.Sec), int64(data.Mtim.Nsec)).Unix(),
 	}
 }
