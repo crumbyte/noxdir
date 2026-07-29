@@ -24,7 +24,7 @@ import (
 
 const defaultBlockSize = 512
 
-var excludedFlags uint32 = unix.MNT_RDONLY | unix.MNT_SNAPSHOT | unix.MNT_ROOTFS | unix.MNT_AUTOMOUNTED
+var excludedFlags uint32 = unix.MNT_SNAPSHOT | unix.MNT_ROOTFS | unix.MNT_AUTOMOUNTED
 
 var excludedMounts = []string{
 	"/dev",
