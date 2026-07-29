@@ -1,7 +1,6 @@
 # 🧹 NoxDir
 
 [![Build](https://github.com/crumbyte/noxdir/actions/workflows/build.yml/badge.svg)](https://github.com/crumbyte/noxdir/actions/workflows/build.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/crumbyte/noxdir)](https://goreportcard.com/report/github.com/crumbyte/noxdir)
 ![GitHub Release](https://img.shields.io/github/v/release/crumbyte/noxdir)
 
 **NoxDir** is a high-performance, cross-platform command-line tool for
