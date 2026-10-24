@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 )
 
 const (
@@ -85,21 +84,13 @@ func (s Settings) ConfigPath() string {
 	return filepath.Join(s.Path, FileName)
 }
 
-func ResolveConfigPath(configDir string) (string, error) {
-	configPath, err := os.UserHomeDir()
+func ResolveConfigPath(_ string) (string, error) {
+	configPath, err := os.UserConfigDir()
 	if err != nil {
 		return "", fmt.Errorf("resolve config path: %w", err)
 	}
 
-	if runtime.GOOS == "windows" {
-		configPath = os.Getenv("LocalAppData")
-
-		if len(configPath) == 0 {
-			return "", errors.New("local app data folder not found")
-		}
-	}
-
-	fullPath := filepath.Join(configPath, configDir)
+	fullPath := filepath.Join(configPath, DirName)
 
 	if err = os.MkdirAll(filepath.Clean(fullPath), 0750); err != nil {
 		return "", fmt.Errorf("create config path: %w", err)
