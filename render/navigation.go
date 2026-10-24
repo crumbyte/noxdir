@@ -107,6 +107,7 @@ func NewRootNavigation(t *structure.Tree, s config.Settings) (*Navigation, error
 wait:
 	for {
 		select {
+		//nolint:errcheck
 		case <-errChan:
 			// ignore permission related errors for now
 		case <-done:

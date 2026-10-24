@@ -112,6 +112,7 @@ func DecodeColorSchema(path string, cs *ColorSchema) error {
 	return nil
 }
 
+//nolint:goconst
 func DefaultColorSchema() ColorSchema {
 	return ColorSchema{
 		ScanProgressBar: PG{
