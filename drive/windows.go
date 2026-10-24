@@ -58,8 +58,8 @@ type win32finddata1 struct {
 	AlternateFileName [14]uint16
 }
 
-func NewFileInfo(alloc Allocator, data *win32finddata1) (FileInfo, error) {
-	if err := detectSparseFileSize(data); err != nil {
+func NewFileInfo(alloc Allocator, fullPath []uint16, data *win32finddata1) (FileInfo, error) {
+	if err := detectSparseFileSize(fullPath, data); err != nil {
 		return FileInfo{}, err
 	}
 
@@ -242,13 +242,13 @@ func spaceUsage(path string) (driveSpace, error) {
 // The function receives an already filled instance of *win32finddata1 and checks
 // for the sparse flag in the file's attributes. If the flag exists, it will get
 // the block-based size and override the corresponding high/low file size fields.
-func detectSparseFileSize(data *win32finddata1) error {
+func detectSparseFileSize(fullPath []uint16, data *win32finddata1) error {
 	if data.FileAttributes&sparseFileFlag == 0 {
 		return nil
 	}
 
 	lowSize, _, err := procGetCompressedFileSize.Call(
-		uintptr(unsafe.Pointer(&data.FileName[0])),
+		uintptr(unsafe.Pointer(&fullPath[0])),
 		uintptr(unsafe.Pointer(&data.FileSizeHigh)),
 	)
 
@@ -306,20 +306,30 @@ func Explore(path string) error {
 }
 
 // ReadDir reads the provided directory and returns its entries as a slice of
-// instances [FileInfoAccess] instances.
+// [FileInfo] instances.
 func ReadDir(alloc Allocator, path string) ([]FileInfo, error) {
 	var data win32finddata1
 
 	fis := make([]FileInfo, 0, 32)
 
-	pathPtr, err := syscall.UTF16PtrFromString(path + "\\*")
+	pathUTF16, err := syscall.UTF16FromString(path)
 	if err != nil {
-		return nil, fmt.Errorf("drive: UTF16PtrFromString: %w", err)
+		return nil, fmt.Errorf("drive: UTF16FromString: %w", err)
 	}
+
+	if len(pathUTF16) == 0 {
+		return nil, errors.New("drive: UTF16FromString: empty path")
+	}
+
+	pathBuffer := make([]uint16, 0, len(pathUTF16)+7+syscall.MAX_PATH)
+	pathBuffer = append(pathBuffer, '\\', '\\', '?', '\\')
+	pathBuffer = append(pathBuffer, pathUTF16[:len(pathUTF16)-1]...)
+	pathBuffer = append(pathBuffer, '\\', '*', 0)
+	dirLen := len(pathBuffer)
 
 	handle, _, errno := syscall.SyscallN(
 		procFindFirstFile.Addr(),
-		uintptr(unsafe.Pointer(pathPtr)),
+		uintptr(unsafe.Pointer(&pathBuffer[0])),
 		uintptr(unsafe.Pointer(&data)),
 	)
 
@@ -334,7 +344,14 @@ func ReadDir(alloc Allocator, path string) ([]FileInfo, error) {
 
 		//nolint:staticcheck // the alternative is even worse
 		if !(name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0))) {
-			fi, fiErr := NewFileInfo(alloc, &data)
+			pathBuffer = append(
+				pathBuffer[:dirLen-2],
+				data.FileName[:utf16Len(data.FileName[:])]...,
+			)
+
+			pathBuffer = append(pathBuffer, 0)
+
+			fi, fiErr := NewFileInfo(alloc, pathBuffer, &data)
 			if fiErr != nil {
 				return nil, fmt.Errorf("drive: NewFileInfo: %w", fiErr)
 			}
@@ -359,4 +376,14 @@ func ReadDir(alloc Allocator, path string) ([]FileInfo, error) {
 
 func toUintptr[T any](val *T) uintptr {
 	return uintptr(unsafe.Pointer(val))
+}
+
+func utf16Len(val []uint16) int {
+	for i := range val {
+		if val[i] == 0 {
+			return i + 1
+		}
+	}
+
+	return 0
 }
