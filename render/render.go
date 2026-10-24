@@ -117,7 +117,7 @@ func (vm *ViewModel) levelDown() {
 		sr = vm.driveModel.drivesTable.SelectedRow()
 	}
 
-	if sr != nil && len(sr.Cols) < 2 {
+	if sr == nil || len(sr.Cols) < 2 {
 		return
 	}
 
