@@ -204,6 +204,7 @@ func (dm *DirModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if msg.Deleted {
 			dm.dirsTable.ResetMarked()
+			dm.dirsTable.SetCursor(dm.dirsTable.Cursor())
 
 			dm.updateTableData()
 		}
@@ -402,10 +403,14 @@ func (dm *DirModel) handleKeyBindings(msg tea.KeyPressMsg) bool {
 		}
 	case key.Matches(msg, Bindings.Dirs.DirsOnly):
 		dm.filters.ToggleFilter(filter.DirsOnlyFilterID)
+
 		dm.updateTableData()
+		dm.dirsTable.SetCursor(dm.dirsTable.Cursor())
 	case key.Matches(msg, Bindings.Dirs.FilesOnly):
 		dm.filters.ToggleFilter(filter.FilesOnlyFilterID)
+
 		dm.updateTableData()
+		dm.dirsTable.SetCursor(dm.dirsTable.Cursor())
 	case key.Matches(msg, Bindings.Dirs.ToggleSelectAll):
 		dm.dirsTable.ToggleMarkAll()
 	}
