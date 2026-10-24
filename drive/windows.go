@@ -305,6 +305,8 @@ func Explore(path string) error {
 	return cmd.Start()
 }
 
+// ReadDir reads the provided directory and returns its entries as a slice of
+// [FileInfo] instances.
 func ReadDir(alloc Allocator, path string) ([]FileInfo, error) {
 	var data win32finddata1
 
