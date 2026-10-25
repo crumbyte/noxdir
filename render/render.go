@@ -14,11 +14,7 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-const (
-	Version = "1.2.2"
-
-	updateTickerInterval = time.Millisecond * 500
-)
+const updateTickerInterval = time.Millisecond * 500
 
 type (
 	UpdateDirState struct{}
@@ -32,15 +28,22 @@ type ViewModel struct {
 	driveModel *DriveModel
 	dirModel   *DirModel
 	nav        *Navigation
+	version    string
 	lastErr    []error
 }
 
-func NewViewModel(n *Navigation, driveModel *DriveModel, dirMode *DirModel) *ViewModel {
+func NewViewModel(
+	version string,
+	n *Navigation,
+	driveModel *DriveModel,
+	dirMode *DirModel,
+) *ViewModel {
 	return &ViewModel{
 		lastErr:    make([]error, 0),
 		nav:        n,
 		driveModel: driveModel,
 		dirModel:   dirMode,
+		version:    version,
 	}
 }
 
@@ -97,7 +100,7 @@ func (vm *ViewModel) View() tea.View {
 	}
 
 	v.AltScreen = true
-	v.WindowTitle = "NoxDir " + Version
+	v.WindowTitle = "NoxDir | v" + vm.version
 	v.MouseMode = tea.MouseModeNone
 
 	return v

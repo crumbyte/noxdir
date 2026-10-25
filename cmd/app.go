@@ -25,6 +25,7 @@ var (
 	ErrUnknown = errors.New("unknown error")
 
 	exclude         []string
+	appVersion      string
 	root            string
 	sizeLimit       string
 	noEmptyDirs     bool
@@ -67,6 +68,8 @@ selected drive and presents the space consumption in a clear, user-friendly layo
 )
 
 func init() {
+	appCmd.SetVersionTemplate("{{.Version}}\n")
+
 	appCmd.PersistentFlags().StringSliceVarP(
 		&exclude,
 		"exclude",
@@ -220,11 +223,12 @@ Example: -v|--version (provide a flag)
 	)
 }
 
-func Execute() {
-	if err := appCmd.Execute(); err != nil {
-		var cliErr *CLIError
+func Execute(version string) {
+	appVersion = version
+	appCmd.Version = version
 
-		if errors.As(err, &cliErr) {
+	if err := appCmd.Execute(); err != nil {
+		if cliErr, ok := errors.AsType[*CLIError](err); ok {
 			printError(cliErr.Error())
 		} else {
 			printError(render.ReportError(err, debug.Stack()))
@@ -270,14 +274,6 @@ func initConfig() (*config.Settings, error) {
 }
 
 func runApp(_ *cobra.Command, _ []string) error {
-	if versionFlag {
-		if _, err := os.Stdout.WriteString(render.Version + "\n"); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
 	var (
 		err   error
 		style *render.Style
@@ -335,8 +331,9 @@ func initViewModel(s *config.Settings) (*render.ViewModel, error) {
 	}
 
 	vm := render.NewViewModel(
+		appVersion,
 		nav,
-		render.NewDriveModel(nav),
+		render.NewDriveModel(appVersion, nav),
 		render.NewDirModel(nav, dirModelFilters...),
 	)
 

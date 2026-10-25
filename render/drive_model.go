@@ -24,12 +24,13 @@ type DriveModel struct {
 	statusBar   *StatusBar
 	sortState   SortState
 	view        tea.View
+	version     string
 	height      int
 	width       int
 	fullHelp    bool
 }
 
-func NewDriveModel(n *Navigation) *DriveModel {
+func NewDriveModel(version string, n *Navigation) *DriveModel {
 	pathRatio := DefaultColWidthRatio
 
 	if runtime.GOOS == "darwin" {
@@ -94,6 +95,7 @@ func NewDriveModel(n *Navigation) *DriveModel {
 		drivesTable: buildTable(),
 		statusBar:   NewStatusBar(),
 		usagePG:     &style.CS().UsageProgressBar,
+		version:     version,
 	}
 }
 
@@ -252,7 +254,7 @@ func (dm *DriveModel) drivesSummary() string {
 	}
 
 	barItems := []*BarItem{
-		{Content: Version, BGColor: sbStyle.VersionBG},
+		{Content: "v" + dm.version, BGColor: sbStyle.VersionBG},
 		{Content: "DRIVES", BGColor: sbStyle.Drives.ModeBG},
 		{Content: driveTitle, BGColor: sbStyle.BG, Width: -1},
 	}
