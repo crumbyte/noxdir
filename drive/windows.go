@@ -20,6 +20,10 @@ const (
 	windowDisplayMode = uintptr(1)
 	invalidFileSize   = 0xFFFFFFFF
 	sparseFileFlag    = 512
+
+	findExInfoBasic       = 1
+	findExSearchNameMatch = 0
+	findFirstExLargeFetch = 2
 )
 
 var (
@@ -29,7 +33,7 @@ var (
 
 var (
 	procGetDiskFreeSpaceEx    = systemDLL.NewProc("GetDiskFreeSpaceExW")
-	procFindFirstFile         = systemDLL.NewProc("FindFirstFileW")
+	procFindFirstFile         = systemDLL.NewProc("FindFirstFileExW")
 	procFindNextFile          = systemDLL.NewProc("FindNextFileW")
 	procGetLogicalDrives      = systemDLL.NewProc("GetLogicalDrives")
 	procGetVolumeInformation  = systemDLL.NewProc("GetVolumeInformationA")
@@ -330,7 +334,11 @@ func ReadDir(alloc Allocator, path string) ([]FileInfo, error) {
 	handle, _, errno := syscall.SyscallN(
 		procFindFirstFile.Addr(),
 		uintptr(unsafe.Pointer(&pathBuffer[0])),
+		findExInfoBasic,
 		uintptr(unsafe.Pointer(&data)),
+		findExSearchNameMatch,
+		findFirstExLargeFetch,
+		0,
 	)
 
 	hw := newHandleWrapper(handle)
